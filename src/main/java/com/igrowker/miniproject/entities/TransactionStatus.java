@@ -2,7 +2,7 @@ package com.igrowker.miniproject.entities;
 
 public enum TransactionStatus {
 
-    ACEPTED,
+    ACCEPTED,
     DENIED,
     FAILED,
     PENDENT

@@ -1,39 +1,27 @@
 package com.igrowker.miniproject.entities;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Entity
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "accounts")
 public class Account {
 
     private Long id;
 
-    private Long amount;
+    private BigDecimal amount;
 
     private boolean enabled;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getAmount() {
-        return amount;
-    }
-
-    public void setAmount(Long amount) {
-        this.amount = amount;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    
+    @OneToOne
+    private User user;
 }
