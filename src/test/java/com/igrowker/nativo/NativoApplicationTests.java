@@ -1,10 +1,10 @@
-package com.igrowker.miniproject;
+package com.igrowker.nativo;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class MiniProjectApplicationTests {
+class NativoApplicationTests {
 
 	@Test
 	void contextLoads() {

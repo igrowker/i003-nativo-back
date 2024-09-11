@@ -1,7 +1,6 @@
-package com.igrowker.miniproject.entities;
+package com.igrowker.nativo.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +12,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "users")
 public class User {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long dni;
@@ -29,6 +30,7 @@ public class User {
 
     private String phone;
 
+    @OneToOne
     private Account account;
 
 }
