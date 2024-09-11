@@ -1,4 +1,4 @@
-package com.igrowker.miniproject.entities;
+package com.igrowker.nativo.entities;
 
 public enum TransactionStatus {
 

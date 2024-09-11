@@ -8,14 +8,14 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.3.2</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 
 	<groupId>com.igrowker</groupId>
-	<artifactId>miniproject</artifactId>
+	<artifactId>nativo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>mini-project</name>
-	<description>Mini project for Spring Boot</description>
+	<name>nativo</name>
+	<description>Nativo App</description>
 	<url/>
 
 	<licenses>
@@ -86,12 +86,14 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.5.0</version>
         </dependency>
+
 		<!--    POSTGRES DB    -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+
 		<!-- JWT ; jackson es para mock en tests -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -110,6 +112,7 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
+
 		<!-- THYMELEAF & STARTER MAIL -> Validations to mail & Remember appointments -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -120,6 +123,8 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 	</dependencies>
+
+
 	<build>
         <plugins>
             <plugin>
