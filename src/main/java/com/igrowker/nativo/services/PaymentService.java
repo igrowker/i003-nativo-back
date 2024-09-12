@@ -6,4 +6,5 @@ import com.igrowker.nativo.dtos.ResponsePaymentDto;
 public interface PaymentService {
 
     ResponsePaymentDto createQr(RequestPaymentDto requestPaymentDto);
+
 }
