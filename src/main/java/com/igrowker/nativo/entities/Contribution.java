@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -19,6 +20,7 @@ public class Contribution {
     private Long id;
     private Long taxpayer;
     private BigDecimal amount;
+    private LocalDate createdDate;
 
     @ManyToOne
     private Microcredit microcredit;
