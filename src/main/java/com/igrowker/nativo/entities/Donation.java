@@ -40,10 +40,11 @@ public class Donation {
     }
 
 
+    /*
     @PrePersist
     protected void onStatus() {
         this.status =  TransactionStatus.PENDENT;
-    }
+    }*/
 
 
     @PreUpdate
