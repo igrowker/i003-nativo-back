@@ -5,25 +5,25 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record RegisterUserDto (
+public record RegisterUserDto(
+        @NotBlank
+        Long dni,
 
-    @NotBlank
-    Long dni,
+        @NotNull
+        String name,
 
-    @NotNull
-    String name,
+        @NotNull
+        String surname,
 
-    @NotNull
-    String surname,
+        @Email
+        String email,
 
-    @Email
-    String email,
+        @NotBlank
+        String password,
 
-    @NotBlank
-    String password,
-    
-    @NotNull
-    @Size(min=8 , max = 16)
-    String phone
+        @NotNull
+        @Size(min = 8, max = 16)
+        String phone
 
-) {}
+) {
+}
