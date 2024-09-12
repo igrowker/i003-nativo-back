@@ -26,10 +26,12 @@ public class Donation {
 
     private LocalDateTime createdAt;
 
-    @ManyToOne
+    private LocalDateTime updateAt;
+
+    @OneToOne
     private User donor;
 
-    @ManyToOne
+    @OneToOne
     private User beneficiary;
 
     @PrePersist
@@ -37,4 +39,15 @@ public class Donation {
         this.createdAt =  LocalDateTime.now();
     }
 
+
+    @PrePersist
+    protected void onStatus() {
+        this.status =  TransactionStatus.PENDENT;
+    }
+
+
+    @PreUpdate
+    protected void updateAt() {
+        this.updateAt =  LocalDateTime.now();
+    }
 }
