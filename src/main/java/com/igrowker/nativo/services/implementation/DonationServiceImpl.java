@@ -1,6 +1,8 @@
 package com.igrowker.nativo.services.implementation;
 
+import com.igrowker.nativo.dtos.RequestDonationConfirmationDto;
 import com.igrowker.nativo.dtos.RequestDonationDto;
+import com.igrowker.nativo.dtos.ResponseDonationConfirmationDto;
 import com.igrowker.nativo.dtos.ResponseDonationDto;
 import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.TransactionStatus;
@@ -23,14 +25,22 @@ public class DonationServiceImpl implements DonationService {
     public ResponseDonationDto createDonation(RequestDonationDto requestDonationDto) {
 
         if (requestDonationDto != null){
-            Donation donation = new Donation();
-            donation.setAmount(requestDonationDto.amount());
-            donation.setDonor(requestDonationDto.donor());
-            donation.setBeneficiary(requestDonationDto.beneficiary());
-            Donation donation1 = donationRepository.save(donation);
-            // return ResponseDonationDto(TransactionStatus.ACCEPTED.name(), Optional.of(donationMapper.requestDtoToDonation()));
-        }
 
+            Donation donation = donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto));
+
+            return new ResponseDonationDto(TransactionStatus.PENDENT.name(), Optional.of(donationMapper.donationToRequestDto(donation)));
+        }
+        return null;
+    }
+
+    @Override
+    public ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto) {
+        if (requestDonationConfirmationDto != null) {
+
+            Donation donation = donationRepository.save(donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto));
+
+            return new ResponseDonationConfirmationDto(Optional.of(donationMapper.donationToRequestConfirmationDto(donation)));
+        }
         return null;
     }
 
