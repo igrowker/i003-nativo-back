@@ -1,9 +1,9 @@
 package com.igrowker.nativo.services.implementation;
 
-import com.igrowker.nativo.dtos.RequestPaymentDto;
-import com.igrowker.nativo.dtos.RequestProcessPaymentDto;
-import com.igrowker.nativo.dtos.ResponsePaymentDto;
-import com.igrowker.nativo.dtos.ResponseProcessPaymentDto;
+import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
+import com.igrowker.nativo.dtos.payment.RequestProcessPaymentDto;
+import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
+import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.mappers.PaymentMapper;

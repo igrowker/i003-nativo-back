@@ -19,8 +19,8 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long sender;
-    private Long receiver;
+    private Long senderAccount;
+    private Long receiverAccount;
 
     private BigDecimal amount;
     private LocalDateTime transactionDate;
@@ -28,8 +28,6 @@ public class Payment {
     private String description;
 
     private String qr;
-
-    private boolean enabled;
 
     @PrePersist
     public void onCreate(){

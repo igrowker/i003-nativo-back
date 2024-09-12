@@ -1,9 +1,9 @@
 package com.igrowker.nativo.controllers;
 
-import com.igrowker.nativo.dtos.RequestPaymentDto;
-import com.igrowker.nativo.dtos.RequestProcessPaymentDto;
-import com.igrowker.nativo.dtos.ResponsePaymentDto;
-import com.igrowker.nativo.dtos.ResponseProcessPaymentDto;
+import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
+import com.igrowker.nativo.dtos.payment.RequestProcessPaymentDto;
+import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
+import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
 import com.igrowker.nativo.services.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

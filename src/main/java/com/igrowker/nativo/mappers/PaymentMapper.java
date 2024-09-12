@@ -1,7 +1,7 @@
 package com.igrowker.nativo.mappers;
 
-import com.igrowker.nativo.dtos.RequestPaymentDto;
-import com.igrowker.nativo.dtos.ResponsePaymentDto;
+import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
+import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
 import com.igrowker.nativo.entities.Payment;
 import org.mapstruct.Mapper;
 
