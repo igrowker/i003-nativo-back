@@ -25,7 +25,7 @@ public class Microcredit {
     private LocalDate expirationDate;
     private TransactionStatus transactionStatus;
 
-    @OneToMany(mappedBy = "microcredits")
+    @OneToMany(mappedBy = "microcredit")
     private List<Contribution> contributions;
 
     private boolean enabled;
