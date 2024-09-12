@@ -1,6 +1,5 @@
 package com.igrowker.nativo.exceptions;
 
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,9 +23,11 @@ public class GlobalExceptionHandler {
         List<String> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .collect(Collectors.toList());
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, String.join(", ", errors));
+
+        String errorMessage = String.join(", ", errors);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, errorMessage);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -45,12 +46,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(InsufficientFundsException.class)
-    public ResponseEntity<ErrorResponse> handleInsufficientFundsException(InsufficientFundsException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleInsufficientFundsException(InsufficientFundsException ex) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

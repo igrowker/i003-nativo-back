@@ -1,4 +1,4 @@
-package com.igrowker.nativo.dtos;
+package com.igrowker.nativo.dtos.user;
 
 public record UserDto (
 
