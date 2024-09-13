@@ -17,14 +17,17 @@ import java.util.Date;
 @NoArgsConstructor
 public class Donation {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
+    @Column(length=1000)
     private BigDecimal amount;
 
+    @Enumerated(EnumType.STRING)
     private TransactionStatus status;
 
     private LocalDateTime createdAt;
+
 
     private LocalDateTime updateAt;
 
@@ -40,12 +43,12 @@ public class Donation {
     }
 
 
-    /*
+/*
     @PrePersist
     protected void onStatus() {
         this.status =  TransactionStatus.PENDENT;
-    }*/
-
+    }
+*/
 
     @PreUpdate
     protected void updateAt() {

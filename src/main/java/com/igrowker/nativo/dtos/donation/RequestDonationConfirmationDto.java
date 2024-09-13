@@ -1,4 +1,4 @@
-package com.igrowker.nativo.dtos;
+package com.igrowker.nativo.dtos.donation;
 
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
