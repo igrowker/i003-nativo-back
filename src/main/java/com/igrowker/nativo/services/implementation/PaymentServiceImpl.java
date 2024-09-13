@@ -71,23 +71,23 @@ public class PaymentServiceImpl implements PaymentService {
         Long senderAccountId = payment.getSenderAccount();
         Account senderAccount = accountRepository.findById(senderAccountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
-        BigDecimal actualSenderAmount = senderAccount.getAmount();
-        BigDecimal paymentAmount = payment.getAmount();
-        if (paymentAmount.compareTo(actualSenderAmount) > 0 ){
+        var actualSenderAmount = senderAccount.getAmount();
+        var paymentAmount = payment.getAmount();
+        if (paymentAmount.compareTo(actualSenderAmount) > 0){
             payment.setTransactionStatus(TransactionStatus.FAILED);
             Payment result = paymentRepository.save(payment);
             return paymentMapper.paymentToResponseProcessDto(result);
         }
 
         // Si los fondos son suficientes restar fondos del sender y Sumar fondos al receiver
-        BigDecimal newSenderAmount = actualSenderAmount.subtract(paymentAmount);
+        var newSenderAmount = actualSenderAmount.subtract(paymentAmount);
         senderAccount.setAmount(newSenderAmount);
 
         Long receiverAccountId = payment.getReceiverAccount();
         Account receiverAccount = accountRepository.findById(receiverAccountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
-        BigDecimal actualReceiverAmount = receiverAccount.getAmount();
-        BigDecimal newReceiverAmount = actualReceiverAmount.add(paymentAmount);
+        var actualReceiverAmount = receiverAccount.getAmount();
+        var newReceiverAmount = actualReceiverAmount.add(paymentAmount);
         receiverAccount.setAmount(newReceiverAmount);
 
         Account savedSenderAccount = accountRepository.save(senderAccount);

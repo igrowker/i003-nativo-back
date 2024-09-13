@@ -22,11 +22,14 @@ public class Payment {
     private Long senderAccount;
     private Long receiverAccount;
 
+    @Column(length=1000)
     private BigDecimal amount;
     private LocalDateTime transactionDate;
     private TransactionStatus transactionStatus;
+    @Column(length=1000)
     private String description;
 
+    @Column(length=10000)
     private String qr;
 
     @PrePersist
