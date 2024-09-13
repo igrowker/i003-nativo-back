@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -20,10 +19,16 @@ public class Microcredit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private Long requester;
+
     private BigDecimal amount;
+
     private LocalDate createdDate;
+
     private LocalDate expirationDate;
+
+    @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
     @OneToMany(mappedBy = "microcredit")
@@ -35,5 +40,6 @@ public class Microcredit {
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDate.now();
+        this.transactionStatus = TransactionStatus.PENDENT;
     }
 }

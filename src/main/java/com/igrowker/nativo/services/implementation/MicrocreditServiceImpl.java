@@ -33,25 +33,15 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     @Override
     public List<ResponseMicrocreditGetDto> getAll() {
         List<Microcredit> microcredits = microcreditRepository.findAll();
-        List<ResponseMicrocreditGetDto> responseMicrocreditGetDtos = new ArrayList<>();
+        return microcredits.stream()
+                .map(microcreditMapper::responseMicrocreditGet).toList();
+    }
 
-        for (Microcredit microcredit : microcredits) {
-            ResponseMicrocreditGetDto responseMicrocreditGetDto = microcreditMapper.responseMicrocreditGet(Optional.ofNullable(microcredit));
-            responseMicrocreditGetDtos.add(responseMicrocreditGetDto);
+        @Override
+        public ResponseMicrocreditGetDto getOne(Long id) {
+            Microcredit microcredit = microcreditRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + id)); // Manejo de excepción si no se encuentra
+
+            return microcreditMapper.responseMicrocreditGet(microcredit); // Mapeo de entidad a DTO
         }
-
-        return responseMicrocreditGetDtos;
-    }
-
-    @Override
-    public ResponseMicrocreditGetDto getOne(Long id) {
-        // Buscamos el microcrédito por ID
-        Microcredit microcredit = microcreditRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Microcredit not found with ID: " + id));
-
-        // Mapeamos el objeto Microcredit a ResponseMicrocreditGetDto
-        ResponseMicrocreditGetDto responseMicrocreditGetDto = microcreditMapper.responseMicrocreditGet(Optional.ofNullable(microcredit));
-
-        return responseMicrocreditGetDto;
-    }
 }
