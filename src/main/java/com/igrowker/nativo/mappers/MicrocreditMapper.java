@@ -15,5 +15,5 @@ public interface MicrocreditMapper {
     ResponseMicrocreditDto responseDtoToMicrocredit(Microcredit microcredit);
 
     //Get
-    ResponseMicrocreditGetDto responseMicrocreditGet(Optional<Microcredit> microcredit);
+    ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit);
 }
