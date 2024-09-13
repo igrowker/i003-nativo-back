@@ -4,23 +4,30 @@ import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
 import com.igrowker.nativo.dtos.payment.RequestProcessPaymentDto;
 import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
 import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
+import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.mappers.PaymentMapper;
+import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.PaymentRepository;
 import com.igrowker.nativo.services.PaymentService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final AccountRepository accountRepository;
     private final PaymentMapper paymentMapper;
     private final QRService qrService;
 
     @Override
+    @Transactional
     public ResponsePaymentDto createQr(RequestPaymentDto requestPaymentDto) {
         // Mapeo el DTO a la entidad Payment
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
@@ -45,38 +52,56 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional
     public ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto) {
         // Buscar el pago por ID
-        Payment payment = paymentRepository.findById(requestProcessPaymentDto.paymentId())
+        Payment payment = paymentRepository.findById(requestProcessPaymentDto.id())
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
         //new PaymentNotFoundException("Payment not found"));
 
         // Validar estado del pago
-        if (!"accepted".equalsIgnoreCase(requestProcessPaymentDto.status())) {
+        if (!payment.getTransactionStatus() .equals(TransactionStatus.ACCEPTED)) {
             // Si el pago fue rechazado
             payment.setTransactionStatus(TransactionStatus.DENIED);
-            paymentRepository.save(payment);
-            return new ResponseProcessPaymentDto(payment.getId(), requestProcessPaymentDto.senderId(),
-                    payment.getReceiver(), payment.getAmount(), "DENIED", "El pago fue rechazado.");
+            var result = paymentRepository.save(payment);
+            return paymentMapper.paymentToResponseProcessDto(result);
         }
 
-        // Aquí iría la lógica para validar los fondos del sender
-        // validar fondos
+        // Aquí iría la lógica para validar los fondos del sender Y validar fondos
+        Long senderAccountId = payment.getSenderAccount();
+        Account senderAccount = accountRepository.findById(senderAccountId)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        BigDecimal actualSenderAmount = senderAccount.getAmount();
+        BigDecimal paymentAmount = payment.getAmount();
+        if (paymentAmount.compareTo(actualSenderAmount) > 0 ){
+            payment.setTransactionStatus(TransactionStatus.FAILED);
+            Payment result = paymentRepository.save(payment);
+            return paymentMapper.paymentToResponseProcessDto(result);
+        }
 
-        // Si los fondos son suficientes (podriamos ponerlo como transaction)
-        // Restar fondos del sender
-        // Sumar fondos al receiver
+        // Si los fondos son suficientes restar fondos del sender y Sumar fondos al receiver
+        BigDecimal newSenderAmount = actualSenderAmount.subtract(paymentAmount);
+        senderAccount.setAmount(newSenderAmount);
+
+        Long receiverAccountId = payment.getReceiverAccount();
+        Account receiverAccount = accountRepository.findById(receiverAccountId)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        BigDecimal actualReceiverAmount = receiverAccount.getAmount();
+        BigDecimal newReceiverAmount = actualReceiverAmount.add(paymentAmount);
+        receiverAccount.setAmount(newReceiverAmount);
+
+        Account savedSenderAccount = accountRepository.save(senderAccount);
+        Account savedReceiverAccount = accountRepository.save(receiverAccount);
 
         // Actualizar estado del pago a aceptado
         payment.setTransactionStatus(TransactionStatus.ACCEPTED);
-        paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
 
-        // Enviar notificaciones a ambos usuarios (esto sería idealmente otro servicio)
+        // ToDo. Enviar notificaciones a ambos usuarios (esto sería idealmente otro servicio)
         // // que se le envie a ambos de alguna forma el resultado de la transaccion
 
         // Retornar respuesta final
-        return new ResponseProcessPaymentDto(payment.getId(), requestProcessPaymentDto.senderId(),
-                payment.getReceiver(), payment.getAmount(), "ACCEPTED", "El pago fue procesado exitosamente.");
+        return paymentMapper.paymentToResponseProcessDto(savedPayment);
     }
 
 }
