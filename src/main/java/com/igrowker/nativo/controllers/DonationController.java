@@ -1,9 +1,9 @@
 package com.igrowker.nativo.controllers;
 
-import com.igrowker.nativo.dtos.RequestDonationConfirmationDto;
-import com.igrowker.nativo.dtos.RequestDonationDto;
-import com.igrowker.nativo.dtos.ResponseDonationConfirmationDto;
-import com.igrowker.nativo.dtos.ResponseDonationDto;
+import com.igrowker.nativo.dtos.donation.RequestDonationConfirmationDto;
+import com.igrowker.nativo.dtos.donation.RequestDonationDto;
+import com.igrowker.nativo.dtos.donation.ResponseDonationConfirmationDto;
+import com.igrowker.nativo.dtos.donation.ResponseDonationDto;
 import com.igrowker.nativo.services.DonationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ public class DonationController {
 
     private final DonationService donationService;
 
-    @PostMapping("/create-donation")
+    @PostMapping("/crear-donacion")
     public ResponseEntity<ResponseDonationDto> createDonation(@RequestBody @Valid RequestDonationDto requestDonationDto){
 
         return ResponseEntity.ok(donationService.createDonation(requestDonationDto));
