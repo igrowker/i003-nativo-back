@@ -9,12 +9,12 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
-public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    Optional<Payment> findBySenderAccountAndTransactionStatus(Long senderAccount, TransactionStatus transactionStatus);
-    Optional<Payment> findByReceiverAccountAndTransactionStatus(Long receiverAccount, TransactionStatus transactionStatus);
+public interface PaymentRepository extends JpaRepository<Payment, String> {
+    Optional<Payment> findBySenderAccountAndTransactionStatus(String senderAccount, TransactionStatus transactionStatus);
+    Optional<Payment> findByReceiverAccountAndTransactionStatus(String receiverAccount, TransactionStatus transactionStatus);
 
-    Optional<Payment> findBySenderAccountAndTransactionDate(Long senderAccount, LocalDateTime transactionDate);
-    Optional<Payment> findByReceiverAccountAndTransactionDate(Long receiverAccount, LocalDateTime transactionDate);
+    Optional<Payment> findBySenderAccountAndTransactionDate(String senderAccount, LocalDateTime transactionDate);
+    Optional<Payment> findByReceiverAccountAndTransactionDate(String receiverAccount, LocalDateTime transactionDate);
 
     //Optional<Payment> findByAccountBetweenDates(Long sender, Boolean enabled);
     //ToDo. Write the sql query! If possible, making it only one for both sender and receiver.

@@ -15,7 +15,7 @@ import java.io.ByteArrayOutputStream;
 @Service
 public class QRService {
 
-    public String generateQrCode(Long paymentId) throws Exception {
+    public String generateQrCode(String paymentId) throws Exception {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
         Map<EncodeHintType, Object> hints = new HashMap<>();
         hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
