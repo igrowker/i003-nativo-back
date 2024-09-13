@@ -1,6 +1,9 @@
 package com.igrowker.nativo.controllers;
 
-import com.igrowker.nativo.dtos.RequestPaymentDto;
+import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
+import com.igrowker.nativo.dtos.payment.RequestProcessPaymentDto;
+import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
+import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
 import com.igrowker.nativo.services.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +20,17 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @PostMapping("/qr")
-    public ResponseEntity<?> generateQr(
+    @PostMapping("/crearqr")
+    public ResponseEntity<ResponsePaymentDto> generateQr(
             @RequestBody @Valid RequestPaymentDto requestPaymentDto){
-        var result = paymentService.createQr(requestPaymentDto);
+        ResponsePaymentDto result = paymentService.createQr(requestPaymentDto);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/pagarqr")
+    public ResponseEntity<ResponseProcessPaymentDto> processPayment(
+            @RequestBody @Valid RequestProcessPaymentDto requestProcessPaymentDto) {
+        ResponseProcessPaymentDto result = paymentService.processPayment(requestProcessPaymentDto);
         return ResponseEntity.ok(result);
     }
 }

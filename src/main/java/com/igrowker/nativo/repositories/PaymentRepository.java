@@ -10,13 +10,12 @@ import java.util.Optional;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    Optional<Payment> findByIdAndEnabled(Long id, Boolean enabled);
-    Optional<Payment> findBySenderAndEnabled(Long sender, Boolean enabled);
-    Optional<Payment> findByReceiverAndEnabled(Long receiver, Boolean enabled);
-    Optional<Payment> findBySenderAndTransactionStatus(Long sender, TransactionStatus transactionStatus);
-    Optional<Payment> findByReceiverAndTransactionStatus(Long receiver, TransactionStatus transactionStatus);
-    Optional<Payment> findBySenderAndTransactionDate(Long sender, LocalDateTime transactionDate);
-    Optional<Payment> findByReceiverAndTransactionDate(Long receiver, LocalDateTime transactionDate);
+    Optional<Payment> findBySenderAccountAndTransactionStatus(Long senderAccount, TransactionStatus transactionStatus);
+    Optional<Payment> findByReceiverAccountAndTransactionStatus(Long receiverAccount, TransactionStatus transactionStatus);
+
+    Optional<Payment> findBySenderAccountAndTransactionDate(Long senderAccount, LocalDateTime transactionDate);
+    Optional<Payment> findByReceiverAccountAndTransactionDate(Long receiverAccount, LocalDateTime transactionDate);
+
     //Optional<Payment> findByAccountBetweenDates(Long sender, Boolean enabled);
     //ToDo. Write the sql query! If possible, making it only one for both sender and receiver.
 

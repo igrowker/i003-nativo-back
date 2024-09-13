@@ -18,11 +18,26 @@ public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long sender;
-    private Long receiver;
+
+    private Long senderAccount;
+    private Long receiverAccount;
+
+    @Column(length=1000)
     private BigDecimal amount;
-    private String qr;
     private LocalDateTime transactionDate;
+
+    @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
-    private boolean enabled;
+
+    @Column(length=1000)
+    private String description;
+
+    @Column(length=10000)
+    private String qr;
+
+    @PrePersist
+    public void onCreate(){
+        this.transactionDate = LocalDateTime.now();
+        this.transactionStatus = TransactionStatus.PENDENT;
+    }
 }
