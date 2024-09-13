@@ -16,11 +16,11 @@ import java.time.LocalDateTime;
 public class Payment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-    private Long senderAccount;
-    private Long receiverAccount;
+    private String senderAccount;
+    private String receiverAccount;
 
     @Column(length=1000)
     private BigDecimal amount;

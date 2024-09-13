@@ -5,11 +5,10 @@ import com.igrowker.nativo.entities.TransactionStatus;
 import java.math.BigDecimal;
 
 public record ResponseProcessPaymentDto(
-        Long id,
-        Long senderAccount,
-        Long receiverAccount,
+        String id,
+        String senderAccount,
+        String receiverAccount,
         BigDecimal amount,
-        TransactionStatus transactionStatus,
-        String message
+        TransactionStatus transactionStatus
 ) {
 }
