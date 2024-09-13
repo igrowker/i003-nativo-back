@@ -54,28 +54,36 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto) {
+
+        Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
+
         // Buscar el pago por ID
-        Payment payment = paymentRepository.findById(requestProcessPaymentDto.id())
+        Payment payment = paymentRepository.findById(newData.getId())
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
         //new PaymentNotFoundException("Payment not found"));
 
+        payment.setSenderAccount(newData.getSenderAccount());
+        payment.setTransactionStatus(newData.getTransactionStatus());
+
+        Payment updatedPayment = paymentRepository.save(payment);
+
         // Validar estado del pago
-        if (!payment.getTransactionStatus() .equals(TransactionStatus.ACCEPTED)) {
+        if (!updatedPayment.getTransactionStatus().equals(TransactionStatus.ACCEPTED)) {
             // Si el pago fue rechazado
-            payment.setTransactionStatus(TransactionStatus.DENIED);
-            var result = paymentRepository.save(payment);
+            updatedPayment.setTransactionStatus(TransactionStatus.DENIED);
+            var result = paymentRepository.save(updatedPayment);
             return paymentMapper.paymentToResponseProcessDto(result);
         }
 
         // Aquí iría la lógica para validar los fondos del sender Y validar fondos
-        Long senderAccountId = payment.getSenderAccount();
+        Long senderAccountId = updatedPayment.getSenderAccount();
         Account senderAccount = accountRepository.findById(senderAccountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         var actualSenderAmount = senderAccount.getAmount();
-        var paymentAmount = payment.getAmount();
+        var paymentAmount = updatedPayment.getAmount();
         if (paymentAmount.compareTo(actualSenderAmount) > 0){
-            payment.setTransactionStatus(TransactionStatus.FAILED);
-            Payment result = paymentRepository.save(payment);
+            updatedPayment.setTransactionStatus(TransactionStatus.FAILED);
+            Payment result = paymentRepository.save(updatedPayment);
             return paymentMapper.paymentToResponseProcessDto(result);
         }
 
@@ -83,7 +91,7 @@ public class PaymentServiceImpl implements PaymentService {
         var newSenderAmount = actualSenderAmount.subtract(paymentAmount);
         senderAccount.setAmount(newSenderAmount);
 
-        Long receiverAccountId = payment.getReceiverAccount();
+        Long receiverAccountId = updatedPayment.getReceiverAccount();
         Account receiverAccount = accountRepository.findById(receiverAccountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         var actualReceiverAmount = receiverAccount.getAmount();
@@ -94,15 +102,14 @@ public class PaymentServiceImpl implements PaymentService {
         Account savedReceiverAccount = accountRepository.save(receiverAccount);
 
         // Actualizar estado del pago a aceptado
-        payment.setTransactionStatus(TransactionStatus.ACCEPTED);
-        Payment savedPayment = paymentRepository.save(payment);
+        updatedPayment.setTransactionStatus(TransactionStatus.ACCEPTED);
+        Payment savedPayment = paymentRepository.save(updatedPayment);
 
         // ToDo. Enviar notificaciones a ambos usuarios (esto sería idealmente otro servicio)
         // // que se le envie a ambos de alguna forma el resultado de la transaccion
 
+
         // Retornar respuesta final
         return paymentMapper.paymentToResponseProcessDto(savedPayment);
     }
-
 }
-

@@ -1,5 +1,7 @@
 package com.igrowker.nativo.dtos.payment;
 
+import com.igrowker.nativo.entities.TransactionStatus;
+
 import java.math.BigDecimal;
 
 public record ResponseProcessPaymentDto(
@@ -7,7 +9,7 @@ public record ResponseProcessPaymentDto(
         Long senderAccount,
         Long receiverAccount,
         BigDecimal amount,
-        String status,
+        TransactionStatus transactionStatus,
         String message
 ) {
 }

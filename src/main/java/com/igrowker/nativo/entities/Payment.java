@@ -25,7 +25,10 @@ public class Payment {
     @Column(length=1000)
     private BigDecimal amount;
     private LocalDateTime transactionDate;
+
+    @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
+
     @Column(length=1000)
     private String description;
 
