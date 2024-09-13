@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
-public interface MicrocreditRepository extends JpaRepository<Microcredit, Long> {
+public interface MicrocreditRepository extends JpaRepository<Microcredit, String> {
     Optional<Microcredit> findByRequesterAndTransactionStatus(String requester, TransactionStatus transactionStatus);
 
     Optional<Microcredit> findByRequesterAndCreatedDate(String senderAccount, LocalDate createdDate);

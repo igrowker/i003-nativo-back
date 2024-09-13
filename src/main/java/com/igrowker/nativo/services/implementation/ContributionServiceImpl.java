@@ -9,6 +9,7 @@ import com.igrowker.nativo.mappers.ContributionMapper;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.services.ContributionService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ public class ContributionServiceImpl implements ContributionService {
     private final ContributionMapper contributionMapper;
 
     @Override
+    @Transactional
     public ResponseContributionDto createContribution(RequestContributionDto requestContributionDto) {
         Microcredit microcredit = microcreditRepository.findById(requestContributionDto.microcreditId()).orElseThrow(()->
                 new ResourceNotFoundException("Microcrédito no encontrado"));

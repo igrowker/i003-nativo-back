@@ -4,11 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ResponseContributionDto(
-        Long id,
-        Long microcreditId,
+        String id,
+        String microcreditId,
         BigDecimal amount,
         LocalDate createdDate
-        //Long requester?
+        //String requester?
 ) {
 }
-

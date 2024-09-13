@@ -8,6 +8,6 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
-public interface ContributionRepository extends JpaRepository<Contribution, Long> {
+public interface ContributionRepository extends JpaRepository<Contribution, String> {
     Optional<Contribution> findByTaxpayerAndCreatedDate(String taxpayer, LocalDate createdDate);
 }

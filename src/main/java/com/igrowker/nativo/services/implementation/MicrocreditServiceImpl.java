@@ -8,13 +8,10 @@ import com.igrowker.nativo.mappers.MicrocreditMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.services.MicrocreditService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -39,11 +36,11 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                 .map(microcreditMapper::responseMicrocreditGet).toList();
     }
 
-        @Override
-        public ResponseMicrocreditGetDto getOne(Long id) {
-            Microcredit microcredit = microcreditRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + id)); // Manejo de excepción si no se encuentra
+    @Override
+    public ResponseMicrocreditGetDto getOne(String id) {
+        Microcredit microcredit = microcreditRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + id)); // Manejo de excepción si no se encuentra
 
-            return microcreditMapper.responseMicrocreditGet(microcredit); // Mapeo de entidad a DTO
-        }
+        return microcreditMapper.responseMicrocreditGet(microcredit); // Mapeo de entidad a DTO
+    }
 }

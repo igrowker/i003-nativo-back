@@ -29,7 +29,7 @@ public class MicrocreditController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseMicrocreditGetDto> getOne(Long id) {
+    public ResponseEntity<ResponseMicrocreditGetDto> getOne(String id) {
         ResponseMicrocreditGetDto response = microcreditService.getOne(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

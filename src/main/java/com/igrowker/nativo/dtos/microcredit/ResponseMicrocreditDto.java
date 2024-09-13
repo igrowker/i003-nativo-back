@@ -4,10 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ResponseMicrocreditDto(
-        Long id,
-        Long requester,
+        String id,
         BigDecimal amount,
         LocalDate createdDate,
-        LocalDate expirationDate
+        LocalDate expirationDate,
+        String description
 ) {
 }

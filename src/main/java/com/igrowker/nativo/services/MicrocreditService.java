@@ -7,7 +7,9 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import java.util.List;
 
 public interface MicrocreditService {
-    ResponseMicrocreditDto createMicrocredit (RequestMicrocreditDto requestMicrocreditDto);
+    ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto);
+
     List<ResponseMicrocreditGetDto> getAll();
-    ResponseMicrocreditGetDto getOne(Long id);
+
+    ResponseMicrocreditGetDto getOne(String id);
 }
