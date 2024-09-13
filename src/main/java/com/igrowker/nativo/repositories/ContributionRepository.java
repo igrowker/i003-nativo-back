@@ -9,9 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface ContributionRepository extends JpaRepository<Contribution, Long> {
-    /*
-    Optional<Contribution> findByIdAndEnabled(Long id, Boolean enabled);
-    Optional<Contribution> findByTaxpayerAndEnabled(Long taxpayer, Boolean enabled);
-    Optional<Contribution> findByTaxpayerAndTransactionDate(Long sender, LocalDate transactionDate);
-     */
+    Optional<Contribution> findByTaxpayerAndCreatedDate(String taxpayer, LocalDate createdDate);
 }

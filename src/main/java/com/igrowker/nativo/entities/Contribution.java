@@ -16,18 +16,19 @@ import java.time.LocalDate;
 public class Contribution {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long taxpayer;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    private String taxpayer;
+
+    @Column(length = 1000)
     private BigDecimal amount;
+
     private LocalDate createdDate;
 
     @ManyToOne
     private Microcredit microcredit;
 
-    private boolean enabled;
-
-    //Para que se genere de forma automática cuando se cree la entidad
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDate.now();

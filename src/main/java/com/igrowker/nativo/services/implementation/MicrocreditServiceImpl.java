@@ -5,6 +5,7 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.entities.Microcredit;
 import com.igrowker.nativo.mappers.MicrocreditMapper;
+import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.services.MicrocreditService;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,6 +21,7 @@ import java.util.Optional;
 public class MicrocreditServiceImpl implements MicrocreditService {
     private final MicrocreditRepository microcreditRepository;
     private final MicrocreditMapper microcreditMapper;
+    private final AccountRepository accountRepository;
 
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) {
