@@ -76,7 +76,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // Aquí iría la lógica para validar los fondos del sender Y validar fondos
-        Long senderAccountId = updatedPayment.getSenderAccount();
+        var senderAccountId = updatedPayment.getSenderAccount();
         Account senderAccount = accountRepository.findById(senderAccountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         var actualSenderAmount = senderAccount.getAmount();
@@ -91,7 +91,7 @@ public class PaymentServiceImpl implements PaymentService {
         var newSenderAmount = actualSenderAmount.subtract(paymentAmount);
         senderAccount.setAmount(newSenderAmount);
 
-        Long receiverAccountId = updatedPayment.getReceiverAccount();
+        var receiverAccountId = updatedPayment.getReceiverAccount();
         Account receiverAccount = accountRepository.findById(receiverAccountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         var actualReceiverAmount = receiverAccount.getAmount();

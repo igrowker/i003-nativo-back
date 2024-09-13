@@ -8,9 +8,9 @@ import org.springframework.stereotype.Repository;
 import com.igrowker.nativo.entities.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long>{
+public interface UserRepository extends JpaRepository<User, String>{
 
     Optional<User> findByEmail(String email);
-    Optional<User> findByDni(Long id);
+    Optional<User> findByDni(Long dni);
     
 }
