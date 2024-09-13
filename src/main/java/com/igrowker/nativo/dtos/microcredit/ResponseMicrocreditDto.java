@@ -1,11 +1,13 @@
-package com.igrowker.nativo.dtos;
+package com.igrowker.nativo.dtos.microcredit;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record RequestMicrocreditDto(
+public record ResponseMicrocreditDto(
+        Long id,
         Long requester,
         BigDecimal amount,
+        LocalDate createdDate,
         LocalDate expirationDate
 ) {
 }

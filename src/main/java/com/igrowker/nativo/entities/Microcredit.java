@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -29,4 +30,10 @@ public class Microcredit {
     private List<Contribution> contributions;
 
     private boolean enabled;
+
+    //Para que se genere de forma automática cuando se cree la entidad
+    @PrePersist
+    protected void onCreate() {
+        this.createdDate = LocalDate.now();
+    }
 }

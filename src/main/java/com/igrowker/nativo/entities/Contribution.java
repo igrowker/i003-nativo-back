@@ -26,4 +26,10 @@ public class Contribution {
     private Microcredit microcredit;
 
     private boolean enabled;
+
+    //Para que se genere de forma automática cuando se cree la entidad
+    @PrePersist
+    protected void onCreate() {
+        this.createdDate = LocalDate.now();
+    }
 }
