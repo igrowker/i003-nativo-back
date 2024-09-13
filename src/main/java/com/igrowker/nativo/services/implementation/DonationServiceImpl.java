@@ -1,9 +1,9 @@
 package com.igrowker.nativo.services.implementation;
 
-import com.igrowker.nativo.dtos.RequestDonationConfirmationDto;
-import com.igrowker.nativo.dtos.RequestDonationDto;
-import com.igrowker.nativo.dtos.ResponseDonationConfirmationDto;
-import com.igrowker.nativo.dtos.ResponseDonationDto;
+import com.igrowker.nativo.dtos.donation.RequestDonationConfirmationDto;
+import com.igrowker.nativo.dtos.donation.RequestDonationDto;
+import com.igrowker.nativo.dtos.donation.ResponseDonationConfirmationDto;
+import com.igrowker.nativo.dtos.donation.ResponseDonationDto;
 import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.mappers.DonationMapper;
@@ -26,9 +26,8 @@ public class DonationServiceImpl implements DonationService {
 
         if (requestDonationDto != null){
 
-            Donation donation = donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto));
+            return donationMapper.donationToResponseDto(donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto)));
 
-            return new ResponseDonationDto(TransactionStatus.PENDENT.name(), Optional.of(donationMapper.donationToRequestDto(donation)));
         }
         return null;
     }
@@ -37,9 +36,8 @@ public class DonationServiceImpl implements DonationService {
     public ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto) {
         if (requestDonationConfirmationDto != null) {
 
-            Donation donation = donationRepository.save(donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto));
+            return  donationMapper.donationToResponseConfirmationDto(donationRepository.save(donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto)));
 
-            return new ResponseDonationConfirmationDto(Optional.of(donationMapper.donationToRequestConfirmationDto(donation)));
         }
         return null;
     }

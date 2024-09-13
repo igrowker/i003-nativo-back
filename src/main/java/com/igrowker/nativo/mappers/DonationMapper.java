@@ -1,7 +1,9 @@
 package com.igrowker.nativo.mappers;
 
-import com.igrowker.nativo.dtos.RequestDonationConfirmationDto;
-import com.igrowker.nativo.dtos.RequestDonationDto;
+import com.igrowker.nativo.dtos.donation.RequestDonationConfirmationDto;
+import com.igrowker.nativo.dtos.donation.RequestDonationDto;
+import com.igrowker.nativo.dtos.donation.ResponseDonationConfirmationDto;
+import com.igrowker.nativo.dtos.donation.ResponseDonationDto;
 import com.igrowker.nativo.entities.Donation;
 import org.mapstruct.Mapper;
 
@@ -10,9 +12,9 @@ public interface DonationMapper {
 
     //CREATE
     Donation requestDtoToDonation(RequestDonationDto requestDonationDto);
-    RequestDonationDto donationToRequestDto(Donation donation);
+    ResponseDonationDto donationToResponseDto(Donation donation);
 
     //CONFIRMATION
     Donation requestConfirmationDtoToDonation(RequestDonationConfirmationDto requestDonationDto);
-    RequestDonationConfirmationDto donationToRequestConfirmationDto(Donation donation);
+    ResponseDonationConfirmationDto donationToResponseConfirmationDto(Donation donation);
 }

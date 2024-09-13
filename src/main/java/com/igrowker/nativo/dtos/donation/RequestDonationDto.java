@@ -1,4 +1,4 @@
-package com.igrowker.nativo.dtos;
+package com.igrowker.nativo.dtos.donation;
 
 import com.igrowker.nativo.entities.User;
 import jakarta.validation.constraints.NotNull;
