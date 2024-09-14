@@ -26,7 +26,7 @@ public class DonationController {
         return ResponseEntity.ok(donationService.createDonation(requestDonationDto));
     }
 
-    @PostMapping("/confirmation-donation")
+    @PostMapping("/confirmacion-donacion")
     public ResponseEntity<ResponseDonationConfirmationDto> confirmationDonation(@RequestBody @Valid RequestDonationConfirmationDto requestDonationConfirmationDto){
         return ResponseEntity.ok(donationService.confirmationDonation(requestDonationConfirmationDto));
     }

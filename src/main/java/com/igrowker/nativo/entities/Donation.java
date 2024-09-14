@@ -4,11 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Table(name = "donations")
@@ -31,24 +29,26 @@ public class Donation {
 
     private LocalDateTime updateAt;
 
-    @OneToOne
+    @ManyToOne
     private User donor;
 
-    @OneToOne
+    @ManyToOne
     private User beneficiary;
 
     @PrePersist
+    protected void onPrePersist() {
+        onCreate();
+        onStatus();
+    }
+
     protected void onCreate() {
         this.createdAt =  LocalDateTime.now();
     }
 
 
-/*
-    @PrePersist
     protected void onStatus() {
         this.status =  TransactionStatus.PENDENT;
     }
-*/
 
     @PreUpdate
     protected void updateAt() {
