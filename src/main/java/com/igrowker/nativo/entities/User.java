@@ -42,6 +42,12 @@ public class User implements UserDetails {
 
     private LocalDateTime createdAt;
 
+    @Column(name = "verification_code")
+    private String verificationCode;
+
+    @Column(name = "verification_expiration")
+    private LocalDateTime verificationCodeExpiresAt;
+
     private boolean enabled;
 
     private boolean accountNonExpired;
