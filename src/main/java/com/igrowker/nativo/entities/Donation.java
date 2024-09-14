@@ -24,16 +24,15 @@ public class Donation {
     @Enumerated(EnumType.STRING)
     private TransactionStatus status;
 
+    private String accountIdDonor;
+
+    private String accountIdBeneficiary;
+
+    private Boolean anonymousDonation;
+
     private LocalDateTime createdAt;
 
-
     private LocalDateTime updateAt;
-
-    @ManyToOne
-    private User donor;
-
-    @ManyToOne
-    private User beneficiary;
 
     @PrePersist
     protected void onPrePersist() {
