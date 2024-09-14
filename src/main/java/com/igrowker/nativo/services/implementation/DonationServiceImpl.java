@@ -29,6 +29,8 @@ public class DonationServiceImpl implements DonationService {
             return donationMapper.donationToResponseDto(donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto)));
 
         }
+
+
         return null;
     }
 
@@ -36,9 +38,21 @@ public class DonationServiceImpl implements DonationService {
     public ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto) {
         if (requestDonationConfirmationDto != null) {
 
-            return  donationMapper.donationToResponseConfirmationDto(donationRepository.save(donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto)));
+            Donation donation = donationRepository.findById(requestDonationConfirmationDto.id())
+                    .orElseThrow(() -> new RuntimeException("Donacion no existe"));
+
+            donation.setStatus(requestDonationConfirmationDto.status());
+
+
+            if (donation.getStatus() == TransactionStatus.ACCEPTED){
+                return  donationMapper.donationToResponseConfirmationDto(donationRepository.save(donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto)));
+            }else{
+
+                return  donationMapper.donationToResponseConfirmationDto(donationRepository.save(donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto)));
+            }
 
         }
+
         return null;
     }
 
