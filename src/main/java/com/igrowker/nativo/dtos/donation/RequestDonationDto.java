@@ -13,6 +13,8 @@ public record RequestDonationDto(
         @NotNull(message = "El Donante de la donacion es nulo.")
         User donor,
 
+
+
         @NotNull(message = "El Beneficiario de la donacion es nulo.")
         User beneficiary
 ) {}
