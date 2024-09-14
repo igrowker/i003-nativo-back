@@ -30,7 +30,7 @@ public class MicrocreditController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseMicrocreditGetDto> getOne(String id) {
+    public ResponseEntity<ResponseMicrocreditGetDto> getOne(@PathVariable String id) {
         ResponseMicrocreditGetDto response = microcreditService.getOne(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

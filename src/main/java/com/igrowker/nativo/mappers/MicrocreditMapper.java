@@ -5,6 +5,7 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.entities.Microcredit;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.Optional;
 
@@ -15,5 +16,6 @@ public interface MicrocreditMapper {
     ResponseMicrocreditDto responseDtoToMicrocredit(Microcredit microcredit);
 
     //Get
+    @Mapping(target = "amountRest", source = "amount")
     ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit);
 }

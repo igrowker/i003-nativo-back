@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 public record ResponseMicrocreditGetDto (
         String id,
-        String requester,
+        String requester, //Falta la relación entre account y user
         BigDecimal amount,
         BigDecimal amountRest,
         LocalDate createdDate,

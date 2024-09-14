@@ -38,8 +38,10 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     @Override
     public ResponseMicrocreditGetDto getOne(String id) {
         Microcredit microcredit = microcreditRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + id)); // Manejo de excepción si no se encuentra
+                .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + id));
 
-        return microcreditMapper.responseMicrocreditGet(microcredit); // Mapeo de entidad a DTO
+        return microcreditMapper.responseMicrocreditGet(microcredit);
     }
+
+    //Falta un list de los microcreditos pendientes
 }
