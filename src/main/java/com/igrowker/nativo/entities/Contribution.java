@@ -29,6 +29,9 @@ public class Contribution {
     @ManyToOne
     private Microcredit microcredit;
 
+    @ManyToOne
+    private Account account;
+
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDate.now();

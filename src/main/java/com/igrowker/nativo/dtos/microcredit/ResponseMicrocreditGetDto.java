@@ -7,7 +7,9 @@ public record ResponseMicrocreditGetDto (
         String id,
         String requester,
         BigDecimal amount,
+        BigDecimal amountRest,
         LocalDate createdDate,
-        LocalDate expirationDate
+        LocalDate expirationDate,
+        String description
 ) {
 }

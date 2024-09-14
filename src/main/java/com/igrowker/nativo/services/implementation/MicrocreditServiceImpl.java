@@ -11,6 +11,7 @@ import com.igrowker.nativo.services.MicrocreditService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -23,10 +24,8 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) {
         Microcredit microcredit = microcreditRepository.save(microcreditMapper.requestDtoToMicrocredit(requestMicrocreditDto));
-
         return microcreditMapper.responseDtoToMicrocredit(microcredit);
-
-        //TODO agregar validaciones
+        //Validaciones pendientes: Que no el usuario no tenga microcréditos adeudados
     }
 
     @Override

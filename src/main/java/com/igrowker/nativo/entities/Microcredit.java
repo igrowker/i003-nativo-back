@@ -37,6 +37,9 @@ public class Microcredit {
     @OneToMany(mappedBy = "microcredit")
     private List<Contribution> contributions;
 
+    @ManyToOne
+    private Account account;
+
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDate.now();

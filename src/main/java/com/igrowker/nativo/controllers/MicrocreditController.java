@@ -7,6 +7,7 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class MicrocreditController {
     private final ContributionService contributionService;
 
     @PostMapping("/solicitar")
-    public ResponseEntity<ResponseMicrocreditDto> createMicrocredit(@RequestBody RequestMicrocreditDto requestMicrocreditDto) {
+    public ResponseEntity<ResponseMicrocreditDto> createMicrocredit(@Valid @RequestBody RequestMicrocreditDto requestMicrocreditDto) {
         ResponseMicrocreditDto response = microcreditService.createMicrocredit(requestMicrocreditDto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
         //TODO enviar notificación

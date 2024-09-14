@@ -7,7 +7,7 @@ public record ResponseContributionDto(
         String id,
         String microcreditId,
         BigDecimal amount,
-        LocalDate createdDate
-        //String requester?
+        LocalDate createdDate,
+        String requester
 ) {
 }
