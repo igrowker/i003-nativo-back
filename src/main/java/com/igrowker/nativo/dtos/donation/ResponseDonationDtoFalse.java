@@ -1,20 +1,19 @@
 package com.igrowker.nativo.dtos.donation;
 
-import com.igrowker.nativo.entities.User;
-
 import java.math.BigDecimal;
-import java.util.Optional;
+import java.time.LocalDateTime;
 
-public record ResponseDonationDto(
+public record ResponseDonationDtoFalse(
 
         String id,
 
         BigDecimal amount,
 
-        User donor,
+        String donor,
 
-        User beneficiary,
+        String beneficiary,
 
+        LocalDateTime createdAt,
 
         String status
 ) {
