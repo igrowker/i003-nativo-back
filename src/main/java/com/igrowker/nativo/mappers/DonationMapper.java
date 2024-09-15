@@ -1,18 +1,23 @@
 package com.igrowker.nativo.mappers;
 
-import com.igrowker.nativo.dtos.donation.RequestDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.RequestDonationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationDtoTrue;
+import com.igrowker.nativo.dtos.donation.*;
 import com.igrowker.nativo.entities.Donation;
+import com.igrowker.nativo.entities.User;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface DonationMapper {
 
+
+    User user= new User();
+
     //CREATE
     Donation requestDtoToDonation(RequestDonationDto requestDonationDto);
-    ResponseDonationDtoTrue donationToResponseDto(Donation donation);
+
+    ResponseDonationDtoTrue donationToResponseDtoTrue(Donation donation);
+
+    ResponseDonationDtoFalse donationToResponseDtoFalse(Donation donation);
 
     //CONFIRMATION
     Donation requestConfirmationDtoToDonation(RequestDonationConfirmationDto requestDonationDto);
