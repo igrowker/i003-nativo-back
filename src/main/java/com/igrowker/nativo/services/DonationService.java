@@ -1,13 +1,12 @@
 package com.igrowker.nativo.services;
 
-import com.igrowker.nativo.dtos.donation.RequestDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.RequestDonationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationDto;
+import com.igrowker.nativo.dtos.donation.*;
 
 public interface DonationService {
 
-    ResponseDonationDto createDonation(RequestDonationDto requestDonationDto);
+    ResponseDonationDtoTrue createDonationTrue(RequestDonationDto requestDonationDto);
+    ResponseDonationDtoFalse createDonationFalse(RequestDonationDto requestDonationDto);
 
-    Object confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto);
+    ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto);
 
 }

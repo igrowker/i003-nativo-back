@@ -1,18 +1,15 @@
 package com.igrowker.nativo.services.implementation;
 
-import com.igrowker.nativo.dtos.donation.RequestDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.RequestDonationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationDto;
+import com.igrowker.nativo.dtos.donation.*;
+import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.mappers.DonationMapper;
+import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.DonationRepository;
 import com.igrowker.nativo.services.DonationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,17 +17,37 @@ public class DonationServiceImpl implements DonationService {
 
     private final DonationRepository donationRepository;
     private final DonationMapper donationMapper;
+    private final AccountRepository accountRepository;
 
     @Override
-    public ResponseDonationDto createDonation(RequestDonationDto requestDonationDto) {
+    public ResponseDonationDtoTrue createDonationTrue(RequestDonationDto requestDonationDto) {
 
         if (requestDonationDto != null){
 
-            return donationMapper.donationToResponseDto(donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto)));
+            // Validando cuenta de donador y beneficiario
+            Account accountDonor = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new RuntimeException("El id del donanto no existe"));
+            Account accountBeneficiary = accountRepository.findById(requestDonationDto.accountIdBeneficiary()).orElseThrow(() -> new RuntimeException("El id del beneficiario no existe"));
 
+            Donation donation =donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto));
+
+
+            return new ResponseDonationDtoTrue(donation.getId(),
+                    donation.getAmount(),
+                    accountDonor.getId(),
+                    accountDonor.getUser().getName(),
+                    accountDonor.getUser().getSurname(),
+                    accountBeneficiary.getId(),
+                    accountBeneficiary.getUser().getName(),
+                    accountBeneficiary.getUser().getSurname(),
+                    donation.getCreatedAt(),
+                    donation.getStatus().name());
         }
 
+        return null;
+    }
 
+    @Override
+    public ResponseDonationDtoFalse createDonationFalse(RequestDonationDto requestDonationDto) {
         return null;
     }
 
