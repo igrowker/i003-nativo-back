@@ -4,9 +4,11 @@ import com.igrowker.nativo.dtos.donation.*;
 import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.entities.User;
 import com.igrowker.nativo.mappers.DonationMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.DonationRepository;
+import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.DonationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ public class DonationServiceImpl implements DonationService {
     private final DonationRepository donationRepository;
     private final DonationMapper donationMapper;
     private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
 
     @Override
     public ResponseDonationDtoTrue createDonationTrue(RequestDonationDto requestDonationDto) {
@@ -25,8 +28,10 @@ public class DonationServiceImpl implements DonationService {
         if (requestDonationDto != null){
 
             // Validando cuenta de donador y beneficiario
-            Account accountDonor = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new RuntimeException("El id del donanto no existe"));
+            Account accountDonor = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new RuntimeException("El id del donante no existe"));
             Account accountBeneficiary = accountRepository.findById(requestDonationDto.accountIdBeneficiary()).orElseThrow(() -> new RuntimeException("El id del beneficiario no existe"));
+            User donor = userRepository.findById(accountDonor.getUserId()).orElseThrow(() -> new RuntimeException("El donante no existe"));
+            User beneficiary = userRepository.findById(accountBeneficiary.getUserId()).orElseThrow(() -> new RuntimeException("El donante no existe"));
 
             Donation donation =donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto));
 
@@ -34,11 +39,11 @@ public class DonationServiceImpl implements DonationService {
             return new ResponseDonationDtoTrue(donation.getId(),
                     donation.getAmount(),
                     accountDonor.getId(),
-                    accountDonor.getUser().getName(),
-                    accountDonor.getUser().getSurname(),
+                    donor.getName(),
+                    donor.getSurname(),
                     accountBeneficiary.getId(),
-                    accountBeneficiary.getUser().getName(),
-                    accountBeneficiary.getUser().getSurname(),
+                    beneficiary.getName(),
+                    beneficiary.getSurname(),
                     donation.getCreatedAt(),
                     donation.getStatus().name());
         }

@@ -1,6 +1,6 @@
 package com.igrowker.nativo.controllers;
 
-import com.igrowker.nativo.dtos.user.ResponseUserDto;
+import com.igrowker.nativo.dtos.user.ResponseRegisterDto;
 import com.igrowker.nativo.dtos.user.UpdateUserDto;
 import com.igrowker.nativo.services.UserService;
 
@@ -17,18 +17,9 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/update")
-    public ResponseEntity<ResponseUserDto> updateAccount(@Valid @RequestBody UpdateUserDto updateUserDto) {
-        System.out.println(updateUserDto);
-        ResponseUserDto responseUserDto = userService.updateAccount(updateUserDto);
-        return ResponseEntity.ok(responseUserDto);
-
+    public ResponseEntity<ResponseRegisterDto> updateUser(@Valid @RequestBody UpdateUserDto updateUserDto) {
+        ResponseRegisterDto responseRegisterDto = userService.updateUser(updateUserDto);
+        return ResponseEntity.ok(responseRegisterDto);
     }
 
-    @PostMapping("/assign")
-    public ResponseEntity<ResponseUserDto> assignAccountToUser(@RequestBody UpdateUserDto updateUserDto) {
-
-        ResponseUserDto responseUserDto = userService.assignAccountToUser(updateUserDto);
-        return ResponseEntity.ok(responseUserDto);
-       
-    }
 }

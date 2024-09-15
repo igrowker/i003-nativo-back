@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record RegisterUserDto(
+public record RequestRegisterDto(
         @NotNull(message = "El DNI es obligatorio.")
         Long dni,
 

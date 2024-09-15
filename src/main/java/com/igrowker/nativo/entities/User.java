@@ -37,8 +37,7 @@ public class User implements UserDetails {
 
     private String phone;
 
-    @OneToOne
-    private Account account;
+    private String accountId;
 
     private LocalDateTime createdAt;
 

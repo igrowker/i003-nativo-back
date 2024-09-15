@@ -1,13 +1,13 @@
 package com.igrowker.nativo.services;
 
-import com.igrowker.nativo.dtos.user.LoginUserDto;
-import com.igrowker.nativo.dtos.user.LoginUserResponse;
-import com.igrowker.nativo.dtos.user.RegisterUserDto;
-import com.igrowker.nativo.dtos.user.UserDto;
+import com.igrowker.nativo.dtos.user.RequestLoginDto;
+import com.igrowker.nativo.dtos.user.ResponseLoginDto;
+import com.igrowker.nativo.dtos.user.RequestRegisterDto;
+import com.igrowker.nativo.dtos.user.ResponseUserDto;
 import jakarta.validation.Valid;
 
 public interface AuthenticationService {
-    UserDto signUp(@Valid RegisterUserDto registerUserDto);
-    LoginUserResponse login(LoginUserDto loginUserDto);
+    ResponseUserDto signUp(@Valid RequestRegisterDto requestRegisterDto);
+    ResponseLoginDto login(RequestLoginDto requestLoginDto);
 
 }
