@@ -17,16 +17,30 @@ import java.util.List;
 public class Microcredit {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long requester;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    private String borrowerAccountId; // solicitante
+
+    @Column(length = 1000)
     private BigDecimal amount;
-    private LocalDate createdDate;
+
+    @Column(length = 1000)
+    private String description;
+
     private LocalDate expirationDate;
+
+    private LocalDate createdDate;
+
+    @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
     @OneToMany(mappedBy = "microcredit")
     private List<Contribution> contributions;
 
-    private boolean enabled;
+    @PrePersist
+    protected void onCreate() {
+        this.createdDate = LocalDate.now();
+        this.transactionStatus = TransactionStatus.PENDENT;
+    }
 }
