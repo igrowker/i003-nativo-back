@@ -20,7 +20,7 @@ public class Microcredit {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String requester;
+    private String borrowerAccountId; // solicitante
 
     @Column(length = 1000)
     private BigDecimal amount;
@@ -29,6 +29,7 @@ public class Microcredit {
     private String description;
 
     private LocalDate expirationDate;
+
     private LocalDate createdDate;
 
     @Enumerated(EnumType.STRING)
@@ -36,9 +37,6 @@ public class Microcredit {
 
     @OneToMany(mappedBy = "microcredit")
     private List<Contribution> contributions;
-
-    @ManyToOne
-    private Account account;
 
     @PrePersist
     protected void onCreate() {

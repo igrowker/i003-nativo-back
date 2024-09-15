@@ -19,12 +19,15 @@ public class Contribution {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String taxpayer;
+    private String lenderAccount;     //contribuyente
 
     @Column(length = 1000)
     private BigDecimal amount;
 
     private LocalDate createdDate;
+
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus transactionStatus;
 
     @ManyToOne
     private Microcredit microcredit;
@@ -35,5 +38,6 @@ public class Contribution {
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDate.now();
+        this.transactionStatus = TransactionStatus.PENDENT;
     }
 }

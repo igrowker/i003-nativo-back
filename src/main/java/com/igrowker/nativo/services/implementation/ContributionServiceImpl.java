@@ -32,3 +32,11 @@ public class ContributionServiceImpl implements ContributionService {
         return contributionMapper.responseContributionDto(contribution);
     }
 }
+
+/*●	Pantalla de presentación para contribuir (para la persona que
+quiere contribuir): debería mostrar un listado de todos los
+microcréditos disponibles, aclarando en cada uno el nombre receptor,
+título, descripción, monto total a recaudar, fecha de vencimiento
+(cuándo recuperará su dinero).
+Una vez elegida la opción, debería abrirse espacio para ingresar
+el monto a contribuir.*/

@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface MicrocreditRepository extends JpaRepository<Microcredit, String> {
-    Optional<Microcredit> findByRequesterAndTransactionStatus(String requester, TransactionStatus transactionStatus);
+    //Optional<Microcredit> findByBorrowerAccountAndTransactionStatus(String borrowerAccount, TransactionStatus transactionStatus);
 
-    Optional<Microcredit> findByRequesterAndCreatedDate(String senderAccount, LocalDate createdDate);
+    //Optional<Microcredit> findByBorrowerAccountAndCreatedDate(String borrowerAccount, LocalDate createdDate);
 }

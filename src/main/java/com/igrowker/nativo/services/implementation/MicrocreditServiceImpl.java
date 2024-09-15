@@ -24,6 +24,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) {
         Microcredit microcredit = microcreditRepository.save(microcreditMapper.requestDtoToMicrocredit(requestMicrocreditDto));
+
         return microcreditMapper.responseDtoToMicrocredit(microcredit);
         //Validaciones pendientes: Que no el usuario no tenga microcréditos adeudados
     }
@@ -45,3 +46,11 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
     //Falta un list de los microcreditos pendientes
 }
+/* ●	Generación (de la persona que solicita el dinero):
+ítulo, Descripción (razón de necesidad del dinero),
+Monto total, Fecha de vencimiento (cuando devolverá el dinero)
+Para que sea más simple para back, estamos viendo de poner una
+fecha fija a x cantidad de tiempo luego de la creación,
+momento en el cual devuelve la suma total a todos los contribuyentes,
+ sin ningún tipo de interés agregado.
+ */

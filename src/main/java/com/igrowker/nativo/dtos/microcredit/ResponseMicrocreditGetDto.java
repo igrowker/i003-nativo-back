@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 public record ResponseMicrocreditGetDto (
         String id,
-        String requester, //Falta la relación entre account y user
+        String borrowerAccount, //Falta la relación entre account y user
         BigDecimal amount,
         BigDecimal amountRest,
         LocalDate createdDate,
@@ -13,3 +13,7 @@ public record ResponseMicrocreditGetDto (
         String description
 ) {
 }
+/* debería mostrar un listado de todos los microcréditos disponibles,
+aclarando en cada uno el nombre receptor, título, descripción,
+monto total a recaudar, fecha de vencimiento
+(cuándo recuperará su dinero). */

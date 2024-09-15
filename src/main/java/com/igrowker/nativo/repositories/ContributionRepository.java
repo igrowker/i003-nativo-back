@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface ContributionRepository extends JpaRepository<Contribution, String> {
-    Optional<Contribution> findByTaxpayerAndCreatedDate(String taxpayer, LocalDate createdDate);
+    Optional<Contribution> findByLenderAccountAndCreatedDate(String lenderAccount, LocalDate createdDate);
 }
