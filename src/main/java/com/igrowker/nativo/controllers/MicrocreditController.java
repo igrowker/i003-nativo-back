@@ -41,6 +41,12 @@ public class MicrocreditController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @GetMapping("/transaction-status/{status}")
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsByTransactionStatus(@PathVariable String status) {
+        List<ResponseMicrocreditGetDto> response = microcreditService.getMicrocreditsByTransactionStatus(status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @PostMapping("/contribuir")
     public ResponseEntity<ResponseContributionDto> createContribution(@RequestBody RequestContributionDto requestContributionDto) {
         ResponseContributionDto response = contributionService.createContribution(requestContributionDto);

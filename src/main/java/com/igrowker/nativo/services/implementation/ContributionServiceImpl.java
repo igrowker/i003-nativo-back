@@ -31,6 +31,17 @@ public class ContributionServiceImpl implements ContributionService {
 
         return contributionMapper.responseContributionDto(contribution);
     }
+    //verificar que las cuentas sean distintas
+    //poner plata
+    //verificar que tenga plata en cuenta
+    //Que el monto a contribuir no sea mayor al total faltante
+    //si esta ok, se descuenta la plata del contribuyente y se suma a la cuenta
+    //status contribución ok
+
+
+
+    // Listado de contribuciones por contribuyente.
+
 }
 
 /*●	Pantalla de presentación para contribuir (para la persona que

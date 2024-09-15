@@ -19,7 +19,7 @@ public class Contribution {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String lenderAccount;     //contribuyente
+    private String lenderAccountId;     //contribuyente
 
     @Column(length = 1000)
     private BigDecimal amount;
@@ -31,9 +31,6 @@ public class Contribution {
 
     @ManyToOne
     private Microcredit microcredit;
-
-    @ManyToOne
-    private Account account;
 
     @PrePersist
     protected void onCreate() {

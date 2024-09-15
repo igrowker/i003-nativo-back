@@ -8,11 +8,11 @@ import java.time.LocalDate;
 public record RequestMicrocreditDto(
         @NotNull(message = "El monto solicitado es obligatorio.")
         @Positive(message = "El monto debe ser mayor a 0.")
+        @Max(value=500000, message = "El monto debe ser menor a $500.000.")
         BigDecimal amount,
 
         @NotNull(message = "La fecha de vencimiento del Microcrédito solicitado es obligatoria.")
-        @FutureOrPresent
-        @Max(value = 31, message = "La fecha de vencimiento no puede ser mayor a un mes")
+        @FutureOrPresent(message = "La fecha de vencimiento debe ser mayor a la fecha de creación")
         LocalDate expirationDate,
 
         @Size(max = 256, message = "La descripción no puede tener más de 256 caracteres.")
