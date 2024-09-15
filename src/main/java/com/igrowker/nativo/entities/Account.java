@@ -17,11 +17,8 @@ public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-
+    private Long accountNumber;
     private BigDecimal amount;
-
     private boolean enabled;
-
-    @OneToOne
-    private User user;
+    private String userId;
 }
