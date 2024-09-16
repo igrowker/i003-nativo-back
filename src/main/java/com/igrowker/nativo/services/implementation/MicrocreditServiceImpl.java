@@ -5,6 +5,7 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.entities.Microcredit;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.mappers.MicrocreditMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -30,12 +32,22 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) {
         AuthenticatedUserAndAccount.UserAccountPair userBorrower = authenticatedUserAndAccount.getAuthenticatedUserAndAccount();
+
         Microcredit microcredit = microcreditMapper.requestDtoToMicrocredit(requestMicrocreditDto);
+
+        BigDecimal limite = new BigDecimal("500000");
+
+        if (microcredit.getAmount().compareTo(limite) > 0) {
+            throw new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ " + limite);
+        }
+
         microcredit.setBorrowerAccountId(userBorrower.account.getId());
         microcredit = microcreditRepository.save(microcredit);
+
         return microcreditMapper.responseDtoToMicrocredit(microcredit);
     }
-    //Validaciones pendientes: Que no el usuario no tenga microcréditos adeudados
+
+    //Validaciones pendientes: Que el usuario no tenga microcréditos adeudados
     //No puede tener más de un microcredito en pendiente
     //Transaccion tiene que seguir pendiente hasta que el monto total se completa
 
@@ -43,12 +55,10 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     @Override
     public List<ResponseMicrocreditGetDto> getAll() {
         List<Microcredit> microcredits = microcreditRepository.findAll();
+
         return microcredits.stream()
                 .map(microcreditMapper::responseMicrocreditGet).toList();
     }
-
-    //getPendents
-    //mostrar monto total y monto faltante
 
     @Override
     public List<ResponseMicrocreditGetDto> getMicrocreditsByTransactionStatus(String transactionStatus) {

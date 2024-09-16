@@ -25,6 +25,12 @@ public class Microcredit {
     @Column(length = 1000)
     private BigDecimal amount;
 
+    @Column(name = "remaining_amount")
+    private BigDecimal remainingAmount;
+
+    @Column(length = 300)
+    private String title;
+
     @Column(length = 1000)
     private String description;
 
@@ -42,5 +48,6 @@ public class Microcredit {
     protected void onCreate() {
         this.createdDate = LocalDate.now();
         this.transactionStatus = TransactionStatus.PENDENT;
+        this.remainingAmount = this.amount;
     }
 }

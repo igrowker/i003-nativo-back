@@ -5,9 +5,7 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.entities.Microcredit;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-
-import java.util.Optional;
+import org.mapstruct.Mapping;;
 
 @Mapper(componentModel = "spring")
 public interface MicrocreditMapper {
