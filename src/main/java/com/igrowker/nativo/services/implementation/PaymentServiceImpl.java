@@ -1,9 +1,6 @@
 package com.igrowker.nativo.services.implementation;
 
-import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
-import com.igrowker.nativo.dtos.payment.RequestProcessPaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
+import com.igrowker.nativo.dtos.payment.*;
 import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
@@ -11,11 +8,11 @@ import com.igrowker.nativo.mappers.PaymentMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.PaymentRepository;
 import com.igrowker.nativo.services.PaymentService;
+import com.igrowker.nativo.validations.TransactionStatusConvert;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +22,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final AccountRepository accountRepository;
     private final PaymentMapper paymentMapper;
     private final QRService qrService;
+    private final TransactionStatusConvert transactionStatusConvert;
 
     @Override
     @Transactional
@@ -98,5 +96,20 @@ public class PaymentServiceImpl implements PaymentService {
         // // que se le envie a ambos de alguna forma el resultado de la transaccion
 
         return paymentMapper.paymentToResponseProcessDto(savedPayment);
+    }
+
+    @Override
+    public List<ResponseHistoryPayment> getAllPayments(String id) {
+        List<Payment> paymentList = paymentRepository.findPaymentsByAccount(id);
+        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        return result;
+    }
+
+    @Override
+    public List<ResponseHistoryPayment> getPaymentsByStatus(String id, String status) {
+        TransactionStatus statusEnum = transactionStatusConvert.statusConvert(status);
+        List<Payment> paymentList = paymentRepository.findPaymentsByStatus(id, statusEnum);
+        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        return result;
     }
 }
