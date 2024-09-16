@@ -2,6 +2,7 @@ package com.igrowker.nativo.services.implementation;
 
 import com.igrowker.nativo.dtos.user.*;
 import com.igrowker.nativo.entities.User;
+import com.igrowker.nativo.exceptions.InvalidDataException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceAlreadyExistsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
@@ -46,11 +47,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         User user = userMapper.registerUsertoUser(registerUserDto);
         user.setPassword(passwordEncoder.encode(registerUserDto.password()));
-        user.setEnabled(true);
+        user.setVerificationCode(generateVerificationCode());
+        user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
+        user.setEnabled(false);
         user.setAccountNonExpired(true);
         user.setAccountNonLocked(true);
         user.setCredentialsNonExpired(true);
-
+        sendVerificationEmail(user);
         User savedUser = userRepository.save(user);
 
         return userMapper.userToUserDTO(savedUser);
@@ -60,6 +63,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public LoginUserResponse login(LoginUserDto loginUserDto) {
         User user = userRepository.findByEmail(loginUserDto.email()).orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
 
+        if (!user.isEnabled()) {
+            throw new InvalidUserCredentialsException("Cuenta no verificada. Por favor verifique su cuenta.");
+        }
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -80,8 +86,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Optional<User> optionalUser = userRepository.findByEmail(verifyUserDto.email());
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
+            if (user.getVerificationCode() == null) {
+                throw new InvalidDataException("Cuenta ya se encuentra verificada.");
+            }
             if (user.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
-                throw new RuntimeException("Código de verificación vencido.");
+                throw new InvalidDataException("Código de verificación vencido.");
             }
             if (user.getVerificationCode().equals(verifyUserDto.verificationCode())) {
                 user.setEnabled(true);
@@ -89,10 +98,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setVerificationCodeExpiresAt(null);
                 userRepository.save(user);
             } else {
-                throw new RuntimeException("Código de verificación incorrecto.");
+                throw new InvalidDataException("Código de verificación incorrecto.");
             }
         } else {
-            throw new RuntimeException("Usuario no encontrado.");
+            throw new ResourceNotFoundException("Usuario no encontrado.");
         }
     }
 
@@ -101,14 +110,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (user.isEnabled()) {
-                throw new RuntimeException("La cuenta ya se encuentra verificada.");
+                throw new InvalidDataException("La cuenta ya se encuentra verificada.");
             }
             user.setVerificationCode(generateVerificationCode());
             user.setVerificationCodeExpiresAt(LocalDateTime.now().plusHours(1));
             sendVerificationEmail(user);
             userRepository.save(user);
         } else {
-            throw new RuntimeException("Usuario no encontrado.");
+            throw new ResourceNotFoundException("Usuario no encontrado.");
         }
     }
 

@@ -6,6 +6,6 @@ public record UserDto (
     String name,
     String surname,
     String email,
-    String phone
-
+    String phone,
+    String verificationCode
 ) {}
