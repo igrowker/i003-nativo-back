@@ -8,6 +8,8 @@ import java.time.LocalDate;
 public record ResponseContributionDto(
         String id,
         String lenderAccountId,
+        String lenderFullname,
+        String borrowerFullname,
         String microcreditId,
         BigDecimal amount,
         LocalDate createdDate,

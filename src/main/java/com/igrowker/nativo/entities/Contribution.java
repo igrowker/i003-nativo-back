@@ -30,6 +30,7 @@ public class Contribution {
     private TransactionStatus transactionStatus;
 
     @ManyToOne
+    @JoinColumn(name = "microcredit_id", nullable = false)
     private Microcredit microcredit;
 
     @PrePersist

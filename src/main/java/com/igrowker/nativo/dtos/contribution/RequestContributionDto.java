@@ -9,7 +9,6 @@ public record RequestContributionDto(
         String microcreditId,
         @NotNull(message = "El monto a contribuir es obligatorio.")
         BigDecimal amount
-        //min
 ) {
 }
 /*Una vez elegida la opción,
