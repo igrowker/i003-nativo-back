@@ -3,20 +3,21 @@ package com.igrowker.nativo.repositories;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, String> {
-    Optional<Payment> findBySenderAccountAndTransactionStatus(String senderAccount, TransactionStatus transactionStatus);
-    Optional<Payment> findByReceiverAccountAndTransactionStatus(String receiverAccount, TransactionStatus transactionStatus);
 
-    Optional<Payment> findBySenderAccountAndTransactionDate(String senderAccount, LocalDateTime transactionDate);
-    Optional<Payment> findByReceiverAccountAndTransactionDate(String receiverAccount, LocalDateTime transactionDate);
+    @Query("SELECT p FROM Payment p WHERE p.senderAccount = :idAccount OR p.receiverAccount = :idAccount")
+    List<Payment> findPaymentsByAccount(@Param("idAccount") String idAccount);
 
-    //Optional<Payment> findByAccountBetweenDates(Long sender, Boolean enabled);
-    //ToDo. Write the sql query! If possible, making it only one for both sender and receiver.
+    @Query("SELECT p FROM Payment p WHERE (p.senderAccount = :idAccount OR p.receiverAccount = :idAccount) AND p.transactionStatus = :status")
+    List<Payment> findPaymentsByStatus(@Param("idAccount") String idAccount, @Param("status") TransactionStatus status);
 
 }
