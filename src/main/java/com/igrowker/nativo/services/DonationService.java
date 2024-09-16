@@ -2,6 +2,8 @@ package com.igrowker.nativo.services;
 
 import com.igrowker.nativo.dtos.donation.*;
 
+import java.util.List;
+
 public interface DonationService {
 
     ResponseDonationDtoTrue createDonationTrue(RequestDonationDto requestDonationDto);
@@ -9,4 +11,5 @@ public interface DonationService {
 
     ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto);
 
+    List<ResponseDonationRecordBeneficiary> historialDonation(String idAccount);
 }

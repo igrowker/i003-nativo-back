@@ -5,6 +5,8 @@ import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.User;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface DonationMapper {
 
@@ -21,4 +23,8 @@ public interface DonationMapper {
     //CONFIRMATION
     Donation requestConfirmationDtoToDonation(RequestDonationConfirmationDto requestDonationDto);
     ResponseDonationConfirmationDto donationToResponseConfirmationDto(Donation donation);
+
+
+    //RECORD
+    List<ResponseDonationRecordBeneficiary> listDonationToListResponseDonationRecord(List<Donation> donationsList);
 }

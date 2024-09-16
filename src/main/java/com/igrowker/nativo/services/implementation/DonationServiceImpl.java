@@ -13,6 +13,8 @@ import com.igrowker.nativo.services.DonationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class DonationServiceImpl implements DonationService {
@@ -83,6 +85,18 @@ public class DonationServiceImpl implements DonationService {
         }
 
         return null;
+    }
+
+    @Override
+    public List<ResponseDonationRecordBeneficiary> historialDonation(String idAccount) {
+
+        //Validar si la cuenta existe
+        Account account =  accountRepository.findById(idAccount).orElseThrow(() -> new RuntimeException("La cuenta no existe"));
+
+        // Obteniedo listado
+        List<Donation> donationList = donationRepository.findAllByAccountIdDonor(account.getId()).orElseThrow(() -> new RuntimeException("No tienes donaciones"));
+
+        return donationMapper.listDonationToListResponseDonationRecord(donationList);
     }
 
 }
