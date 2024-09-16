@@ -21,9 +21,12 @@ public class DonationController {
     private final DonationService donationService;
 
     @PostMapping("/crear-donacion")
-    public ResponseEntity<ResponseDonationDtoTrue> createDonation(@RequestBody @Valid RequestDonationDto requestDonationDto){
-
-        return ResponseEntity.ok(donationService.createDonationTrue(requestDonationDto));
+    public ResponseEntity<?> createDonation(@RequestBody @Valid RequestDonationDto requestDonationDto){
+        if (requestDonationDto.anonymousDonation()) {
+            return ResponseEntity.ok(donationService.createDonationTrue(requestDonationDto));
+        }else {
+            return ResponseEntity.ok(donationService.createDonationFalse(requestDonationDto));
+        }
     }
 
     @PostMapping("/confirmacion-donacion")
