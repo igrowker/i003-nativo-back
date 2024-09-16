@@ -7,6 +7,8 @@ import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
 import com.igrowker.nativo.entities.Payment;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface PaymentMapper {
 
@@ -17,4 +19,6 @@ public interface PaymentMapper {
     Payment requestProcessDtoToPayment(RequestProcessPaymentDto requestProcessPaymentDto);
 
     ResponseProcessPaymentDto paymentToResponseProcessDto(Payment payment);
+
+    List<ResponsePaymentDto> paymentListToResponseDtoList(List<Payment> paymentList);
 }

@@ -8,10 +8,9 @@ import com.igrowker.nativo.services.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -31,6 +30,12 @@ public class PaymentController {
     public ResponseEntity<ResponseProcessPaymentDto> processPayment(
             @RequestBody @Valid RequestProcessPaymentDto requestProcessPaymentDto) {
         ResponseProcessPaymentDto result = paymentService.processPayment(requestProcessPaymentDto);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/all/{id}")
+    public ResponseEntity<List<ResponsePaymentDto>> getAllPayments(@PathVariable String id){
+        List<ResponsePaymentDto> result = paymentService.getAllPayments(id);
         return ResponseEntity.ok(result);
     }
 }

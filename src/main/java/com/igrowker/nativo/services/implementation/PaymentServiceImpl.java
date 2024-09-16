@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -98,5 +99,12 @@ public class PaymentServiceImpl implements PaymentService {
         // // que se le envie a ambos de alguna forma el resultado de la transaccion
 
         return paymentMapper.paymentToResponseProcessDto(savedPayment);
+    }
+
+    @Override
+    public List<ResponsePaymentDto> getAllPayments(String id) {
+        List<Payment> paymentList = paymentRepository.findPaymentsByAccount(id);
+        var result = paymentMapper.paymentListToResponseDtoList(paymentList);
+        return result;
     }
 }
