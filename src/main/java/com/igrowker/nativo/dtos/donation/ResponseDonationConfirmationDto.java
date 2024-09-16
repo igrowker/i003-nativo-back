@@ -2,6 +2,7 @@ package com.igrowker.nativo.dtos.donation;
 
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
@@ -10,9 +11,9 @@ public record ResponseDonationConfirmationDto(
 
         BigDecimal amount,
 
-        User donor,
+        String accountIdDonor,
 
-        User beneficiary,
+        String accountIdBeneficiary,
 
         TransactionStatus status
 

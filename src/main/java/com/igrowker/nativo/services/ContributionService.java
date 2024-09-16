@@ -1,8 +1,8 @@
 package com.igrowker.nativo.services;
 
-import com.igrowker.nativo.dtos.RequestContributionDto;
-import com.igrowker.nativo.dtos.ResponseContributionDto;
+import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
+import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 
 public interface ContributionService {
-    ResponseContributionDto contributeToMicrocredit (RequestContributionDto requestContributionDto);
+    ResponseContributionDto createContribution (RequestContributionDto requestContributionDto);
 }
