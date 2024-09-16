@@ -4,7 +4,6 @@ import com.igrowker.nativo.dtos.donation.*;
 import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.User;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface DonationMapper {

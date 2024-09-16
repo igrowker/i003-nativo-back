@@ -11,7 +11,6 @@ public record ResponseDonationDtoFalse(
 
         String accountIdDonor,
 
-        String beneficiary,
 
         String accountIdBeneficiary,
 

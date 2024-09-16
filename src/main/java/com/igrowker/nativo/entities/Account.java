@@ -21,4 +21,5 @@ public class Account {
     private BigDecimal amount;
     private boolean enabled;
     private String userId;
+    private BigDecimal reservedAmount;
 }

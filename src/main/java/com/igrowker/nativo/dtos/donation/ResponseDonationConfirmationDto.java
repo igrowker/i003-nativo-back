@@ -11,9 +11,7 @@ public record ResponseDonationConfirmationDto(
 
         BigDecimal amount,
 
-
         String accountIdDonor,
-
 
         String accountIdBeneficiary,
 
