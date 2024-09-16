@@ -1,7 +1,9 @@
 package com.igrowker.nativo.validations;
 
 import com.igrowker.nativo.entities.TransactionStatus;
+import org.springframework.stereotype.Service;
 
+@Service
 public class TransactionStatusConvert {
 
     public TransactionStatus statusConvert(String transactionStatus) {

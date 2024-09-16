@@ -17,4 +17,7 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
     @Query("SELECT p FROM Payment p WHERE p.senderAccount = :idAccount OR p.receiverAccount = :idAccount")
     List<Payment> findPaymentsByAccount(@Param("idAccount") String idAccount);
 
+    @Query("SELECT p FROM Payment p WHERE (p.senderAccount = :idAccount OR p.receiverAccount = :idAccount) AND p.transactionStatus = :status")
+    List<Payment> findPaymentsByStatus(@Param("idAccount") String idAccount, @Param("status") TransactionStatus status);
+
 }

@@ -1,9 +1,6 @@
 package com.igrowker.nativo.controllers;
 
-import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
-import com.igrowker.nativo.dtos.payment.RequestProcessPaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
+import com.igrowker.nativo.dtos.payment.*;
 import com.igrowker.nativo.services.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +31,15 @@ public class PaymentController {
     }
 
     @GetMapping("/all/{id}")
-    public ResponseEntity<List<ResponsePaymentDto>> getAllPayments(@PathVariable String id){
-        List<ResponsePaymentDto> result = paymentService.getAllPayments(id);
+    public ResponseEntity<List<ResponseHistoryPayment>> getAllPayments(@PathVariable String id){
+        List<ResponseHistoryPayment> result = paymentService.getAllPayments(id);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{id}/status/{status}")
+    public ResponseEntity<List<ResponseHistoryPayment>> getAllPayments(@PathVariable String id,
+                                                                       @PathVariable String status){
+        List<ResponseHistoryPayment> result = paymentService.getPaymentsByStatus(id, status);
         return ResponseEntity.ok(result);
     }
 }

@@ -1,9 +1,6 @@
 package com.igrowker.nativo.mappers;
 
-import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
-import com.igrowker.nativo.dtos.payment.RequestProcessPaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
+import com.igrowker.nativo.dtos.payment.*;
 import com.igrowker.nativo.entities.Payment;
 import org.mapstruct.Mapper;
 
@@ -20,5 +17,5 @@ public interface PaymentMapper {
 
     ResponseProcessPaymentDto paymentToResponseProcessDto(Payment payment);
 
-    List<ResponsePaymentDto> paymentListToResponseDtoList(List<Payment> paymentList);
+    List<ResponseHistoryPayment> paymentListToResponseHistoryList(List<Payment> paymentList);
 }
