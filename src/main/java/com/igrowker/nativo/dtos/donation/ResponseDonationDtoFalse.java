@@ -9,9 +9,10 @@ public record ResponseDonationDtoFalse(
 
         BigDecimal amount,
 
-        String donor,
+        String accountIdDonor,
 
-        String beneficiary,
+
+        String accountIdBeneficiary,
 
         LocalDateTime createdAt,
 
