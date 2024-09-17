@@ -1,5 +1,7 @@
 package com.igrowker.nativo.dtos.user;
 
+import java.time.LocalDate;
+
 public record ResponseUserDto(
     String id,
     Long dni,
@@ -7,6 +9,7 @@ public record ResponseUserDto(
     String surname,
     String accountId,
     String email,
-    String phone
-
+    String phone,
+    LocalDate birthday,
+    String verificationCode
 ) {}
