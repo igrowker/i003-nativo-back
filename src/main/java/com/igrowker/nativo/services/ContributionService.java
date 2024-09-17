@@ -1,8 +1,14 @@
 package com.igrowker.nativo.services;
 
-import com.igrowker.nativo.dtos.RequestContributionDto;
-import com.igrowker.nativo.dtos.ResponseContributionDto;
+import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
+import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
+import com.igrowker.nativo.dtos.contribution.ResponseContributionGetDto;
+
+import java.util.List;
 
 public interface ContributionService {
-    ResponseContributionDto contributeToMicrocredit (RequestContributionDto requestContributionDto);
+    ResponseContributionDto createContribution (RequestContributionDto requestContributionDto);
+    List<ResponseContributionGetDto> getAll();
+    List<ResponseContributionGetDto> getContributionsByTransactionStatus(String transactionStatus);
+    ResponseContributionGetDto getOneContribution(String id);
 }

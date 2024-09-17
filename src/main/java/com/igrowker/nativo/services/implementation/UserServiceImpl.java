@@ -1,10 +1,12 @@
 package com.igrowker.nativo.services.implementation;
 
+import com.igrowker.nativo.exceptions.ResourceNotFoundException;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import java.util.*;
 import java.math.BigDecimal;
 
-import com.igrowker.nativo.dtos.user.ResponseUserDto;
+import com.igrowker.nativo.dtos.user.ResponseRegisterDto;
 import com.igrowker.nativo.dtos.user.UpdateUserDto;
 import com.igrowker.nativo.entities.*;
 import com.igrowker.nativo.mappers.UserMapper;
@@ -16,61 +18,44 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
-public class UserServiceimpl implements UserService{
+public class UserServiceImpl implements UserService{
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final UserMapper userMapper;
 
 
     @Override
-    public ResponseUserDto updateAccount(UpdateUserDto updateUserDto) {
-
+    @Transactional
+    public ResponseRegisterDto updateUser(UpdateUserDto updateUserDto) {
         Optional<User> userOptional = userRepository.findByDni(updateUserDto.dni());
-
         if (userOptional.isPresent()) {
-
             User dbUser = userOptional.orElseThrow();
-            
             dbUser.setEmail(updateUserDto.email());
             dbUser.setPhone(updateUserDto.phone());
             dbUser.setName(updateUserDto.name());
             dbUser.setSurname(updateUserDto.surname());
-
             userRepository.save(dbUser);
-
-            ResponseUserDto responseUserDto = userMapper.userToResponseUserDto(dbUser);
-
-            return responseUserDto;
+            ResponseRegisterDto responseRegisterDto = userMapper.userToResponseUserDto(dbUser);
+            return responseRegisterDto;
         } else {
             throw new NoSuchElementException("No existe un user con ese DNI");
         }
     }
 
     @Override
-    public ResponseUserDto assignAccountToUser(UpdateUserDto updateUserDto) {
-        Optional<User> userOptional = userRepository.findByDni(updateUserDto.dni());
-    
-        if (userOptional.isPresent()) {
-            User dbUser = userOptional.get();
-    
-            if (dbUser.getAccount() != null) {
-                throw new IllegalStateException("El usuario ya tiene una cuenta asociada.");
-            }
-    
+    @Transactional
+    public void assignAccountToUser(Long dni, String id) {
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
             Account account = new Account();
+            account.setAccountNumber(dni);
             account.setAmount(BigDecimal.ZERO);
             account.setEnabled(true);
-            accountRepository.save(account);
-    
-            dbUser.setAccount(account);
-            userRepository.save(dbUser);
-    
-            ResponseUserDto responseUserDto = userMapper.userToResponseUserDto(dbUser);
-            return responseUserDto;
-    
-        } else {
-            throw new NoSuchElementException("No existe un usuario con ese DNI.");
-        }
+            account.setUserId(user.getId());
+            Account savedAccount = accountRepository.save(account);
+            String accountId = savedAccount.getId();
+            user.setAccountId(accountId);
+            userRepository.save(user);
     }
     
     

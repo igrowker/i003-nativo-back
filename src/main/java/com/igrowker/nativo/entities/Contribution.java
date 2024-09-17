@@ -16,14 +16,26 @@ import java.time.LocalDate;
 public class Contribution {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long taxpayer;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    private String lenderAccountId;     //contribuyente
+
+    @Column(length = 1000)
     private BigDecimal amount;
+
     private LocalDate createdDate;
 
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus transactionStatus;
+
     @ManyToOne
+    @JoinColumn(name = "microcredit_id", nullable = false)
     private Microcredit microcredit;
 
-    private boolean enabled;
+    @PrePersist
+    protected void onCreate() {
+        this.createdDate = LocalDate.now();
+        this.transactionStatus = TransactionStatus.PENDENT;
+    }
 }

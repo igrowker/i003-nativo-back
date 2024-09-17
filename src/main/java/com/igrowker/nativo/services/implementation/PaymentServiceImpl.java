@@ -1,53 +1,53 @@
 package com.igrowker.nativo.services.implementation;
 
-import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
-import com.igrowker.nativo.dtos.payment.RequestProcessPaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponseProcessPaymentDto;
-import com.igrowker.nativo.entities.Account;
+import com.igrowker.nativo.dtos.payment.*;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.InsufficientFundsException;
+import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
+import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.mappers.PaymentMapper;
-import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.PaymentRepository;
 import com.igrowker.nativo.services.PaymentService;
+import com.igrowker.nativo.utils.GeneralTransactions;
+import com.igrowker.nativo.validations.Validations;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final AccountRepository accountRepository;
     private final PaymentMapper paymentMapper;
     private final QRService qrService;
+    private final Validations validations;
+    private final GeneralTransactions transactions;
 
     @Override
     @Transactional
     public ResponsePaymentDto createQr(RequestPaymentDto requestPaymentDto) {
-        // Mapeo el DTO a la entidad Payment
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
 
-        // Guardo el payment en la base de datos
+        if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+        }
+
         Payment savedPayment = paymentRepository.save(payment);
 
-        // Genero el código QR con el ID del pago recién creado
         String qrCode = null;
         try {
             qrCode = qrService.generateQrCode(savedPayment.getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error al generar el código QR", e);
         }
 
-        // Actualizo la entidad Payment con el código QR
         savedPayment.setQr(qrCode);
         Payment withQrPayment = paymentRepository.save(savedPayment);
 
-        // Mapear de nuevo a ResponsePaymentDto para devolverlo al frontend
         return paymentMapper.paymentToResponseDto(withQrPayment);
     }
 
@@ -57,59 +57,54 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
 
-        // Buscar el pago por ID
+        if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+        }
+
         Payment payment = paymentRepository.findById(newData.getId())
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
-        //new PaymentNotFoundException("Payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
 
         payment.setSenderAccount(newData.getSenderAccount());
         payment.setTransactionStatus(newData.getTransactionStatus());
 
         Payment updatedPayment = paymentRepository.save(payment);
 
-        // Validar estado del pago
         if (!updatedPayment.getTransactionStatus().equals(TransactionStatus.ACCEPTED)) {
-            // Si el pago fue rechazado
             updatedPayment.setTransactionStatus(TransactionStatus.DENIED);
             var result = paymentRepository.save(updatedPayment);
             return paymentMapper.paymentToResponseProcessDto(result);
         }
 
-        // Aquí iría la lógica para validar los fondos del sender Y validar fondos
-        var senderAccountId = updatedPayment.getSenderAccount();
-        Account senderAccount = accountRepository.findById(senderAccountId)
-                .orElseThrow(() -> new RuntimeException("account not found"));
-        var actualSenderAmount = senderAccount.getAmount();
-        var paymentAmount = updatedPayment.getAmount();
-        if (paymentAmount.compareTo(actualSenderAmount) > 0){
+        if(!validations.validateTransactionUserFunds(updatedPayment.getAmount())){
             updatedPayment.setTransactionStatus(TransactionStatus.FAILED);
             Payment result = paymentRepository.save(updatedPayment);
-            return paymentMapper.paymentToResponseProcessDto(result);
+            throw new InsufficientFundsException("Fondos insuficientes para realizar el pago.");
         }
 
-        // Si los fondos son suficientes restar fondos del sender y Sumar fondos al receiver
-        var newSenderAmount = actualSenderAmount.subtract(paymentAmount);
-        senderAccount.setAmount(newSenderAmount);
+        transactions.updateBalances(payment.getSenderAccount(), payment.getReceiverAccount(), payment.getAmount());
 
-        var receiverAccountId = updatedPayment.getReceiverAccount();
-        Account receiverAccount = accountRepository.findById(receiverAccountId)
-                .orElseThrow(() -> new RuntimeException("account not found"));
-        var actualReceiverAmount = receiverAccount.getAmount();
-        var newReceiverAmount = actualReceiverAmount.add(paymentAmount);
-        receiverAccount.setAmount(newReceiverAmount);
-
-        Account savedSenderAccount = accountRepository.save(senderAccount);
-        Account savedReceiverAccount = accountRepository.save(receiverAccount);
-
-        // Actualizar estado del pago a aceptado
         updatedPayment.setTransactionStatus(TransactionStatus.ACCEPTED);
+
         Payment savedPayment = paymentRepository.save(updatedPayment);
+
+        return paymentMapper.paymentToResponseProcessDto(savedPayment);
 
         // ToDo. Enviar notificaciones a ambos usuarios (esto sería idealmente otro servicio)
         // // que se le envie a ambos de alguna forma el resultado de la transaccion
+    }
 
+    @Override
+    public List<ResponseHistoryPayment> getAllPayments(String id) {
+        List<Payment> paymentList = paymentRepository.findPaymentsByAccount(id);
+        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        return result;
+    }
 
-        // Retornar respuesta final
-        return paymentMapper.paymentToResponseProcessDto(savedPayment);
+    @Override
+    public List<ResponseHistoryPayment> getPaymentsByStatus(String id, String status) {
+        TransactionStatus statusEnum = validations.statusConvert(status);
+        List<Payment> paymentList = paymentRepository.findPaymentsByStatus(id, statusEnum);
+        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        return result;
     }
 }

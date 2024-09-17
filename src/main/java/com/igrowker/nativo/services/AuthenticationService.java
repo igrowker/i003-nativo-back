@@ -4,8 +4,8 @@ import com.igrowker.nativo.dtos.user.*;
 import jakarta.validation.Valid;
 
 public interface AuthenticationService {
-    UserDto signUp(@Valid RegisterUserDto registerUserDto);
-    LoginUserResponse login(LoginUserDto loginUserDto);
+    ResponseUserDto signUp(@Valid RequestRegisterDto requestRegisterDto);
+    ResponseLoginDto login(RequestLoginDto requestLoginDto);
     void verifyUser(VerifyUserDto verifyUserDto);
     void resendVerificationCode(String email);
 }

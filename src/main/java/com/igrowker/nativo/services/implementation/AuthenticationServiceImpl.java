@@ -11,6 +11,8 @@ import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.security.EmailService;
 import com.igrowker.nativo.security.JwtService;
 import com.igrowker.nativo.services.AuthenticationService;
+import com.igrowker.nativo.services.UserService;
+import jakarta.transaction.Transactional;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import java.util.Random;
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
 
+    private final UserService userService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
@@ -36,17 +39,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final EmailService emailService;
 
     @Override
-    public UserDto signUp(@Valid RegisterUserDto registerUserDto) {
-        if (userRepository.findByEmail(registerUserDto.email()).isPresent()) {
-            throw new ResourceAlreadyExistsException("Ya hay una cuenta asociada con el email " + registerUserDto.email() + ".");
+    @Transactional
+    public ResponseUserDto signUp(@Valid RequestRegisterDto requestRegisterDto) {
+        if (userRepository.findByEmail(requestRegisterDto.email()).isPresent()) {
+            throw new ResourceAlreadyExistsException("Ya hay una cuenta asociada con el email " + requestRegisterDto.email() + ".");
         }
 
-        if (userRepository.findByDni(registerUserDto.dni()).isPresent()) {
-            throw new ResourceAlreadyExistsException("Ya hay una cuenta asociada con el DNI " + registerUserDto.dni() + ".");
+        if (userRepository.findByDni(requestRegisterDto.dni()).isPresent()) {
+            throw new ResourceAlreadyExistsException("Ya hay una cuenta asociada con el DNI " + requestRegisterDto.dni() + ".");
         }
 
-        User user = userMapper.registerUsertoUser(registerUserDto);
-        user.setPassword(passwordEncoder.encode(registerUserDto.password()));
+        User user = userMapper.registerUsertoUser(requestRegisterDto);
+        user.setPassword(passwordEncoder.encode(requestRegisterDto.password()));
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
@@ -60,8 +64,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public LoginUserResponse login(LoginUserDto loginUserDto) {
-        User user = userRepository.findByEmail(loginUserDto.email()).orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+    @Transactional
+    public ResponseLoginDto login(RequestLoginDto requestLoginDto) {
+        User user = userRepository.findByEmail(requestLoginDto.email()).orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
 
         if (!user.isEnabled()) {
             throw new InvalidUserCredentialsException("Cuenta no verificada. Por favor verifique su cuenta.");
@@ -69,8 +74,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            loginUserDto.email(),
-                            loginUserDto.password()
+                            requestLoginDto.email(),
+                            requestLoginDto.password()
                     )
             );
         } catch (BadCredentialsException ex) {
@@ -79,7 +84,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         String jwtToken = jwtService.generateToken(user);
 
-        return new LoginUserResponse(user.getId(), jwtToken, jwtService.getExpirationTime());
+        return new ResponseLoginDto(user.getId(), jwtToken, jwtService.getExpirationTime());
     }
 
     public void verifyUser(VerifyUserDto verifyUserDto) {
@@ -96,6 +101,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setEnabled(true);
                 user.setVerificationCode(null);
                 user.setVerificationCodeExpiresAt(null);
+                userService.assignAccountToUser(user.getDni(), user.getId());
                 userRepository.save(user);
             } else {
                 throw new InvalidDataException("Código de verificación incorrecto.");

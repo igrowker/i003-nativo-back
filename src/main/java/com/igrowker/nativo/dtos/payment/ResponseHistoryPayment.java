@@ -5,12 +5,13 @@ import com.igrowker.nativo.entities.TransactionStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record ResponseProcessPaymentDto(
+public record ResponseHistoryPayment(
         String id,
         String senderAccount,
         String receiverAccount,
         BigDecimal amount,
-        TransactionStatus transactionStatus,
-        LocalDateTime transactionDate
+        String description,
+        LocalDateTime transactionDate,
+        TransactionStatus transactionStatus
 ) {
 }

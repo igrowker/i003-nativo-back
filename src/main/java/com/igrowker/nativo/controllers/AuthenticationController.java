@@ -15,14 +15,14 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserDto> registerUser(@Valid @RequestBody RegisterUserDto registerUserDto) {
-        UserDto registeredUser = authenticationService.signUp(registerUserDto);
+    public ResponseEntity<ResponseUserDto> registerUser(@Valid @RequestBody RequestRegisterDto requestRegisterDto) {
+        ResponseUserDto registeredUser = authenticationService.signUp(requestRegisterDto);
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginUserResponse> loginUser(@Valid @RequestBody LoginUserDto loginUserDto) {
-        LoginUserResponse loginResponse = authenticationService.login(loginUserDto);
+    public ResponseEntity<ResponseLoginDto> loginUser(@Valid @RequestBody RequestLoginDto requestLoginDto) {
+        ResponseLoginDto loginResponse = authenticationService.login(requestLoginDto);
         return ResponseEntity.ok(loginResponse);
     }
 
