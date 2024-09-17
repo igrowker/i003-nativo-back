@@ -11,8 +11,7 @@ import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.MicrocreditService;
-import com.igrowker.nativo.validations.AuthenticatedUserAndAccount;
-import com.igrowker.nativo.validations.TransactionStatusConvert;
+import com.igrowker.nativo.validations.Validations;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,13 +24,13 @@ import java.util.List;
 public class MicrocreditServiceImpl implements MicrocreditService {
     private final MicrocreditRepository microcreditRepository;
     private final MicrocreditMapper microcreditMapper;
-    private final AuthenticatedUserAndAccount authenticatedUserAndAccount;
+    private final Validations validations;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
 
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) {
-        AuthenticatedUserAndAccount.UserAccountPair userBorrower = authenticatedUserAndAccount.getAuthenticatedUserAndAccount();
+        Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
 
         Microcredit microcredit = microcreditMapper.requestDtoToMicrocredit(requestMicrocreditDto);
 
@@ -62,9 +61,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
     @Override
     public List<ResponseMicrocreditGetDto> getMicrocreditsByTransactionStatus(String transactionStatus) {
-        TransactionStatusConvert convertValue = new TransactionStatusConvert();
-        TransactionStatus enumStatus = convertValue.statusConvert(transactionStatus);
-
+        TransactionStatus enumStatus =  validations.statusConvert(transactionStatus);
         List<Microcredit> microcredits = microcreditRepository.findByTransactionStatus(enumStatus);
 
         return microcredits.stream()
