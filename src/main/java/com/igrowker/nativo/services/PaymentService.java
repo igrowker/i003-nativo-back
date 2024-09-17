@@ -10,5 +10,4 @@ public interface PaymentService {
     ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto);
     List<ResponseHistoryPayment> getAllPayments(String id);
     List<ResponseHistoryPayment> getPaymentsByStatus(String id, String status);
-    Payment updateBalancesAndPayment(Payment payment);
 }

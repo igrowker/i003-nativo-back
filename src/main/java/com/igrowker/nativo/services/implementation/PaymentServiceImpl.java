@@ -1,20 +1,20 @@
 package com.igrowker.nativo.services.implementation;
 
 import com.igrowker.nativo.dtos.payment.*;
-import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.InsufficientFundsException;
+import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
-import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.mappers.PaymentMapper;
-import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.PaymentRepository;
 import com.igrowker.nativo.services.PaymentService;
-import com.igrowker.nativo.validations.TransactionStatusConvert;
-import com.igrowker.nativo.validations.TransactionValidations;
+import com.igrowker.nativo.utils.GeneralTransactions;
+import com.igrowker.nativo.validations.Validations;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -22,19 +22,18 @@ import java.util.List;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final AccountRepository accountRepository;
     private final PaymentMapper paymentMapper;
     private final QRService qrService;
-    private final TransactionStatusConvert transactionStatusConvert;
-    private final TransactionValidations transactionValidations;
+    private final Validations validations;
+    private final GeneralTransactions transactions;
 
     @Override
     @Transactional
     public ResponsePaymentDto createQr(RequestPaymentDto requestPaymentDto) {
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
 
-        if(transactionValidations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
-            throw new ValidationException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+        if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
         }
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -58,12 +57,12 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
 
-        if(transactionValidations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
-            throw new ValidationException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+        if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
         }
 
         Payment payment = paymentRepository.findById(newData.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Pago solicitado no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
 
         payment.setSenderAccount(newData.getSenderAccount());
         payment.setTransactionStatus(newData.getTransactionStatus());
@@ -76,13 +75,17 @@ public class PaymentServiceImpl implements PaymentService {
             return paymentMapper.paymentToResponseProcessDto(result);
         }
 
-        if(!transactionValidations.validateTransactionUserFunds(updatedPayment.getAmount())){
+        if(!validations.validateTransactionUserFunds(updatedPayment.getAmount())){
             updatedPayment.setTransactionStatus(TransactionStatus.FAILED);
             Payment result = paymentRepository.save(updatedPayment);
-            return paymentMapper.paymentToResponseProcessDto(result);
+            throw new InsufficientFundsException("Fondos insuficientes para realizar el pago.");
         }
 
-        Payment savedPayment = this.updateBalancesAndPayment(updatedPayment);
+        transactions.updateBalances(payment.getSenderAccount(), payment.getReceiverAccount(), payment.getAmount());
+
+        updatedPayment.setTransactionStatus(TransactionStatus.ACCEPTED);
+
+        Payment savedPayment = paymentRepository.save(updatedPayment);
 
         return paymentMapper.paymentToResponseProcessDto(savedPayment);
 
@@ -99,29 +102,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public List<ResponseHistoryPayment> getPaymentsByStatus(String id, String status) {
-        TransactionStatus statusEnum = transactionStatusConvert.statusConvert(status);
+        TransactionStatus statusEnum = validations.statusConvert(status);
         List<Payment> paymentList = paymentRepository.findPaymentsByStatus(id, statusEnum);
         var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
         return result;
-    }
-
-    @Override
-    public Payment updateBalancesAndPayment(Payment payment) {
-        Account senderAccount = accountRepository.findById(payment.getSenderAccount())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
-
-        Account receiverAccount = accountRepository.findById(payment.getReceiverAccount())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
-
-        senderAccount.setAmount(senderAccount.getAmount().subtract(payment.getAmount()));
-        receiverAccount.setAmount(receiverAccount.getAmount().add(payment.getAmount()));
-
-        Account updatedSenderAccount =  accountRepository.save(senderAccount);
-        Account updatedReceiverAccount =  accountRepository.save(receiverAccount);
-
-        payment.setTransactionStatus(TransactionStatus.ACCEPTED);
-        Payment savedPayment = paymentRepository.save(payment);
-
-        return savedPayment;
     }
 }

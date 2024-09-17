@@ -12,8 +12,7 @@ import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.ContributionService;
-import com.igrowker.nativo.validations.AuthenticatedUserAndAccount;
-import com.igrowker.nativo.validations.TransactionStatusConvert;
+import com.igrowker.nativo.validations.Validations;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,14 +28,14 @@ public class ContributionServiceImpl implements ContributionService {
     private final ContributionRepository contributionRepository;
     private final MicrocreditRepository microcreditRepository;
     private final ContributionMapper contributionMapper;
-    private final AuthenticatedUserAndAccount authenticatedUserAndAccount;
+    private final Validations validations;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
 
     @Override
     @Transactional
     public ResponseContributionDto createContribution(RequestContributionDto requestContributionDto) {
-        AuthenticatedUserAndAccount.UserAccountPair userLender = authenticatedUserAndAccount.getAuthenticatedUserAndAccount();
+        Validations.UserAccountPair userLender = validations.getAuthenticatedUserAndAccount();
 
         Microcredit microcredit = microcreditRepository.findById(requestContributionDto.microcreditId())
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
@@ -107,9 +106,7 @@ public class ContributionServiceImpl implements ContributionService {
 
     @Override
     public List<ResponseContributionGetDto> getContributionsByTransactionStatus(String transactionStatus) {
-        TransactionStatusConvert convertValue = new TransactionStatusConvert();
-        TransactionStatus enumStatus = convertValue.statusConvert(transactionStatus);
-
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
         List<Contribution> contributions = contributionRepository.findByTransactionStatus(enumStatus);
 
         return contributions.stream()
