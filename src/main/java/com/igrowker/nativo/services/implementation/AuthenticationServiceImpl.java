@@ -22,7 +22,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.Optional;
 import java.util.Random;
 
@@ -47,6 +49,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         if (userRepository.findByDni(requestRegisterDto.dni()).isPresent()) {
             throw new ResourceAlreadyExistsException("Ya hay una cuenta asociada con el DNI " + requestRegisterDto.dni() + ".");
+        }
+
+        if (Period.between(requestRegisterDto.birthday(), LocalDate.now()).getYears() < 18) {
+            throw new InvalidDataException("Debes tener al menos 18 años para registrarte.");
         }
 
         User user = userMapper.registerUsertoUser(requestRegisterDto);
