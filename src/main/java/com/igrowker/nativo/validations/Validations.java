@@ -19,19 +19,6 @@ public class Validations {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
 
-    /*
-    public Account getAuthenticatedUserAccount() {
-        String userNameAuthentication = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User user = userRepository.findByEmail(userNameAuthentication)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        return accountRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada para el usuario"));
-    }
-
-     */
-
     public UserAccountPair getAuthenticatedUserAndAccount() {
         String userNameAuthentication = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -65,7 +52,8 @@ public class Validations {
     public boolean validateTransactionUserFunds(BigDecimal TransactionAmount){
         Account userAccount = this.getAuthenticatedUserAndAccount().account;
         BigDecimal userFunds = userAccount.getAmount();
-        return userFunds.compareTo(TransactionAmount)>=0;
+        BigDecimal reservedFunds = userAccount.getReservedAmount();
+        return userFunds.compareTo(TransactionAmount.add(reservedFunds))>=0;
     }
 
     public TransactionStatus statusConvert(String transactionStatus) {

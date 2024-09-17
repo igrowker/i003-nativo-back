@@ -54,7 +54,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto) {
-
+        TransactionStatus dtoStatus = validations.statusConvert(requestProcessPaymentDto.transactionStatus());
         Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
 
         if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
@@ -65,8 +65,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
 
         payment.setSenderAccount(newData.getSenderAccount());
-        payment.setTransactionStatus(newData.getTransactionStatus());
-
+        payment.setTransactionStatus(dtoStatus);
         Payment updatedPayment = paymentRepository.save(payment);
 
         if (!updatedPayment.getTransactionStatus().equals(TransactionStatus.ACCEPTED)) {
@@ -88,9 +87,6 @@ public class PaymentServiceImpl implements PaymentService {
         Payment savedPayment = paymentRepository.save(updatedPayment);
 
         return paymentMapper.paymentToResponseProcessDto(savedPayment);
-
-        // ToDo. Enviar notificaciones a ambos usuarios (esto sería idealmente otro servicio)
-        // // que se le envie a ambos de alguna forma el resultado de la transaccion
     }
 
     @Override

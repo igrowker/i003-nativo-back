@@ -18,10 +18,10 @@ public class GeneralTransactions {
     @Transactional
     public void updateBalances(String senderAccountId, String receiverAccountId, BigDecimal transactionAmount) {
         Account senderAccount = accountRepository.findById(senderAccountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta de emisor no encontrada"));
 
         Account receiverAccount = accountRepository.findById(receiverAccountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta de receptor no encontrada"));
 
         senderAccount.setAmount(senderAccount.getAmount().subtract(transactionAmount));
         receiverAccount.setAmount(receiverAccount.getAmount().add(transactionAmount));
