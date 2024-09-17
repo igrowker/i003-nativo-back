@@ -1,13 +1,10 @@
 package com.igrowker.nativo.entities;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Past;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -42,17 +39,7 @@ public class User implements UserDetails {
 
     private String accountId;
 
-    @JsonFormat(pattern="yyyy-MM-dd")
-    @Past(message = "La fecha de nacimiento debe estar en el pasado.")
-    private LocalDate birthday;
-
     private LocalDateTime createdAt;
-
-    @Column(name = "verification_code")
-    private String verificationCode;
-
-    @Column(name = "verification_expiration")
-    private LocalDateTime verificationCodeExpiresAt;
 
     private boolean enabled;
 
