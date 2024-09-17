@@ -5,5 +5,6 @@ public enum TransactionStatus {
     ACCEPTED,
     DENIED,
     FAILED,
-    PENDENT
+    PENDENT,
+    EXPIRED
 }

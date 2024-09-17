@@ -1,16 +1,20 @@
 package com.igrowker.nativo.dtos.microcredit;
 
+import com.igrowker.nativo.entities.TransactionStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record ResponseMicrocreditGetDto (
+public record ResponseMicrocreditGetDto(
         String id,
         String borrowerAccount, //Falta la relación entre account y user
         BigDecimal amount,
         BigDecimal amountRest,
         LocalDate createdDate,
         LocalDate expirationDate,
-        String description
+        String title,
+        String description,
+        TransactionStatus transactionStatus
 ) {
 }
 /* debería mostrar un listado de todos los microcréditos disponibles,
