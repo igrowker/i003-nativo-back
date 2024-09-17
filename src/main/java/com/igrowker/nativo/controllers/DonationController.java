@@ -1,17 +1,13 @@
 package com.igrowker.nativo.controllers;
 
-import com.igrowker.nativo.dtos.donation.RequestDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.RequestDonationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationDtoTrue;
+import com.igrowker.nativo.dtos.donation.*;
 import com.igrowker.nativo.services.DonationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -29,9 +25,19 @@ public class DonationController {
         }
     }
 
-    @PostMapping("/confirmacion-donacion")
+    @PostMapping("/confirmar-donacion")
     public ResponseEntity<ResponseDonationConfirmationDto> confirmationDonation(@RequestBody @Valid RequestDonationConfirmationDto requestDonationConfirmationDto){
         return ResponseEntity.ok(donationService.confirmationDonation(requestDonationConfirmationDto));
+    }
+
+    @GetMapping("/historial-donaciones/donador/{id}")
+    public ResponseEntity<List<ResponseDonationRecordBeneficiary>> recordDonationDonor(@PathVariable String id){
+        return ResponseEntity.ok(donationService.recordDonationDonor(id));
+    }
+
+    @GetMapping("/historial-donaciones/beneficiario/{id}")
+    public ResponseEntity<List<ResponseDonationRecordBeneficiary>> recordDonationBeneficiary(@PathVariable String id){
+        return ResponseEntity.ok(donationService.recordDonationBeneficiary(id));
     }
     
 }
