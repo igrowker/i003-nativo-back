@@ -6,6 +6,6 @@ import jakarta.validation.Valid;
 public interface AuthenticationService {
     ResponseUserDto signUp(@Valid RequestRegisterDto requestRegisterDto);
     ResponseLoginDto login(RequestLoginDto requestLoginDto);
-    void verifyUser(VerifyUserDto verifyUserDto);
+    void verifyUser(RequestVerifyUserDto verifyUserDto);
     void resendVerificationCode(String email);
 }

@@ -7,6 +7,6 @@ public record ResponseUserDto(
     String surname,
     String accountId,
     String email,
-    String phone
-
+    String phone,
+    String verificationCode
 ) {}

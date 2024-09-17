@@ -87,7 +87,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return new ResponseLoginDto(user.getId(), jwtToken, jwtService.getExpirationTime());
     }
 
-    public void verifyUser(VerifyUserDto verifyUserDto) {
+    public void verifyUser(RequestVerifyUserDto verifyUserDto) {
         Optional<User> optionalUser = userRepository.findByEmail(verifyUserDto.email());
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();

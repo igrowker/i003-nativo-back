@@ -1,6 +1,6 @@
 package com.igrowker.nativo.dtos.user;
 
-public record VerifyUserDto(
+public record RequestVerifyUserDto(
         String email,
         String verificationCode
 ) {
