@@ -23,6 +23,6 @@ public record RequestMicrocreditDto(
         LocalDate expirationDate
 ) {
 }
-/*Título, Descripción (razón de necesidad del dinero),
-Monto total, Fecha de vencimiento (cuando devolverá el dinero)
+/*
+expirationDate: Que la fecha de expiración no sea mayor a dos meses
  */
