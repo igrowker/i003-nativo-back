@@ -78,7 +78,7 @@ public class ContributionServiceImpl implements ContributionService {
         String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
         String microcreditId = microcredit.getId();
 
-
+        // Realizar la tranferencia entre cuentas validateTransactionUserFunds()
 
         return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname, microcreditId);
     }

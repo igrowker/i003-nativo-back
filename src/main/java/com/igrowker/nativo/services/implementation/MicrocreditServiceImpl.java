@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -34,14 +35,14 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         Microcredit microcredit = microcreditMapper.requestDtoToMicrocredit(requestMicrocreditDto);
 
+        //Validación para evaluar si tiene un microcredito en estado pendiente, vencido o denegado
+        isMicrocreditExpiredOrPendentOrDenied(userBorrower.account.getId());
+
         BigDecimal limite = new BigDecimal("500000");
 
         if (microcredit.getAmount().compareTo(limite) > 0) {
             throw new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ " + limite);
         }
-
-        //Validaciones pendientes: Que el usuario no tenga microcréditos adeudados  (EXPIRED)
-        //No puede tener más de un microcredito en pendiente (PENDENT)
 
         microcredit.setBorrowerAccountId(userBorrower.account.getId());
         microcredit = microcreditRepository.save(microcredit);
@@ -60,7 +61,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
     @Override
     public List<ResponseMicrocreditGetDto> getMicrocreditsByTransactionStatus(String transactionStatus) {
-        TransactionStatus enumStatus =  validations.statusConvert(transactionStatus);
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
         List<Microcredit> microcredits = microcreditRepository.findByTransactionStatus(enumStatus);
 
         return microcredits.stream()
@@ -76,6 +77,23 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         return microcreditMapper.responseMicrocreditGet(microcredit);
     }
 
+    private void isMicrocreditExpiredOrPendentOrDenied(String borrowerAccountId) {
+        Optional<Microcredit> pendingMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.PENDENT);
+        if (pendingMicrocredit.isPresent()) {
+            throw new ValidationException("Presenta un microcrédito pendiente.");
+        }
+
+        Optional<Microcredit> expiredMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.EXPIRED);
+        if (expiredMicrocredit.isPresent()) {
+            throw new ValidationException("Presenta un microcrédito vencido.");
+        }
+
+        Optional<Microcredit> deniedMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.DENIED);
+        if (deniedMicrocredit.isPresent()) {
+            throw new ValidationException("No puede solicitar un nuevo microcrédito. Debe regularizar el estado de su cuenta.");
+        }
+    }
+
     /*
     Listar todos los microcreditos, comparar la fecha de vencimiento con la actual.
     ACCEPTED -- SE COMPLETA EL MONTO TOTAL
@@ -87,4 +105,6 @@ public class MicrocreditServiceImpl implements MicrocreditService {
      */
 
     //CARGAR TRANSACCIONES A USAR AL SWITCH
+
+
 }
