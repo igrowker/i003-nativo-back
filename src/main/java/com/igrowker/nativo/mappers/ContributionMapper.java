@@ -21,4 +21,6 @@ public interface ContributionMapper {
     @Mapping(target = "borrowerFullname", source = "borrowerFullname")
     ResponseContributionGetDto responseContributionGetDto(Contribution contribution, String lenderFullname,
                                                           String borrowerFullname, String microcreditId);
+
+    //Agregar fecha de vencimiento del microcredito
 }

@@ -6,5 +6,6 @@ public enum TransactionStatus {
     DENIED,
     FAILED,
     PENDENT,
-    EXPIRED
+    EXPIRED,
+    COMPLETED
 }

@@ -40,16 +40,15 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             throw new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ " + limite);
         }
 
+        //Validaciones pendientes: Que el usuario no tenga microcréditos adeudados  (EXPIRED)
+        //No puede tener más de un microcredito en pendiente (PENDENT)
+
         microcredit.setBorrowerAccountId(userBorrower.account.getId());
         microcredit = microcreditRepository.save(microcredit);
 
+        //Agregar fecha de vencimiento del microcredito
         return microcreditMapper.responseDtoToMicrocredit(microcredit);
     }
-
-    //Validaciones pendientes: Que el usuario no tenga microcréditos adeudados
-    //No puede tener más de un microcredito en pendiente
-    //Transaccion tiene que seguir pendiente hasta que el monto total se completa
-
 
     @Override
     public List<ResponseMicrocreditGetDto> getAll() {
@@ -76,4 +75,16 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         return microcreditMapper.responseMicrocreditGet(microcredit);
     }
+
+    /*
+    Listar todos los microcreditos, comparar la fecha de vencimiento con la actual.
+    ACCEPTED -- SE COMPLETA EL MONTO TOTAL
+    DENIED -- NO CUMPLE CON VENCIMIENTO O PENDIENTES,
+    FAILED -- ALGUN PROBLEMA DE SISTEMA
+    PENDENT -- AL CREARSE EL MICROCREDITO
+    EXPIRED -- SUPERA LA FECHA DE VENCIMIENTO Y NO TIENE FONDOS ENTRA EN DEUDA.
+    COMPLETED -- AL CUMPLIRSE CON EL PAGO DEL MICRO EN TERMINO
+     */
+
+    //CARGAR TRANSACCIONES A USAR AL SWITCH
 }

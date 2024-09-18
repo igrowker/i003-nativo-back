@@ -40,17 +40,18 @@ public class ContributionServiceImpl implements ContributionService {
         Microcredit microcredit = microcreditRepository.findById(requestContributionDto.microcreditId())
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
 
-        if (microcredit.getBorrowerAccountId().equals(userLender.account.getId())) {
+        if (!validations.isUserAccountMismatch(microcredit.getBorrowerAccountId())) {
             throw new IllegalArgumentException("El usuario contribuyente no puede ser el mismo que el solicitante del microcrédito.");
         }
+
+        //updateBalance
+        //Cambio de estado del contribuyente a ACCEPTED y si hubo error FAILED
 
         Contribution contribution = contributionMapper.requestDtoToContribution(requestContributionDto);
 
         BigDecimal remainingAmount;
 
-        if (microcredit.getRemainingAmount() == null) {
-            remainingAmount = microcredit.getAmount().subtract(contribution.getAmount());
-        } else if ( microcredit.getRemainingAmount().compareTo(microcredit.getAmount()) == 0) {
+        if (microcredit.getRemainingAmount().compareTo(microcredit.getAmount()) == 0) {
             remainingAmount = microcredit.getAmount().subtract(contribution.getAmount());
         } else {
             remainingAmount = microcredit.getRemainingAmount().subtract(contribution.getAmount());
@@ -77,13 +78,12 @@ public class ContributionServiceImpl implements ContributionService {
         String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
         String microcreditId = microcredit.getId();
 
+
+
         return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname, microcreditId);
     }
 
-    //poner plata
-    //verificar que tenga plata en cuenta
-    //si esta ok, se descuenta la plata del contribuyente y se suma a la cuenta
-    //status contribución ok
+
     // Listado de contribuciones por contribuyente.
 
     @Override
@@ -152,4 +152,11 @@ public class ContributionServiceImpl implements ContributionService {
 
         return user.getSurname().toUpperCase() + ", " + user.getName();
     }
+
+      /*
+    ACCEPTED -- CUANDO SE CREE LA CONTRIBUCIÓN
+    DENIED -- FONDOS INSUFICIENTES
+    FAILED -- ALGUN PROBLEMA DE SISTEMA
+    PENDENT -- AL CREARSE LA CONTRIBUCIÓN, ANTES DE QUE CHEQUEE LOS FONDOS
+      */
 }

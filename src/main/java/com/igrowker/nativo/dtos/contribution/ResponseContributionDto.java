@@ -13,6 +13,7 @@ public record ResponseContributionDto(
         String microcreditId,
         BigDecimal amount,
         LocalDate createdDate,
+        LocalDate expiredDateMicrocredit,
         TransactionStatus transactionStatus
 ) {
 }
