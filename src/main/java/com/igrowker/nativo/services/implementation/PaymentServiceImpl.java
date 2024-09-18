@@ -15,6 +15,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -90,16 +93,31 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<ResponseHistoryPayment> getAllPayments(String id) {
-        List<Payment> paymentList = paymentRepository.findPaymentsByAccount(id);
+    public List<ResponseHistoryPayment> getAllPayments() {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        List<Payment> paymentList = paymentRepository.findPaymentsByAccount(accountAndUser.account.getId());
         var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
         return result;
     }
 
     @Override
-    public List<ResponseHistoryPayment> getPaymentsByStatus(String id, String status) {
+    public List<ResponseHistoryPayment> getPaymentsByStatus(String status) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         TransactionStatus statusEnum = validations.statusConvert(status);
-        List<Payment> paymentList = paymentRepository.findPaymentsByStatus(id, statusEnum);
+        List<Payment> paymentList = paymentRepository.findPaymentsByStatus(accountAndUser.account.getId(), statusEnum);
+        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        return result;
+    }
+
+    @Override
+    public List<ResponseHistoryPayment> getPaymentsByDate(String date) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate transactionDate = LocalDate.parse(date, formatter);
+        LocalDateTime startDate = transactionDate.atStartOfDay();
+        LocalDateTime endDate = transactionDate.plusDays(1).atStartOfDay();
+        List<Payment> paymentList = paymentRepository.findPaymentsByTransactionDate(
+                accountAndUser.account.getId(), startDate, endDate);
         var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
         return result;
     }
