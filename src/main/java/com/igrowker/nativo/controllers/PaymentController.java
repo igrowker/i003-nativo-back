@@ -16,30 +16,35 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @PostMapping("/crearqr")
+    @PostMapping("/crear-qr")
     public ResponseEntity<ResponsePaymentDto> generateQr(
             @RequestBody @Valid RequestPaymentDto requestPaymentDto){
         ResponsePaymentDto result = paymentService.createQr(requestPaymentDto);
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/pagarqr")
+    @PostMapping("/pagar-qr")
     public ResponseEntity<ResponseProcessPaymentDto> processPayment(
             @RequestBody @Valid RequestProcessPaymentDto requestProcessPaymentDto) {
         ResponseProcessPaymentDto result = paymentService.processPayment(requestProcessPaymentDto);
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/all/{id}")
-    public ResponseEntity<List<ResponseHistoryPayment>> getAllPayments(@PathVariable String id){
-        List<ResponseHistoryPayment> result = paymentService.getAllPayments(id);
+    @GetMapping("/todo")
+    public ResponseEntity<List<ResponseHistoryPayment>> getAllPayments(){
+        List<ResponseHistoryPayment> result = paymentService.getAllPayments();
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/{id}/status/{status}")
-    public ResponseEntity<List<ResponseHistoryPayment>> getAllPayments(@PathVariable String id,
-                                                                       @PathVariable String status){
-        List<ResponseHistoryPayment> result = paymentService.getPaymentsByStatus(id, status);
+    @GetMapping("estado/{status}")
+    public ResponseEntity<List<ResponseHistoryPayment>> getPaymentsByStatus(@PathVariable String status){
+        List<ResponseHistoryPayment> result = paymentService.getPaymentsByStatus(status);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("fecha/{date}")
+    public ResponseEntity<List<ResponseHistoryPayment>> getPaymentsByDate(@PathVariable String date){
+        List<ResponseHistoryPayment> result = paymentService.getPaymentsByDate(date);
         return ResponseEntity.ok(result);
     }
 }
