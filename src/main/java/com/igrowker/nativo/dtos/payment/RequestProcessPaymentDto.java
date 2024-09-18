@@ -9,6 +9,6 @@ public record RequestProcessPaymentDto(
         @NotNull(message = "El id de cuenta del cliente es obligatorio.")
         String senderAccount,
         @NotNull(message = "El status del pago es obligatorio.")
-        TransactionStatus transactionStatus
+        String transactionStatus
 ) {
 }

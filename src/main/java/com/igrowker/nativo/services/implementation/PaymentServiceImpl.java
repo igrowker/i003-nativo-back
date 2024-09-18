@@ -33,7 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
 
         if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
         }
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -54,19 +54,18 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto) {
-
+        TransactionStatus dtoStatus = validations.statusConvert(requestProcessPaymentDto.transactionStatus());
         Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
 
         if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
         }
 
         Payment payment = paymentRepository.findById(newData.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
 
         payment.setSenderAccount(newData.getSenderAccount());
-        payment.setTransactionStatus(newData.getTransactionStatus());
-
+        payment.setTransactionStatus(dtoStatus);
         Payment updatedPayment = paymentRepository.save(payment);
 
         if (!updatedPayment.getTransactionStatus().equals(TransactionStatus.ACCEPTED)) {
@@ -88,9 +87,6 @@ public class PaymentServiceImpl implements PaymentService {
         Payment savedPayment = paymentRepository.save(updatedPayment);
 
         return paymentMapper.paymentToResponseProcessDto(savedPayment);
-
-        // ToDo. Enviar notificaciones a ambos usuarios (esto sería idealmente otro servicio)
-        // // que se le envie a ambos de alguna forma el resultado de la transaccion
     }
 
     @Override
