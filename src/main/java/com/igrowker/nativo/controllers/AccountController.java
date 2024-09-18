@@ -23,7 +23,7 @@ public class AccountController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/consultarSaldo/{id}")
+    @GetMapping("/consultar-saldo/{id}")
     public ResponseEntity<ResponseSelfAccountDto> readSelfAccount(
             @PathVariable String id){
         ResponseSelfAccountDto result = accountService.readSelfAccount(id);

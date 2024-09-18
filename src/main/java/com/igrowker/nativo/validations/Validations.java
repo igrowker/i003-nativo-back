@@ -3,6 +3,7 @@ package com.igrowker.nativo.validations;
 import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
+import com.igrowker.nativo.exceptions.InvalidDataException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.UserRepository;
@@ -67,7 +68,7 @@ public class Validations {
             case "DENIED":
                 return TransactionStatus.DENIED;
             default:
-                throw new IllegalArgumentException("El estado de la transacción no existe: " + transactionStatus);
+                throw new InvalidDataException("El estado de la transacción no existe: " + transactionStatus);
         }
     }
 }

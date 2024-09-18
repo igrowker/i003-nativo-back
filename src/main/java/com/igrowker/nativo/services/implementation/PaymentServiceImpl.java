@@ -33,7 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
 
         if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
         }
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -58,7 +58,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
 
         if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
         }
 
         Payment payment = paymentRepository.findById(newData.getId())

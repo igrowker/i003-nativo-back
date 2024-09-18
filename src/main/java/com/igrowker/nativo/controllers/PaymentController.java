@@ -16,14 +16,14 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @PostMapping("/crearqr")
+    @PostMapping("/crear-qr")
     public ResponseEntity<ResponsePaymentDto> generateQr(
             @RequestBody @Valid RequestPaymentDto requestPaymentDto){
         ResponsePaymentDto result = paymentService.createQr(requestPaymentDto);
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/pagarqr")
+    @PostMapping("/pagar-qr")
     public ResponseEntity<ResponseProcessPaymentDto> processPayment(
             @RequestBody @Valid RequestProcessPaymentDto requestProcessPaymentDto) {
         ResponseProcessPaymentDto result = paymentService.processPayment(requestProcessPaymentDto);
