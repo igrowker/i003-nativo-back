@@ -32,7 +32,7 @@ public class ContributionController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/transaction-status/{status}")
+    @GetMapping("/historial-estados/{status}")
     public ResponseEntity<List<ResponseContributionGetDto>> getContributionsByTransactionStatus(@PathVariable String status) {
         List<ResponseContributionGetDto> response = contributionService.getContributionsByTransactionStatus(status);
 

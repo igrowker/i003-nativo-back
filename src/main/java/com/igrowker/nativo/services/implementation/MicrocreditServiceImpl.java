@@ -1,19 +1,20 @@
 package com.igrowker.nativo.services.implementation;
 
-import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
-import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
-import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
-import com.igrowker.nativo.entities.Microcredit;
-import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.dtos.microcredit.*;
+import com.igrowker.nativo.entities.*;
+import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.mappers.MicrocreditMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
+import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.MicrocreditService;
+import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.validations.Validations;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     private final Validations validations;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final ContributionRepository contributionRepository;
 
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) {
@@ -77,6 +79,53 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         return microcreditMapper.responseMicrocreditGet(microcredit);
     }
 
+    @Override
+    public List<ResponseMicrocreditGetDto> getBy(String transactionStatus) {
+        Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
+
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+
+        List<Microcredit> microcredits = microcreditRepository.findByTransactionStatusAndBorrowerAccountId(
+                enumStatus, userBorrower.account.getId());
+
+        return microcredits.stream()
+                .map(microcreditMapper::responseMicrocreditGet)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) {
+        Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
+
+        Microcredit microcredit = microcreditRepository.findById(microcreditId)
+                .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado para el usuario"));
+
+        if (!microcredit.getBorrowerAccountId().equals(userBorrower.account.getId())) {
+            throw new IllegalArgumentException("El usuario no tiene permiso para pagar este microcrédito.");
+        }
+
+        if (microcredit.getTransactionStatus() == TransactionStatus.COMPLETED) {
+            throw new IllegalArgumentException("El microcrédito ya ha sido pagado.");
+        }
+
+        List<Contribution> contributions = microcredit.getContributions();
+        GeneralTransactions generalTransactions = new GeneralTransactions(accountRepository);
+
+        for (Contribution contribution : contributions) {
+            generalTransactions.updateBalances(microcredit.getBorrowerAccountId(), contribution.getLenderAccountId(),
+                    contribution.getAmount());
+
+            contribution.setTransactionStatus(TransactionStatus.COMPLETED);
+            contributionRepository.save(contribution);
+        }
+
+        microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
+        microcreditRepository.save(microcredit);
+
+        return microcreditMapper.responseMicrocreditPaymentDto(microcredit);
+    }
+
     private void isMicrocreditExpiredOrPendentOrDenied(String borrowerAccountId) {
         Optional<Microcredit> pendingMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.PENDENT);
         if (pendingMicrocredit.isPresent()) {
@@ -105,6 +154,5 @@ public class MicrocreditServiceImpl implements MicrocreditService {
      */
 
     //CARGAR TRANSACCIONES A USAR AL SWITCH
-
 
 }

@@ -62,14 +62,18 @@ public class Validations {
         return !loggedUserAccount.equals(providedUserAccount);
     }
 
-    public boolean validateTransactionUserFunds(BigDecimal TransactionAmount){
+    public boolean validateTransactionUserFunds(BigDecimal TransactionAmount) {
         Account userAccount = this.getAuthenticatedUserAndAccount().account;
         BigDecimal userFunds = userAccount.getAmount();
-        return userFunds.compareTo(TransactionAmount)>=0;
+        return userFunds.compareTo(TransactionAmount) >= 0;
     }
 
     public TransactionStatus statusConvert(String transactionStatus) {
         switch (transactionStatus.toUpperCase()) {
+            case "COMPLETED":
+                return TransactionStatus.COMPLETED;
+            case "EXPIRED":
+                return TransactionStatus.EXPIRED;
             case "PENDENT":
                 return TransactionStatus.PENDENT;
             case "ACCEPTED":

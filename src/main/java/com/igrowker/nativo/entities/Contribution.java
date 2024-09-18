@@ -36,6 +36,6 @@ public class Contribution {
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDate.now();
-        this.transactionStatus = TransactionStatus.PENDENT;
+        this.transactionStatus = TransactionStatus.ACCEPTED;
     }
 }

@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 public record ResponseMicrocreditGetDto(
         String id,
-        String borrowerAccount,
+        String borrowerAccountId,
         BigDecimal amount,
         BigDecimal remainingAmount,
         LocalDate createdDate,

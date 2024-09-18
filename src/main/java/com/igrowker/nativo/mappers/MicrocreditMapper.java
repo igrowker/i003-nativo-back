@@ -3,6 +3,7 @@ package com.igrowker.nativo.mappers;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
+import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditPaymentDto;
 import com.igrowker.nativo.entities.Microcredit;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;;
@@ -11,9 +12,14 @@ import org.mapstruct.Mapping;;
 public interface MicrocreditMapper {
     //Crear
     Microcredit requestDtoToMicrocredit(RequestMicrocreditDto requestMicrocreditDto);
+
     ResponseMicrocreditDto responseDtoToMicrocredit(Microcredit microcredit);
 
     //Get
+    @Mapping(target = "borrowerAccountId", source = "borrowerAccountId")
     @Mapping(target = "remainingAmount", source = "amount")
     ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit);
+
+    @Mapping(target = "remainingAmount", source = "remainingAmount")
+    ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto(Microcredit microcredit);
 }
