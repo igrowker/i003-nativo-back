@@ -2,9 +2,8 @@ package com.igrowker.nativo.controllers;
 
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
-import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
-import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
-import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
+import com.igrowker.nativo.dtos.microcredit.*;
+import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
@@ -28,6 +27,7 @@ public class MicrocreditController {
         try {
             ResponseMicrocreditDto response = microcreditService.createMicrocredit(requestMicrocreditDto);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
+            // TODO enviar notificación
         } catch (ValidationException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
@@ -49,7 +49,7 @@ public class MicrocreditController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/transaction-status/{status}")
+    @GetMapping("/historial-estados/{status}")
     public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsByTransactionStatus(@PathVariable String status) {
         List<ResponseMicrocreditGetDto> response = microcreditService.getMicrocreditsByTransactionStatus(status);
 
@@ -64,6 +64,26 @@ public class MicrocreditController {
             // TODO enviar notificación
         } catch (ValidationException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/estado/{status}")
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getBy(@PathVariable String status) {
+        List<ResponseMicrocreditGetDto> response = microcreditService.getMicrocreditsByTransactionStatus(status);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/pagar/{id}")
+    public ResponseEntity<?> payMicrocredit(@PathVariable String id) {
+        try {
+            ResponseMicrocreditPaymentDto response = microcreditService.payMicrocredit(id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+            // TODO enviar notificación
+        } catch (ValidationException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
     }
 }

@@ -3,6 +3,7 @@ package com.igrowker.nativo.services.implementation;
 import com.igrowker.nativo.dtos.payment.*;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.ExpiredTransactionException;
 import com.igrowker.nativo.exceptions.InsufficientFundsException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
@@ -15,6 +16,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -33,7 +37,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
 
         if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
         }
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -54,19 +58,29 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto) {
-
+        TransactionStatus dtoStatus = validations.statusConvert(requestProcessPaymentDto.transactionStatus());
         Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
 
         if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logeado en la aplicacion");
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
         }
 
         Payment payment = paymentRepository.findById(newData.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
 
-        payment.setSenderAccount(newData.getSenderAccount());
-        payment.setTransactionStatus(newData.getTransactionStatus());
+        if (!payment.getTransactionStatus().equals(TransactionStatus.PENDENT)) {
+            throw new ExpiredTransactionException("El QR ya fue utilizado.");
+        }
 
+
+        if(payment.getTransactionDate().plusMinutes(10).isBefore(LocalDateTime.now())){
+            payment.setTransactionStatus(TransactionStatus.EXPIRED);
+            Payment result = paymentRepository.save(payment);
+            throw new ExpiredTransactionException("El QR no puede ser procesado por exceso en el limite de tiempo. Genere uno nuevo.");
+        }
+
+        payment.setSenderAccount(newData.getSenderAccount());
+        payment.setTransactionStatus(dtoStatus);
         Payment updatedPayment = paymentRepository.save(payment);
 
         if (!updatedPayment.getTransactionStatus().equals(TransactionStatus.ACCEPTED)) {
@@ -88,22 +102,34 @@ public class PaymentServiceImpl implements PaymentService {
         Payment savedPayment = paymentRepository.save(updatedPayment);
 
         return paymentMapper.paymentToResponseProcessDto(savedPayment);
-
-        // ToDo. Enviar notificaciones a ambos usuarios (esto sería idealmente otro servicio)
-        // // que se le envie a ambos de alguna forma el resultado de la transaccion
     }
 
     @Override
-    public List<ResponseHistoryPayment> getAllPayments(String id) {
-        List<Payment> paymentList = paymentRepository.findPaymentsByAccount(id);
+    public List<ResponseHistoryPayment> getAllPayments() {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        List<Payment> paymentList = paymentRepository.findPaymentsByAccount(accountAndUser.account.getId());
         var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
         return result;
     }
 
     @Override
-    public List<ResponseHistoryPayment> getPaymentsByStatus(String id, String status) {
+    public List<ResponseHistoryPayment> getPaymentsByStatus(String status) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         TransactionStatus statusEnum = validations.statusConvert(status);
-        List<Payment> paymentList = paymentRepository.findPaymentsByStatus(id, statusEnum);
+        List<Payment> paymentList = paymentRepository.findPaymentsByStatus(accountAndUser.account.getId(), statusEnum);
+        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        return result;
+    }
+
+    @Override
+    public List<ResponseHistoryPayment> getPaymentsByDate(String date) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate transactionDate = LocalDate.parse(date, formatter);
+        LocalDateTime startDate = transactionDate.atStartOfDay();
+        LocalDateTime endDate = transactionDate.plusDays(1).atStartOfDay();
+        List<Payment> paymentList = paymentRepository.findPaymentsByTransactionDate(
+                accountAndUser.account.getId(), startDate, endDate);
         var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
         return result;
     }

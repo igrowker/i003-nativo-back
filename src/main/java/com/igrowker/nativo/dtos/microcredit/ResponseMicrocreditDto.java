@@ -8,6 +8,7 @@ import java.time.LocalDate;
 public record ResponseMicrocreditDto(
         String id,
         BigDecimal amount,
+        BigDecimal remainingAmount,
         LocalDate createdDate,
         LocalDate expirationDate,
         String title,

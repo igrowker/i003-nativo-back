@@ -3,6 +3,7 @@ package com.igrowker.nativo.validations;
 import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
+import com.igrowker.nativo.exceptions.InvalidDataException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.UserRepository;
@@ -18,19 +19,6 @@ public class Validations {
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
-
-    /*
-    public Account getAuthenticatedUserAccount() {
-        String userNameAuthentication = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User user = userRepository.findByEmail(userNameAuthentication)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        return accountRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada para el usuario"));
-    }
-
-     */
 
     public UserAccountPair getAuthenticatedUserAndAccount() {
         String userNameAuthentication = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -62,14 +50,19 @@ public class Validations {
         return !loggedUserAccount.equals(providedUserAccount);
     }
 
-    public boolean validateTransactionUserFunds(BigDecimal TransactionAmount){
+    public boolean validateTransactionUserFunds(BigDecimal TransactionAmount) {
         Account userAccount = this.getAuthenticatedUserAndAccount().account;
         BigDecimal userFunds = userAccount.getAmount();
-        return userFunds.compareTo(TransactionAmount)>=0;
+        BigDecimal reservedFunds = userAccount.getReservedAmount();
+        return userFunds.compareTo(TransactionAmount.add(reservedFunds))>=0;
     }
 
     public TransactionStatus statusConvert(String transactionStatus) {
         switch (transactionStatus.toUpperCase()) {
+            case "COMPLETED":
+                return TransactionStatus.COMPLETED;
+            case "EXPIRED":
+                return TransactionStatus.EXPIRED;
             case "PENDENT":
                 return TransactionStatus.PENDENT;
             case "ACCEPTED":
@@ -78,8 +71,10 @@ public class Validations {
                 return TransactionStatus.FAILED;
             case "DENIED":
                 return TransactionStatus.DENIED;
+            case "EXPIRED":
+                return TransactionStatus.EXPIRED;
             default:
-                throw new IllegalArgumentException("El estado de la transacción no existe: " + transactionStatus);
+                throw new InvalidDataException("El estado de la transacción no existe: " + transactionStatus);
         }
     }
 }

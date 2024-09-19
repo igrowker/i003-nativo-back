@@ -12,7 +12,12 @@ import java.util.Optional;
 @Repository
 public interface MicrocreditRepository extends JpaRepository<Microcredit, String> {
     Optional<Microcredit> findByBorrowerAccountIdAndTransactionStatus(String borrowerAccountId, TransactionStatus transactionStatus);
+
     Optional<Microcredit> findByBorrowerAccountIdAndCreatedDate(String borrowerAccountId, LocalDate createdDate);
+
     List<Microcredit> findByTransactionStatus(TransactionStatus transactionStatus);
 
+    List<Microcredit> findByTransactionStatusAndBorrowerAccountId(TransactionStatus enumStatus, String id);
+
+    List<Microcredit> findByExpirationDateBeforeAndTransactionStatusNot(LocalDate today, TransactionStatus transactionStatus);
 }

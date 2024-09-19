@@ -18,8 +18,8 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private Long accountNumber;
-    private BigDecimal amount;
+    private BigDecimal amount = BigDecimal.ZERO;
     private boolean enabled;
     private String userId;
-    private BigDecimal reservedAmount;
+    private BigDecimal reservedAmount = BigDecimal.ZERO;
 }
