@@ -20,8 +20,8 @@ public record RequestRegisterDto(
         String email,
 
         @NotNull(message = "La contraseña es obligatoria.")
-        @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$",
-                message = "La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula y un número.")
+        @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()]).{8,}$",
+                message = "La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial (!@#$%^&*()).")
         String password,
 
         @NotNull(message = "El teléfono es obligatorio.")

@@ -134,7 +134,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private void sendVerificationEmail(User user) {
-        String subject = "Account Verification";
+        String subject = "Verificación de cuenta";
         String verificationCode = user.getVerificationCode();
         String htmlMessage = "<html>"
                 + "<body style=\"font-family: Arial, sans-serif;\">"

@@ -9,24 +9,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
-@RequestMapping("/api/authentication")
+@RequestMapping("/api/autenticacion")
 @RestController
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
-    @PostMapping("/register")
+    @PostMapping("/registro")
     public ResponseEntity<ResponseUserDto> registerUser(@Valid @RequestBody RequestRegisterDto requestRegisterDto) {
         ResponseUserDto registeredUser = authenticationService.signUp(requestRegisterDto);
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/inicio-sesion")
     public ResponseEntity<ResponseLoginDto> loginUser(@Valid @RequestBody RequestLoginDto requestLoginDto) {
         ResponseLoginDto loginResponse = authenticationService.login(requestLoginDto);
         return ResponseEntity.ok(loginResponse);
     }
 
-    @PostMapping("/verify")
+    @PostMapping("/verificacion-codigo")
     public ResponseEntity<?> verifyUser(@RequestBody RequestVerifyUserDto verifyUserDto) {
         try {
             authenticationService.verifyUser(verifyUserDto);
@@ -36,7 +36,7 @@ public class AuthenticationController {
         }
     }
 
-    @PostMapping("/resend")
+    @PostMapping("/reenvio-codigo")
     public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
         try {
             authenticationService.resendVerificationCode(email);
