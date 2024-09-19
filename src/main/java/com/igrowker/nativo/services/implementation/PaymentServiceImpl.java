@@ -3,6 +3,7 @@ package com.igrowker.nativo.services.implementation;
 import com.igrowker.nativo.dtos.payment.*;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.ExpiredTransactionException;
 import com.igrowker.nativo.exceptions.InsufficientFundsException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
@@ -66,6 +67,17 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = paymentRepository.findById(newData.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
+
+        if (!payment.getTransactionStatus().equals(TransactionStatus.PENDENT)) {
+            throw new ExpiredTransactionException("El QR ya fue utilizado.");
+        }
+
+
+        if(payment.getTransactionDate().plusMinutes(10).isBefore(LocalDateTime.now())){
+            payment.setTransactionStatus(TransactionStatus.EXPIRED);
+            Payment result = paymentRepository.save(payment);
+            throw new ExpiredTransactionException("El QR no puede ser procesado por exceso en el limite de tiempo. Genere uno nuevo.");
+        }
 
         payment.setSenderAccount(newData.getSenderAccount());
         payment.setTransactionStatus(dtoStatus);
