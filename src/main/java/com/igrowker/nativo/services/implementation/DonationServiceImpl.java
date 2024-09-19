@@ -17,7 +17,6 @@ import com.igrowker.nativo.validations.Validations;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,13 +39,17 @@ public class DonationServiceImpl implements DonationService {
             // Validando cuenta de donador y beneficiario
             Account accountDonor = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new InsufficientFundsException("El id de la cuenta donante no existe"));
 
-            if(validations.validateTransactionUserFunds(accountDonor.getAmount())){
+            if(validations.validateTransactionUserFunds(requestDonationDto.amount())){
                 Account accountBeneficiary = accountRepository.findById(requestDonationDto.accountIdBeneficiary()).orElseThrow(() -> new InsufficientFundsException("El id de la cuenta beneficiario no existe"));
 
                 User donor = userRepository.findById(accountDonor.getUserId()).orElseThrow(() -> new InsufficientFundsException("El id del usuario donante no existe"));
                 User beneficiary = userRepository.findById(accountBeneficiary.getUserId()).orElseThrow(() -> new InsufficientFundsException("El id del usuario beneficiario no existe"));
 
                 Donation donation =donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto));
+
+                Account donorAccount = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+                donorAccount.setReservedAmount(donorAccount.getReservedAmount().add(requestDonationDto.amount()));
+                accountRepository.save(donorAccount);
 
                 return new ResponseDonationDtoTrue(
                         donation.getId(),
@@ -69,11 +72,9 @@ public class DonationServiceImpl implements DonationService {
     @Override
     public ResponseDonationDtoFalse createDonationFalse(RequestDonationDto requestDonationDto) {
 
-        Account accountDonor = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new InsufficientFundsException("El id de la cuenta donante no existe"));
-
         // Validando cuenta de donador y beneficiario
-      if (validations.isUserAccountMismatch(requestDonationDto.accountIdBeneficiary())){
-          if (validations.validateTransactionUserFunds(accountDonor.getAmount())){
+      if (validations.isUserAccountMismatch(requestDonationDto.accountIdBeneficiary()) || validations.isUserAccountMismatch(requestDonationDto.accountIdDonor())){
+          if (validations.validateTransactionUserFunds(requestDonationDto.amount())){
               return donationMapper.donationToResponseDtoFalse(donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto)));
           }else{
               throw new InsufficientFundsException("Tu cuenta no tiene suficientes fondos.");
@@ -81,29 +82,30 @@ public class DonationServiceImpl implements DonationService {
         }else{
             throw new InsufficientFundsException("El id de la cuenta beneficiario no existe");
         }
-
-
     }
 
     @Override
     public ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto) {
 
-
         Donation donation = donationRepository.findById(requestDonationConfirmationDto.id())
                 .orElseThrow(() -> new InsufficientFundsException("El id de la donacion no existe"));
 
-        Donation donation1 = donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto);
+        if (validations.isUserAccountMismatch(donation.getAccountIdDonor())) {
 
-        if (validations.isUserAccountMismatch(requestDonationConfirmationDto.accountIdDonor()) && validations.isUserAccountMismatch(requestDonationConfirmationDto.accountIdBeneficiary())) {
+                Donation donation1 = donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto);
                 donation1.setAnonymousDonation(donation.getAnonymousDonation());
                 donation1.setCreatedAt(donation.getCreatedAt());
 
                 if (donation.getStatus() == TransactionStatus.ACCEPTED) {
-                    // Se agrega el monto al beneficiario
+                    // Se agrega el monto al beneficiario y se descuenta de la cuenta de reserva del donador
                     generalTransactions.updateBalances(
-                            requestDonationConfirmationDto.accountIdDonor(),
-                            requestDonationConfirmationDto.accountIdBeneficiary(),
-                            requestDonationConfirmationDto.amount());
+                            donation1.getAccountIdDonor(),
+                            donation1.getAccountIdBeneficiary(),
+                            donation.getAmount());
+
+                    Account donorAccount = accountRepository.findById(requestDonationConfirmationDto.accountIdDonor()).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+                    donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(donation.getAmount()));
+                    accountRepository.save(donorAccount);
 
                     return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
                 } else {
@@ -111,51 +113,42 @@ public class DonationServiceImpl implements DonationService {
                     return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
                 }
 
-
         }else{
             throw new InsufficientFundsException("La cuenta seleccionada no existe.");
         }
     }
 
 
-
     @Override
-    public List<ResponseDonationRecordBeneficiary> recordDonationDonor(String idAccount) {
+    public List<ResponseDonationRecord> recordDonationDonor(String idDonorAccount) {
 
-        //Validar si la cuenta existe
-        Account account =  accountRepository.findById(idAccount).orElseThrow(() -> new InsufficientFundsException("La cuenta no existe"));
-
-        // Obteniedo listado
-        //validar si la lista esta vacia, en el caso comunicarlo
+        Account account =  accountRepository.findById(idDonorAccount).orElseThrow(() -> new InsufficientFundsException("La cuenta no existe"));
 
         List<Donation> donationList = donationRepository.findAllByAccountIdDonor(account.getId()).orElseThrow(() -> new InsufficientFundsException("No hay donacion que tenga ese id de cuenta"));
 
         if (donationList.isEmpty()){
             throw  new ResourceNotFoundException("No hay donaciones dadas");
         }else {
-            return donationMapper.listDonationToListResponseDonationRecord(donationList);
+            return donationMapper.listDonationToListResponseDonationRecord(donationList.stream()
+                    .sorted(Comparator.comparing(Donation::getCreatedAt).reversed())
+                    .collect(Collectors.toList()));
         }
-
-
     }
 
 
     @Override
-    public List<ResponseDonationRecordBeneficiary> recordDonationBeneficiary(String idAccount) {
+    public List<ResponseDonationRecord> recordDonationBeneficiary(String idBeneficiaryAccount) {
 
-        Account account =  accountRepository.findById(idAccount).orElseThrow(() -> new InsufficientFundsException("La cuenta no existe"));
+        Account account =  accountRepository.findById(idBeneficiaryAccount).orElseThrow(() -> new InsufficientFundsException("La cuenta no existe"));
 
         List<Donation> donationList = donationRepository.findAllByAccountIdBeneficiary(account.getId()).orElseThrow(() -> new InsufficientFundsException("No hay donacion que tenga ese id de cuenta"));
 
         if (donationList.isEmpty()){
             throw  new ResourceNotFoundException("No hay donaciones recibidas");
         } else {
-
-            donationList.stream()
-                    .sorted(Comparator.comparing(Donation::getCreatedAt))
-                    .collect(Collectors.toList());
-
-            return donationMapper.listDonationToListResponseDonationRecord(donationList);
+            return donationMapper.listDonationToListResponseDonationRecord(donationList.stream()
+                    .sorted(Comparator.comparing(Donation::getCreatedAt).reversed())
+                    .collect(Collectors.toList()));
         }
     }
 

@@ -31,13 +31,13 @@ public class DonationController {
     }
 
     @GetMapping("/historial-donaciones/donador/{id}")
-    public ResponseEntity<List<ResponseDonationRecordBeneficiary>> recordDonationDonor(@PathVariable String id){
-        return ResponseEntity.ok(donationService.recordDonationDonor(id));
+    public ResponseEntity<List<ResponseDonationRecord>> recordDonationDonor(@PathVariable String idDonorAccount){
+        return ResponseEntity.ok(donationService.recordDonationDonor(idDonorAccount));
     }
 
     @GetMapping("/historial-donaciones/beneficiario/{id}")
-    public ResponseEntity<List<ResponseDonationRecordBeneficiary>> recordDonationBeneficiary(@PathVariable String id){
-        return ResponseEntity.ok(donationService.recordDonationBeneficiary(id));
+    public ResponseEntity<List<ResponseDonationRecord>> recordDonationBeneficiary(@PathVariable String idBeneficiaryAccount){
+        return ResponseEntity.ok(donationService.recordDonationBeneficiary(idBeneficiaryAccount));
     }
     
 }
