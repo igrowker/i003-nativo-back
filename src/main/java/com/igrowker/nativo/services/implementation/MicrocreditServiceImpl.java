@@ -153,6 +153,4 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     COMPLETED -- AL CUMPLIRSE CON EL PAGO DEL MICRO EN TERMINO
      */
 
-    //CARGAR TRANSACCIONES A USAR AL SWITCH
-
 }
