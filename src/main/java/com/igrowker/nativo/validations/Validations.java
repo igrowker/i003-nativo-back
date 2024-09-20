@@ -71,8 +71,6 @@ public class Validations {
                 return TransactionStatus.FAILED;
             case "DENIED":
                 return TransactionStatus.DENIED;
-            case "EXPIRED":
-                return TransactionStatus.EXPIRED;
             default:
                 throw new InvalidDataException("El estado de la transacción no existe: " + transactionStatus);
         }
