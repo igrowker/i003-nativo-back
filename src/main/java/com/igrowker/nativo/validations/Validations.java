@@ -54,7 +54,7 @@ public class Validations {
         Account userAccount = this.getAuthenticatedUserAndAccount().account;
         BigDecimal userFunds = userAccount.getAmount();
         BigDecimal reservedFunds = userAccount.getReservedAmount();
-        return userFunds.compareTo(TransactionAmount.add(reservedFunds))>=0;
+        return userFunds.compareTo(TransactionAmount.add(reservedFunds)) >= 0;
     }
 
     public TransactionStatus statusConvert(String transactionStatus) {
@@ -74,5 +74,15 @@ public class Validations {
             default:
                 throw new InvalidDataException("El estado de la transacción no existe: " + transactionStatus);
         }
+    }
+
+    public String fullname(String accountId) {
+        Account account = accountRepository.findById(accountId).orElseThrow(() ->
+                new ResourceNotFoundException("Cuenta no encontrada"));
+
+        User user = userRepository.findById(account.getUserId()).orElseThrow(() ->
+                new ResourceNotFoundException("Usuario no encontrado"));
+
+        return user.getSurname().toUpperCase() + ", " + user.getName();
     }
 }

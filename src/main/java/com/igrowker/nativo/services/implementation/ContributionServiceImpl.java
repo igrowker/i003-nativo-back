@@ -52,7 +52,7 @@ public class ContributionServiceImpl implements ContributionService {
             throw new ValidationException("Fondos insuficientes");
         }
         //Actualizar el monto restante
-        updateRemainingAmount(microcredit,requestContributionDto.amount());
+        updateRemainingAmount(microcredit, requestContributionDto.amount());
 
         Contribution contribution = contributionMapper.requestDtoToContribution(requestContributionDto);
         contribution.setLenderAccountId(userLender.account.getId());
@@ -65,8 +65,10 @@ public class ContributionServiceImpl implements ContributionService {
 
         microcreditRepository.save(microcredit);
 
-        String lenderFullname = fullname(contribution.getLenderAccountId());
-        String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
+        Validations validations1 = new Validations(accountRepository, userRepository);
+
+        String lenderFullname = validations.fullname(contribution.getLenderAccountId());
+        String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
         String microcreditId = microcredit.getId();
         LocalDate expirationDate = microcredit.getExpirationDate();
 
@@ -85,8 +87,10 @@ public class ContributionServiceImpl implements ContributionService {
                     Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
                             .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado"));
 
-                    String lenderFullname = fullname(contribution.getLenderAccountId());
-                    String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
+                    Validations validations1 = new Validations(accountRepository, userRepository);
+
+                    String lenderFullname = validations1.fullname(contribution.getLenderAccountId());
+                    String borrowerFullname = validations1.fullname(microcredit.getBorrowerAccountId());
                     String microcreditId = microcredit.getId();
                     LocalDate expirationDate = microcredit.getExpirationDate();
 
@@ -106,8 +110,8 @@ public class ContributionServiceImpl implements ContributionService {
                     Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
                             .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado"));
 
-                    String lenderFullname = fullname(contribution.getLenderAccountId());
-                    String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
+                    String lenderFullname = validations.fullname(contribution.getLenderAccountId());
+                    String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
                     String microcreditId = microcredit.getId();
                     LocalDate expirationDate = microcredit.getExpirationDate();
 
@@ -125,8 +129,10 @@ public class ContributionServiceImpl implements ContributionService {
         Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
                 .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + contribution.getMicrocredit().getId()));
 
-        String lenderFullname = fullname(contribution.getLenderAccountId());
-        String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
+        Validations validations1 = new Validations(accountRepository, userRepository);
+
+        String lenderFullname = validations1.fullname(contribution.getLenderAccountId());
+        String borrowerFullname = validations1.fullname(microcredit.getBorrowerAccountId());
         String microcreditId = microcredit.getId();
         LocalDate expirationDate = microcredit.getExpirationDate();
 
@@ -137,16 +143,6 @@ public class ContributionServiceImpl implements ContributionService {
     //Valida monto contribución
     public boolean contributionOk(BigDecimal contributionAmount, BigDecimal microcreditRemainingAmount) {
         return contributionAmount.compareTo(BigDecimal.ZERO) > 0 && contributionAmount.compareTo(microcreditRemainingAmount) <= 0;
-    }
-
-    private String fullname(String accountId) {
-        Account account = accountRepository.findById(accountId).orElseThrow(() ->
-                new ResourceNotFoundException("Cuenta no encontrada"));
-
-        User user = userRepository.findById(account.getUserId()).orElseThrow(() ->
-                new ResourceNotFoundException("Usuario no encontrado"));
-
-        return user.getSurname().toUpperCase() + ", " + user.getName();
     }
 
     //Chequea el monto restante. Cambia el estado de la transacción
