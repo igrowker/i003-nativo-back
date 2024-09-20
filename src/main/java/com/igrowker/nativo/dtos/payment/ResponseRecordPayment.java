@@ -5,7 +5,7 @@ import com.igrowker.nativo.entities.TransactionStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record ResponseHistoryPayment(
+public record ResponseRecordPayment(
         String id,
         String senderAccount,
         String receiverAccount,

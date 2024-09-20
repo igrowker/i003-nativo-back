@@ -37,7 +37,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
 
         if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
+            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
         }
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -105,7 +105,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<ResponseHistoryPayment> getAllPayments() {
+    public List<ResponseRecordPayment> getAllPayments() {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         List<Payment> paymentList = paymentRepository.findPaymentsByAccount(accountAndUser.account.getId());
         var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
@@ -113,7 +113,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<ResponseHistoryPayment> getPaymentsByStatus(String status) {
+    public List<ResponseRecordPayment> getPaymentsByStatus(String status) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         TransactionStatus statusEnum = validations.statusConvert(status);
         List<Payment> paymentList = paymentRepository.findPaymentsByStatus(accountAndUser.account.getId(), statusEnum);
@@ -122,7 +122,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<ResponseHistoryPayment> getPaymentsByDate(String date) {
+    public List<ResponseRecordPayment> getPaymentsByDate(String date) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate transactionDate = LocalDate.parse(date, formatter);
