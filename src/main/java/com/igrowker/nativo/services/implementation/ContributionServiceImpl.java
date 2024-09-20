@@ -12,12 +12,14 @@ import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.ContributionService;
+import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.validations.Validations;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,54 +38,42 @@ public class ContributionServiceImpl implements ContributionService {
     @Transactional
     public ResponseContributionDto createContribution(RequestContributionDto requestContributionDto) {
         Validations.UserAccountPair userLender = validations.getAuthenticatedUserAndAccount();
+        String userLenderId = userLender.account.getId();
 
         Microcredit microcredit = microcreditRepository.findById(requestContributionDto.microcreditId())
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
 
-        if (microcredit.getBorrowerAccountId().equals(userLender.account.getId())) {
+        if (!validations.isUserAccountMismatch(microcredit.getBorrowerAccountId())) {
             throw new IllegalArgumentException("El usuario contribuyente no puede ser el mismo que el solicitante del microcrédito.");
         }
 
+        // verificar que la cuenta tenga el saldo a transferir
+        if (!validations.validateTransactionUserFunds(requestContributionDto.amount())) {
+            throw new ValidationException("Fondos insuficientes");
+        }
+        //Actualizar el monto restante
+        updateRemainingAmount(microcredit,requestContributionDto.amount());
+
         Contribution contribution = contributionMapper.requestDtoToContribution(requestContributionDto);
-
-        BigDecimal remainingAmount;
-
-        if (microcredit.getRemainingAmount() == null) {
-            remainingAmount = microcredit.getAmount().subtract(contribution.getAmount());
-        } else if ( microcredit.getRemainingAmount().compareTo(microcredit.getAmount()) == 0) {
-            remainingAmount = microcredit.getAmount().subtract(contribution.getAmount());
-        } else {
-            remainingAmount = microcredit.getRemainingAmount().subtract(contribution.getAmount());
-        }
-
-        if (!contributionOk(contribution.getAmount(), microcredit.getRemainingAmount())) {
-            throw new ValidationException("El monto a contribuir no puede ser mayor al solicitado: $ " +
-                    microcredit.getAmount());
-        }
-
-        microcredit.setRemainingAmount(remainingAmount);
-
-        if (remainingAmount.compareTo(BigDecimal.ZERO) == 0) {
-            microcredit.setTransactionStatus(TransactionStatus.ACCEPTED);
-        }
-
         contribution.setLenderAccountId(userLender.account.getId());
         contribution.setMicrocredit(microcredit);
         contribution = contributionRepository.save(contribution);
+
+        //Pasa la contribución al saldo del solicitante y resta la misma al contribuyente
+        GeneralTransactions generalTransactions = new GeneralTransactions(accountRepository);
+        generalTransactions.updateBalances(userLenderId, contribution.getMicrocredit().getBorrowerAccountId(), contribution.getAmount());
 
         microcreditRepository.save(microcredit);
 
         String lenderFullname = fullname(contribution.getLenderAccountId());
         String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
         String microcreditId = microcredit.getId();
+        LocalDate expirationDate = microcredit.getExpirationDate();
 
-        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname, microcreditId);
+        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
+                microcreditId, expirationDate);
     }
 
-    //poner plata
-    //verificar que tenga plata en cuenta
-    //si esta ok, se descuenta la plata del contribuyente y se suma a la cuenta
-    //status contribución ok
     // Listado de contribuciones por contribuyente.
 
     @Override
@@ -98,8 +88,10 @@ public class ContributionServiceImpl implements ContributionService {
                     String lenderFullname = fullname(contribution.getLenderAccountId());
                     String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
                     String microcreditId = microcredit.getId();
+                    LocalDate expirationDate = microcredit.getExpirationDate();
 
-                    return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname, microcreditId);
+                    return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname,
+                            microcreditId, expirationDate);
                 })
                 .collect(Collectors.toList());
     }
@@ -117,8 +109,10 @@ public class ContributionServiceImpl implements ContributionService {
                     String lenderFullname = fullname(contribution.getLenderAccountId());
                     String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
                     String microcreditId = microcredit.getId();
+                    LocalDate expirationDate = microcredit.getExpirationDate();
 
-                    return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname, microcreditId);
+                    return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname,
+                            microcreditId, expirationDate);
                 })
                 .collect(Collectors.toList());
     }
@@ -134,8 +128,10 @@ public class ContributionServiceImpl implements ContributionService {
         String lenderFullname = fullname(contribution.getLenderAccountId());
         String borrowerFullname = fullname(microcredit.getBorrowerAccountId());
         String microcreditId = microcredit.getId();
+        LocalDate expirationDate = microcredit.getExpirationDate();
 
-        return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname, microcreditId);
+        return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname,
+                microcreditId, expirationDate);
     }
 
     //Valida monto contribución
@@ -152,4 +148,33 @@ public class ContributionServiceImpl implements ContributionService {
 
         return user.getSurname().toUpperCase() + ", " + user.getName();
     }
+
+    //Chequea el monto restante. Cambia el estado de la transacción
+    private void updateRemainingAmount(Microcredit microcredit, BigDecimal contributionAmount) {
+        if (microcredit.getTransactionStatus() == TransactionStatus.PENDENT) {
+            if (contributionAmount.compareTo(microcredit.getRemainingAmount()) > 0) {
+                throw new ValidationException("El monto de la contribución no puede ser mayor que el monto restante del microcrédito.");
+            }
+
+            BigDecimal remainingAmount = microcredit.getRemainingAmount().subtract(contributionAmount);
+            microcredit.setRemainingAmount(remainingAmount);
+
+            if (remainingAmount.compareTo(BigDecimal.ZERO) == 0) {
+                microcredit.setTransactionStatus(TransactionStatus.ACCEPTED);
+            }
+
+            microcreditRepository.saveAndFlush(microcredit);
+        } else if (microcredit.getTransactionStatus() == TransactionStatus.ACCEPTED) {
+            throw new IllegalStateException("No se puede agregar más dinero a un microcrédito que ya está en estado ACCEPTED.");
+        } else {
+            throw new IllegalStateException("No se puede contribuir en el microcrédito en estado " + microcredit.getTransactionStatus());
+        }
+    }
 }
+      /*
+    ACCEPTED -- CUANDO SE CREE LA CONTRIBUCIÓN
+    DENIED -- FONDOS INSUFICIENTES
+    FAILED -- ALGUN PROBLEMA DE SISTEMA
+    COMPLETED -- SE DEVUELVE EL DINERO CONTRIBUIDO
+      */
+
