@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleWrongArgumentException(IllegalArgumentException ex) {
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(InvalidUserCredentialsException.class)

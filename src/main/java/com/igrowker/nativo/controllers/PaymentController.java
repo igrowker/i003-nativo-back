@@ -31,20 +31,20 @@ public class PaymentController {
     }
 
     @GetMapping("/todo")
-    public ResponseEntity<List<ResponseHistoryPayment>> getAllPayments(){
-        List<ResponseHistoryPayment> result = paymentService.getAllPayments();
+    public ResponseEntity<List<ResponseRecordPayment>> getAllPayments(){
+        List<ResponseRecordPayment> result = paymentService.getAllPayments();
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("estado/{status}")
-    public ResponseEntity<List<ResponseHistoryPayment>> getPaymentsByStatus(@PathVariable String status){
-        List<ResponseHistoryPayment> result = paymentService.getPaymentsByStatus(status);
+    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsByStatus(@PathVariable String status){
+        List<ResponseRecordPayment> result = paymentService.getPaymentsByStatus(status);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("fecha/{date}")
-    public ResponseEntity<List<ResponseHistoryPayment>> getPaymentsByDate(@PathVariable String date){
-        List<ResponseHistoryPayment> result = paymentService.getPaymentsByDate(date);
+    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsByDate(@PathVariable String date){
+        List<ResponseRecordPayment> result = paymentService.getPaymentsByDate(date);
         return ResponseEntity.ok(result);
     }
 }
