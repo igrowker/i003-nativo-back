@@ -4,7 +4,7 @@ import com.igrowker.nativo.entities.TransactionStatus;
 
 import java.math.BigDecimal;
 
-public record ResponseDonationRecordBeneficiary(
+public record ResponseDonationRecord(
         String id,
 
         BigDecimal amount,

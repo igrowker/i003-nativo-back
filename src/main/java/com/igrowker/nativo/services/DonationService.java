@@ -11,7 +11,7 @@ public interface DonationService {
 
     ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto);
 
-    List<ResponseDonationRecordBeneficiary> recordDonationDonor(String idAccount);
+    List<ResponseDonationRecord> recordDonationDonor(String idAccount);
 
-    List<ResponseDonationRecordBeneficiary> recordDonationBeneficiary(String idAccount);
+    List<ResponseDonationRecord> recordDonationBeneficiary(String idAccount);
 }

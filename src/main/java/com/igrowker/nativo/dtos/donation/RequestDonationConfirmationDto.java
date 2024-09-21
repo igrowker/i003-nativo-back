@@ -11,9 +11,6 @@ public record RequestDonationConfirmationDto(
         @NotNull(message = "EL Id de la donacion es nulo.")
         String id,
 
-        @NotNull(message = "El Monto de la donacion es nulo.")
-        BigDecimal amount,
-
         @NotNull(message = "El id de la cuenta del donante es nulo.")
         String accountIdDonor,
 
