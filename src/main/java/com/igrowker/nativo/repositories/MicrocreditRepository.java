@@ -19,5 +19,6 @@ public interface MicrocreditRepository extends JpaRepository<Microcredit, String
 
     List<Microcredit> findByTransactionStatusAndBorrowerAccountId(TransactionStatus enumStatus, String id);
 
-    List<Microcredit> findByExpirationDateBeforeAndTransactionStatusNot(LocalDate today, TransactionStatus transactionStatus);
+    List<Microcredit> findByExpirationDateBeforeAndTransactionStatusNotIn(LocalDate today, List<TransactionStatus> expired);
+
 }

@@ -14,6 +14,3 @@ public record RequestContributionDto(
         BigDecimal amount
 ) {
 }
-/*Una vez elegida la opción,
-debería abrirse espacio para ingresar el monto a contribuir
- */

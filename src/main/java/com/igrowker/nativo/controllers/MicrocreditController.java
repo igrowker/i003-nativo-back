@@ -69,7 +69,7 @@ public class MicrocreditController {
 
     @GetMapping("/estado/{status}")
     public ResponseEntity<List<ResponseMicrocreditGetDto>> getBy(@PathVariable String status) {
-        List<ResponseMicrocreditGetDto> response = microcreditService.getMicrocreditsByTransactionStatus(status);
+        List<ResponseMicrocreditGetDto> response = microcreditService.getBy(status);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

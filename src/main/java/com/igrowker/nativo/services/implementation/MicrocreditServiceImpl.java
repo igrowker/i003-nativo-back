@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -140,6 +141,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         return microcreditMapper.responseMicrocreditPaymentDto(microcredit);
     }
+
 
     private void isMicrocreditExpiredOrPendentOrDenied(String borrowerAccountId) {
         Optional<Microcredit> pendingMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.PENDENT);
