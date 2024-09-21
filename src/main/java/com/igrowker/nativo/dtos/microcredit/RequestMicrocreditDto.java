@@ -23,6 +23,3 @@ public record RequestMicrocreditDto(
         LocalDate expirationDate
 ) {
 }
-/*
-expirationDate: Que la fecha de expiración no sea mayor a dos meses
- */
