@@ -30,12 +30,12 @@ public class DonationController {
         return ResponseEntity.ok(donationService.confirmationDonation(requestDonationConfirmationDto));
     }
 
-    @GetMapping("/historial-donaciones/donador/{id}")
+    @GetMapping("/historial-donaciones/donador/{idDonorAccount}")
     public ResponseEntity<List<ResponseDonationRecord>> recordDonationDonor(@PathVariable String idDonorAccount){
         return ResponseEntity.ok(donationService.recordDonationDonor(idDonorAccount));
     }
 
-    @GetMapping("/historial-donaciones/beneficiario/{id}")
+    @GetMapping("/historial-donaciones/beneficiario/{idBeneficiaryAccount}")
     public ResponseEntity<List<ResponseDonationRecord>> recordDonationBeneficiary(@PathVariable String idBeneficiaryAccount){
         return ResponseEntity.ok(donationService.recordDonationBeneficiary(idBeneficiaryAccount));
     }

@@ -75,6 +75,9 @@ public class DonationServiceImpl implements DonationService {
         // Validando cuenta de donador y beneficiario
       if (validations.isUserAccountMismatch(requestDonationDto.accountIdBeneficiary()) || validations.isUserAccountMismatch(requestDonationDto.accountIdDonor())){
           if (validations.validateTransactionUserFunds(requestDonationDto.amount())){
+              Account donorAccount = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+              donorAccount.setReservedAmount(donorAccount.getReservedAmount().add(requestDonationDto.amount()));
+              accountRepository.save(donorAccount);
               return donationMapper.donationToResponseDtoFalse(donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto)));
           }else{
               throw new InsufficientFundsException("Tu cuenta no tiene suficientes fondos.");
@@ -90,22 +93,25 @@ public class DonationServiceImpl implements DonationService {
         Donation donation = donationRepository.findById(requestDonationConfirmationDto.id())
                 .orElseThrow(() -> new InsufficientFundsException("El id de la donacion no existe"));
 
-        if (validations.isUserAccountMismatch(donation.getAccountIdDonor())) {
+        if (!validations.isUserAccountMismatch(donation.getAccountIdDonor())) {
 
+                // Recibo el request y lo convierto a donation
                 Donation donation1 = donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto);
+
                 donation1.setAnonymousDonation(donation.getAnonymousDonation());
+                donation1.setAmount(donation.getAmount());
                 donation1.setCreatedAt(donation.getCreatedAt());
 
-                if (donation.getStatus() == TransactionStatus.ACCEPTED) {
+                Account donorAccount = accountRepository.findById(donation1.getAccountIdDonor()).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+                donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(donation.getAmount()));
+                accountRepository.save(donorAccount);
+
+                if (donation1.getStatus() == TransactionStatus.ACCEPTED) {
                     // Se agrega el monto al beneficiario y se descuenta de la cuenta de reserva del donador
-                    generalTransactions.updateBalances(
+                       generalTransactions.updateBalances(
                             donation1.getAccountIdDonor(),
                             donation1.getAccountIdBeneficiary(),
-                            donation.getAmount());
-
-                    Account donorAccount = accountRepository.findById(requestDonationConfirmationDto.accountIdDonor()).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
-                    donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(donation.getAmount()));
-                    accountRepository.save(donorAccount);
+                            donation1.getAmount());
 
                     return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
                 } else {
