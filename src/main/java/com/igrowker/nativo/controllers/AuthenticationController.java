@@ -36,7 +36,7 @@ public class AuthenticationController {
         }
     }
 
-    @PostMapping("/reenvio-codigo")
+    @GetMapping("/reenvio-codigo")
     public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
         try {
             authenticationService.resendVerificationCode(email);
