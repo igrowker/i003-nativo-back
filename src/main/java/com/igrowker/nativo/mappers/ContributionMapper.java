@@ -26,5 +26,7 @@ public interface ContributionMapper {
                                                           String borrowerFullname, String microcreditId,
                                                           LocalDate expiredDateMicrocredit);
 
+    ResponseContributionGetDto responseContributionGetDto(Contribution contribution);
+
     //Agregar fecha de vencimiento del microcredito
 }

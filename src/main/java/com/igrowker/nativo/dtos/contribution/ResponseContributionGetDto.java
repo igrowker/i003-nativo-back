@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ResponseContributionGetDto (
+        String id,
         String lenderAccountId,
         String lenderFullname,
         String borrowerFullname,
