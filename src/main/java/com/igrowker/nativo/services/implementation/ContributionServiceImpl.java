@@ -13,7 +13,9 @@ import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.utils.GeneralTransactions;
+import com.igrowker.nativo.utils.NotificationService;
 import com.igrowker.nativo.validations.Validations;
+import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,10 +35,11 @@ public class ContributionServiceImpl implements ContributionService {
     private final Validations validations;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
-    public ResponseContributionDto createContribution(RequestContributionDto requestContributionDto) {
+    public ResponseContributionDto createContribution(RequestContributionDto requestContributionDto) throws MessagingException {
         Validations.UserAccountPair userLender = validations.getAuthenticatedUserAndAccount();
         String userLenderId = userLender.account.getId();
 
@@ -47,11 +50,10 @@ public class ContributionServiceImpl implements ContributionService {
             throw new IllegalArgumentException("El usuario contribuyente no puede ser el mismo que el solicitante del microcrédito.");
         }
 
-        // verificar que la cuenta tenga el saldo a transferir
         if (!validations.validateTransactionUserFunds(requestContributionDto.amount())) {
             throw new ValidationException("Fondos insuficientes");
         }
-        //Actualizar el monto restante
+
         updateRemainingAmount(microcredit, requestContributionDto.amount());
 
         Contribution contribution = contributionMapper.requestDtoToContribution(requestContributionDto);
@@ -59,7 +61,6 @@ public class ContributionServiceImpl implements ContributionService {
         contribution.setMicrocredit(microcredit);
         contribution = contributionRepository.save(contribution);
 
-        //Pasa la contribución al saldo del solicitante y resta la misma al contribuyente
         GeneralTransactions generalTransactions = new GeneralTransactions(accountRepository);
         generalTransactions.updateBalances(userLenderId, contribution.getMicrocredit().getBorrowerAccountId(), contribution.getAmount());
 
@@ -72,11 +73,11 @@ public class ContributionServiceImpl implements ContributionService {
         String microcreditId = microcredit.getId();
         LocalDate expirationDate = microcredit.getExpirationDate();
 
+        notificationService.sendContributionNotificationToBorrower(microcredit, lenderFullname, contribution.getAmount());
+
         return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
                 microcreditId, expirationDate);
     }
-
-    // Listado de contribuciones por contribuyente.
 
     @Override
     public List<ResponseContributionGetDto> getAll() {
