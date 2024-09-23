@@ -4,6 +4,6 @@ import java.math.BigDecimal;
 
 public record ResponseMicrocreditPaymentDto(
         String id,
-        BigDecimal remainingAmount
+        BigDecimal totalPaidAmount
 ) {
 }

@@ -26,4 +26,16 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
     List<Payment> findPaymentsByTransactionDate(@Param("idAccount") String idAccount,
                                                     @Param("startDate") LocalDateTime startDate,
                                                     @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT p FROM Payment p WHERE (p.senderAccount = :idAccount OR p.receiverAccount = :idAccount) " +
+            "AND p.transactionDate >= :startDate AND p.transactionDate < :endDate")
+    List<Payment> findPaymentsBetweenDates(@Param("idAccount") String idAccount,
+                                           @Param("startDate") LocalDateTime startDate,
+                                           @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT p FROM Payment p WHERE p.senderAccount = :idAccount")
+    List<Payment> findPaymentsAsClient(@Param("idAccount") String idAccount);
+
+    @Query("SELECT p FROM Payment p WHERE p.receiverAccount = :idAccount")
+    List<Payment> findPaymentsAsSeller(@Param("idAccount") String idAccount);
 }

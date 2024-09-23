@@ -7,6 +7,7 @@ import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -64,12 +65,14 @@ public class MicrocreditController {
             // TODO enviar notificación
         } catch (ValidationException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @GetMapping("/estado/{status}")
     public ResponseEntity<List<ResponseMicrocreditGetDto>> getBy(@PathVariable String status) {
-        List<ResponseMicrocreditGetDto> response = microcreditService.getMicrocreditsByTransactionStatus(status);
+        List<ResponseMicrocreditGetDto> response = microcreditService.getBy(status);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -84,6 +87,8 @@ public class MicrocreditController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (ResourceNotFoundException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
         }
     }
 }

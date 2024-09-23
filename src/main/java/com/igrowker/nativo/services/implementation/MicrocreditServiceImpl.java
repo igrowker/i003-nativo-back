@@ -1,6 +1,6 @@
 package com.igrowker.nativo.services.implementation;
 
-import com.igrowker.nativo.dtos.contribution.ResponseContributionGetDto;
+import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.*;
 import com.igrowker.nativo.entities.*;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
@@ -12,7 +12,9 @@ import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.MicrocreditService;
 import com.igrowker.nativo.utils.GeneralTransactions;
+import com.igrowker.nativo.utils.NotificationService;
 import com.igrowker.nativo.validations.Validations;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final ContributionRepository contributionRepository;
+    private final NotificationService notificationService;
 
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) {
@@ -39,8 +42,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         Microcredit microcredit = microcreditMapper.requestDtoToMicrocredit(requestMicrocreditDto);
 
-        //Validación para evaluar si tiene un microcredito en estado pendiente, vencido o denegado
-        isMicrocreditExpiredOrPendentOrDenied(userBorrower.account.getId());
+        checkForActiveOrRestrictedMicrocredit(userBorrower.account.getId());
 
         BigDecimal limite = new BigDecimal("500000");
 
@@ -102,7 +104,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
     @Override
     @Transactional
-    public ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) {
+    public ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
 
         Microcredit microcredit = microcreditRepository.findById(microcreditId)
@@ -110,6 +112,16 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         if (!microcredit.getBorrowerAccountId().equals(userBorrower.account.getId())) {
             throw new IllegalArgumentException("El usuario no tiene permiso para pagar este microcrédito.");
+        }
+
+        if (microcredit.getTransactionStatus() == TransactionStatus.COMPLETED ||
+                microcredit.getTransactionStatus() == TransactionStatus.EXPIRED) {
+            throw new ValidationException("No se puede pagar un microcrédito que ya está " +
+                    microcredit.getTransactionStatus().toString().toLowerCase() + ".");
+        }
+
+        if (microcredit.getTransactionStatus() == TransactionStatus.PENDENT && microcredit.getContributions().isEmpty()) {
+            throw new ValidationException("No se puede pagar un microcrédito sin contribuciones.");
         }
 
         BigDecimal totalAmountToPay = microcredit.getContributions().stream()
@@ -120,12 +132,16 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             throw new ValidationException("Fondos insuficientes");
         }
 
-        if (microcredit.getTransactionStatus() == TransactionStatus.COMPLETED) {
-            throw new IllegalArgumentException("El microcrédito ya ha sido pagado.");
-        }
+        Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
+
+        User borrowerUser = userRepository.findById(borrowerAccount.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario del prestatario no encontrado."));
 
         List<Contribution> contributions = microcredit.getContributions();
         GeneralTransactions generalTransactions = new GeneralTransactions(accountRepository);
+
+        BigDecimal totalPaidAmount = BigDecimal.ZERO;
 
         for (Contribution contribution : contributions) {
             generalTransactions.updateBalances(microcredit.getBorrowerAccountId(), contribution.getLenderAccountId(),
@@ -133,26 +149,52 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
             contribution.setTransactionStatus(TransactionStatus.COMPLETED);
             contributionRepository.save(contribution);
+
+            totalPaidAmount = totalPaidAmount.add(contribution.getAmount());
+
+            Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
+            User lenderUser = userRepository.findById(lenderAccount.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario de prestamista no encontrado."));
+
+            notificationService.sendPaymentNotification(lenderUser.getEmail(), (lenderUser.getName() + " " + lenderUser.getSurname()),
+                    contribution.getAmount(), "Devolución cuota microcrédito",
+                    "Te informamos que se ha procesado la devolución de tu contribución al microcrédito con ID: " + microcredit.getId(),
+                    "Gracias por tu participación en nuestro programa de microcréditos. Esperamos seguir contando con tu confianza.");
         }
+
+        notificationService.sendPaymentNotification(borrowerUser.getEmail(), (borrowerUser.getName() + " " + borrowerUser.getSurname()),
+                totalPaidAmount, "Descuento cuota del microcrédito",
+                "Te informamos que se ha procesado el descuento por el microcrédito con ID: " + microcredit.getId(),
+                "Si no tienes saldo suficiente en la cuenta en este momento, el monto pendiente se deducirá automáticamente en tu próximo ingreso.");
 
         microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
         microcreditRepository.save(microcredit);
 
-        return microcreditMapper.responseMicrocreditPaymentDto(microcredit);
+        return new ResponseMicrocreditPaymentDto(microcredit.getId(), totalPaidAmount);
     }
 
-    private void isMicrocreditExpiredOrPendentOrDenied(String borrowerAccountId) {
+    private void checkForActiveOrRestrictedMicrocredit(String borrowerAccountId) {
+        Optional<Microcredit> acceptedMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.ACCEPTED);
+
+        if (acceptedMicrocredit.isPresent()) {
+            throw new ValidationException("Ya tiene un microcrédito activo.");
+        }
+
         Optional<Microcredit> pendingMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.PENDENT);
+
         if (pendingMicrocredit.isPresent()) {
             throw new ValidationException("Presenta un microcrédito pendiente.");
         }
 
         Optional<Microcredit> expiredMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.EXPIRED);
+
         if (expiredMicrocredit.isPresent()) {
             throw new ValidationException("Presenta un microcrédito vencido.");
         }
 
         Optional<Microcredit> deniedMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.DENIED);
+
         if (deniedMicrocredit.isPresent()) {
             throw new ValidationException("No puede solicitar un nuevo microcrédito. Debe regularizar el estado de su cuenta.");
         }
@@ -163,7 +205,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     }
 
     private ResponseMicrocreditGetDto getResponseMicrocreditGetDto(Microcredit microcredit) {
-        List<ResponseContributionGetDto> contributionsDto = microcredit.getContributions().stream()
+        List<ResponseContributionDto> contributionsDto = microcredit.getContributions().stream()
                 .map(contribution -> {
 
                     Validations validations1 = new Validations(accountRepository, userRepository);
@@ -171,7 +213,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                     String lenderFullname = validations.fullname(contribution.getLenderAccountId());
                     String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
 
-                    return new ResponseContributionGetDto(
+                    return new ResponseContributionDto(
                             contribution.getId(),
                             contribution.getLenderAccountId(),
                             lenderFullname,
@@ -179,6 +221,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                             microcredit.getId(),
                             contribution.getAmount(),
                             contribution.getCreatedDate(),
+                            microcredit.getExpirationDate(),
                             contribution.getTransactionStatus()
                     );
                 }).collect(Collectors.toList());

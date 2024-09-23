@@ -21,6 +21,5 @@ public interface MicrocreditMapper {
     @Mapping(target = "remainingAmount", source = "remainingAmount")
     ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit);
 
-    @Mapping(target = "remainingAmount", source = "remainingAmount")
     ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto(Microcredit microcredit);
 }

@@ -1,6 +1,7 @@
 package com.igrowker.nativo.services;
 
 import com.igrowker.nativo.dtos.microcredit.*;
+import jakarta.mail.MessagingException;
 
 import java.util.List;
 
@@ -15,5 +16,6 @@ public interface MicrocreditService {
 
     List<ResponseMicrocreditGetDto> getBy(String transactionStatus);
 
-    ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId);
+    ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException;
+
 }
