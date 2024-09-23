@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
@@ -131,6 +132,50 @@ public class PaymentServiceImpl implements PaymentService {
         List<Payment> paymentList = paymentRepository.findPaymentsByTransactionDate(
                 accountAndUser.account.getId(), startDate, endDate);
         var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        return result;
+    }
+
+    @Override
+    public List<ResponseRecordPayment> getPaymentsBetweenDates(String fromDate, String toDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        try {
+            LocalDate firstDate = LocalDate.parse(fromDate, formatter);
+            LocalDate secondDate = LocalDate.parse(toDate, formatter);
+
+            if (firstDate.isAfter(secondDate)) {
+                throw new IllegalArgumentException("La fecha inicial no puede ser posterior a la fecha final.");
+            }
+
+            LocalDateTime startDate = firstDate.atStartOfDay();
+            LocalDateTime endDate = secondDate.plusDays(1).atStartOfDay();
+
+            Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+            List<Payment> paymentList = paymentRepository.findPaymentsBetweenDates(
+                    accountAndUser.account.getId(), startDate, endDate);
+
+            return paymentMapper.paymentListToResponseHistoryList(paymentList);
+        } catch (DateTimeParseException e) {
+            throw new DateTimeParseException("Error al parsear las fechas: " + fromDate + " o " + toDate, fromDate, 0);
+        }
+    }
+
+
+    @Override
+    public List<ResponseRecordPayment> getPaymentsAsClient() {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        List<Payment> paymentList = paymentRepository.findPaymentsAsClient(
+                accountAndUser.account.getId());
+        List<ResponseRecordPayment> result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        return result;
+    }
+
+    @Override
+    public List<ResponseRecordPayment> getPaymentsAsSeller() {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        List<Payment> paymentList = paymentRepository.findPaymentsAsSeller(
+                accountAndUser.account.getId());
+        List<ResponseRecordPayment> result = paymentMapper.paymentListToResponseHistoryList(paymentList);
         return result;
     }
 }

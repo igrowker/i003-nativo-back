@@ -10,4 +10,7 @@ public interface PaymentService {
     List<ResponseRecordPayment> getAllPayments();
     List<ResponseRecordPayment> getPaymentsByStatus(String status);
     List<ResponseRecordPayment> getPaymentsByDate(String date);
+    List<ResponseRecordPayment> getPaymentsBetweenDates(String fromDate, String toDate);
+    List<ResponseRecordPayment> getPaymentsAsClient();
+    List<ResponseRecordPayment> getPaymentsAsSeller();
 }
