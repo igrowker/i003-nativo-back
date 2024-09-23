@@ -87,6 +87,8 @@ public class MicrocreditController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (ResourceNotFoundException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
         }
     }
 }

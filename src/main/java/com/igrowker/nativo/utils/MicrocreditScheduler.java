@@ -27,11 +27,9 @@ public class MicrocreditScheduler {
     private final GeneralTransactions generalTransactions;
     private final NotificationService notificationService;
 
-
-    // El job se ejecuta cada día a medianoche, se puede ajustar!
+    @Transactional
     @Scheduled(cron = "0 0 0 * * ?", zone = "America/Argentina/Buenos_Aires")
     public void checkAndExpireMicrocredits() {
-
         LocalDate today = LocalDate.now();
 
         List<Microcredit> expiredMicrocredits = microcreditRepository
@@ -39,14 +37,20 @@ public class MicrocreditScheduler {
                         today, List.of(TransactionStatus.EXPIRED, TransactionStatus.COMPLETED));
 
         for (Microcredit microcredit : expiredMicrocredits) {
-            microcredit.setTransactionStatus(TransactionStatus.EXPIRED);
+            List<Contribution> contributions = microcredit.getContributions();
+
+            if (contributions.isEmpty()) {
+                microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
+            } else {
+                microcredit.setTransactionStatus(TransactionStatus.EXPIRED);
+            }
+
             microcreditRepository.save(microcredit);
         }
     }
 
     @Transactional
     @Scheduled(cron = "0 0 17 * * ?", zone = "America/Argentina/Buenos_Aires") //Todos los días a las 17.00 hs
-    //@Scheduled(cron = "*/10 * * * * *")
     public void processPayAutomaticMicrocredits() {
         LocalDate today = LocalDate.now();
         processMicrocreditPayments(today, TransactionStatus.PENDENT);
@@ -70,13 +74,14 @@ public class MicrocreditScheduler {
 
     private void payMicrocreditAndContributors(Microcredit microcredit) throws MessagingException {
         List<Contribution> contributions = microcredit.getContributions();
+
         if (contributions.isEmpty()) return;
 
         Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
-                .orElseThrow(() -> new ResourceNotFoundException("Borrower account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
 
         User borrowerUser = userRepository.findById(borrowerAccount.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Borrower user not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
 
         BigDecimal totalAmount = contributions.stream()
                 .map(Contribution::getAmount)
@@ -86,9 +91,9 @@ public class MicrocreditScheduler {
             processContribution(contribution, microcredit);
 
             Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Lender account not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
             User lenderUser = userRepository.findById(lenderAccount.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Lender user not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
 
             notificationService.sendPaymentNotification(lenderUser.getEmail(), (lenderUser.getName() + " " + lenderUser.getSurname()),
                     contribution.getAmount(), "Devolución cuota microcrédito",

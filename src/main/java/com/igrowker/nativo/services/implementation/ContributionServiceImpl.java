@@ -2,7 +2,6 @@ package com.igrowker.nativo.services.implementation;
 
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
-import com.igrowker.nativo.dtos.contribution.ResponseContributionGetDto;
 import com.igrowker.nativo.entities.*;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
@@ -80,7 +79,7 @@ public class ContributionServiceImpl implements ContributionService {
     }
 
     @Override
-    public List<ResponseContributionGetDto> getAll() {
+    public List<ResponseContributionDto> getAll() {
         List<Contribution> contributions = contributionRepository.findAll();
 
         return contributions.stream()
@@ -95,14 +94,14 @@ public class ContributionServiceImpl implements ContributionService {
                     String microcreditId = microcredit.getId();
                     LocalDate expirationDate = microcredit.getExpirationDate();
 
-                    return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname,
+                    return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
                             microcreditId, expirationDate);
                 })
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<ResponseContributionGetDto> getContributionsByTransactionStatus(String transactionStatus) {
+    public List<ResponseContributionDto> getContributionsByTransactionStatus(String transactionStatus) {
         TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
         List<Contribution> contributions = contributionRepository.findByTransactionStatus(enumStatus);
 
@@ -116,14 +115,14 @@ public class ContributionServiceImpl implements ContributionService {
                     String microcreditId = microcredit.getId();
                     LocalDate expirationDate = microcredit.getExpirationDate();
 
-                    return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname,
+                    return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
                             microcreditId, expirationDate);
                 })
                 .collect(Collectors.toList());
     }
 
     @Override
-    public ResponseContributionGetDto getOneContribution(String id) {
+    public ResponseContributionDto getOneContribution(String id) {
         Contribution contribution = contributionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contribution no encontrado con id: " + id));
 
@@ -137,7 +136,7 @@ public class ContributionServiceImpl implements ContributionService {
         String microcreditId = microcredit.getId();
         LocalDate expirationDate = microcredit.getExpirationDate();
 
-        return contributionMapper.responseContributionGetDto(contribution, lenderFullname, borrowerFullname,
+        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
                 microcreditId, expirationDate);
     }
 
@@ -174,4 +173,3 @@ public class ContributionServiceImpl implements ContributionService {
     FAILED -- ALGUN PROBLEMA DE SISTEMA
     COMPLETED -- SE DEVUELVE EL DINERO CONTRIBUIDO
       */
-
