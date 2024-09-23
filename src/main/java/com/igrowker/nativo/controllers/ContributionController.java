@@ -1,6 +1,6 @@
 package com.igrowker.nativo.controllers;
 
-import com.igrowker.nativo.dtos.contribution.ResponseContributionGetDto;
+import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.services.ContributionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,22 +19,22 @@ public class ContributionController {
     private final ContributionService contributionService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseContributionGetDto> getOneContribution(@PathVariable String id) {
-        ResponseContributionGetDto response = contributionService.getOneContribution(id);
+    public ResponseEntity<ResponseContributionDto> getOneContribution(@PathVariable String id) {
+        ResponseContributionDto response = contributionService.getOneContribution(id);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping()
-    public ResponseEntity<List<ResponseContributionGetDto>> getAll() {
-        List<ResponseContributionGetDto> response = contributionService.getAll();
+    public ResponseEntity<List<ResponseContributionDto>> getAll() {
+        List<ResponseContributionDto> response = contributionService.getAll();
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/historial-estados/{status}")
-    public ResponseEntity<List<ResponseContributionGetDto>> getContributionsByTransactionStatus(@PathVariable String status) {
-        List<ResponseContributionGetDto> response = contributionService.getContributionsByTransactionStatus(status);
+    public ResponseEntity<List<ResponseContributionDto>> getContributionsByTransactionStatus(@PathVariable String status) {
+        List<ResponseContributionDto> response = contributionService.getContributionsByTransactionStatus(status);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
