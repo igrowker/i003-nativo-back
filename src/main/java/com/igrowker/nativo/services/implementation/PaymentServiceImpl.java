@@ -160,7 +160,6 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-
     @Override
     public List<ResponseRecordPayment> getPaymentsAsClient() {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
