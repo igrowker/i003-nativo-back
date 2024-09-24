@@ -221,6 +221,6 @@ public class MicrocreditControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditPaymentDto.id())))
-                .andExpect(jsonPath("$.remainingAmount", Matchers.is(responseMicrocreditPaymentDto.remainingAmount().doubleValue())));
+                .andExpect(jsonPath("$.totalPaidAmount", Matchers.is(responseMicrocreditPaymentDto.totalPaidAmount().doubleValue())));
     }
 }
