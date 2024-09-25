@@ -9,6 +9,8 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditPaymentDto;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.ResourceNotFoundException;
+import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.security.JwtService;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
@@ -26,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -224,3 +227,30 @@ public class MicrocreditControllerTest {
                 .andExpect(jsonPath("$.totalPaidAmount", Matchers.is(responseMicrocreditPaymentDto.totalPaidAmount().doubleValue())));
     }
 }
+
+
+
+/*
+// Andando! habría que limpiar de try/catch los métodos y usar sólo los de GlobalException.
+    @Test
+    public void createMicrocredit_ShouldNotReturnOk() throws Exception {
+        RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
+                BigDecimal.valueOf(100000.00), LocalDate.of(2024, 10, 17));
+
+        when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("Usuario no encontrado"));
+
+        mockMvc.perform(post("/api/microcreditos/solicitar")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(requestMicrocreditDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+// Andando! Revisar la excepción y mensaje que se quiera devolver... pero debería ser lo único (?
+@Test
+    public void getOne_ShouldNotReturnOk() throws Exception {
+        when(microcreditService.getOne(any())).thenThrow(new ResourceNotFoundException("Usuario no encontrado"));
+        mockMvc.perform(get("/api/microcreditos/1234"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", Matchers.is("Usuario no encontrado")));
+* */
