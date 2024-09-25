@@ -22,7 +22,7 @@ public class DonationSheduled {
 
     private final DonationServiceImpl donationService;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 1440000)
     public void checkPendingDonations() {
         // Buscar todas las donaciones con estado PENDENT
         List<Donation> pendingDonations = donationRepository.findByStatus(TransactionStatus.PENDENT).orElseThrow(()-> new ResourceNotFoundException("No hay donaciones pendientes"));
@@ -30,9 +30,8 @@ public class DonationSheduled {
         // Revisar cada donación pendiente
         for (Donation donation : pendingDonations) {
             // Verificar si ha pasado más de 1 minuto desde la creación
-            if (LocalDateTime.now().isAfter(donation.getCreatedAt().plusMinutes(1))) {
+            if (LocalDateTime.now().isAfter(donation.getCreatedAt().plusHours(24))) {
                 // Cambiar el estado a DENIED
-                System.out.println("entro");
                 donationService.returnAmount(donation.getAccountIdDonor(), donation.getAmount());
                 donation.setStatus(TransactionStatus.DENIED);
                 // Guardar el cambio en la base de datos
