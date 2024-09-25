@@ -109,7 +109,7 @@ public class PaymentServiceImpl implements PaymentService {
     public List<ResponseRecordPayment> getAllPayments() {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         List<Payment> paymentList = paymentRepository.findPaymentsByAccount(accountAndUser.account.getId());
-        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        var result = paymentMapper.paymentListToResponseRecordList(paymentList);
         return result;
     }
 
@@ -118,7 +118,7 @@ public class PaymentServiceImpl implements PaymentService {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         TransactionStatus statusEnum = validations.statusConvert(status);
         List<Payment> paymentList = paymentRepository.findPaymentsByStatus(accountAndUser.account.getId(), statusEnum);
-        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        var result = paymentMapper.paymentListToResponseRecordList(paymentList);
         return result;
     }
 
@@ -131,7 +131,7 @@ public class PaymentServiceImpl implements PaymentService {
         LocalDateTime endDate = transactionDate.plusDays(1).atStartOfDay();
         List<Payment> paymentList = paymentRepository.findPaymentsByTransactionDate(
                 accountAndUser.account.getId(), startDate, endDate);
-        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        var result = paymentMapper.paymentListToResponseRecordList(paymentList);
         return result;
     }
 
@@ -154,7 +154,7 @@ public class PaymentServiceImpl implements PaymentService {
             List<Payment> paymentList = paymentRepository.findPaymentsBetweenDates(
                     accountAndUser.account.getId(), startDate, endDate);
 
-            return paymentMapper.paymentListToResponseHistoryList(paymentList);
+            return paymentMapper.paymentListToResponseRecordList(paymentList);
         } catch (DateTimeParseException e) {
             throw new DateTimeParseException("Error al parsear las fechas: " + fromDate + " o " + toDate, fromDate, 0);
         }
@@ -165,7 +165,7 @@ public class PaymentServiceImpl implements PaymentService {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         List<Payment> paymentList = paymentRepository.findPaymentsAsClient(
                 accountAndUser.account.getId());
-        List<ResponseRecordPayment> result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        List<ResponseRecordPayment> result = paymentMapper.paymentListToResponseRecordList(paymentList);
         return result;
     }
 
@@ -174,7 +174,7 @@ public class PaymentServiceImpl implements PaymentService {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         List<Payment> paymentList = paymentRepository.findPaymentsAsSeller(
                 accountAndUser.account.getId());
-        List<ResponseRecordPayment> result = paymentMapper.paymentListToResponseHistoryList(paymentList);
+        List<ResponseRecordPayment> result = paymentMapper.paymentListToResponseRecordList(paymentList);
         return result;
     }
 }
