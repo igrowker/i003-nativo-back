@@ -53,7 +53,7 @@ public class Microcredit {
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDate.now();
-        this.transactionStatus = TransactionStatus.PENDENT;
+        this.transactionStatus = TransactionStatus.PENDING;
         this.remainingAmount = this.amount;
         //this.remainingInstallments = this.installmentCount;
     }

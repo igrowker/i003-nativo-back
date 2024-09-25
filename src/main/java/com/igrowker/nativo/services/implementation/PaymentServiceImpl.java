@@ -69,7 +69,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(newData.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
 
-        if (!payment.getTransactionStatus().equals(TransactionStatus.PENDENT)) {
+        if (!payment.getTransactionStatus().equals(TransactionStatus.PENDING)) {
             throw new ExpiredTransactionException("El QR ya fue utilizado.");
         }
 

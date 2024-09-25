@@ -46,7 +46,7 @@ public class Donation {
 
 
     protected void onStatus() {
-        this.status =  TransactionStatus.PENDENT;
+        this.status =  TransactionStatus.PENDING;
     }
 
     @PreUpdate

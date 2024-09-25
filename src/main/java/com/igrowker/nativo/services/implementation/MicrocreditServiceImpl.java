@@ -37,7 +37,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     private final NotificationService notificationService;
 
     @Override
-    public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) {
+    public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) throws MessagingException {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
 
         Microcredit microcredit = microcreditMapper.requestDtoToMicrocredit(requestMicrocreditDto);
@@ -50,8 +50,23 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             throw new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ " + limite);
         }
 
+        // Verificar que el saldo de la cuenta sea mayor o igual a cero
+        if (userBorrower.account.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("El saldo de la cuenta debe ser mayor o igual a cero para solicitar un microcrédito.");
+        }
+
         microcredit.setBorrowerAccountId(userBorrower.account.getId());
         microcredit = microcreditRepository.save(microcredit);
+
+        // Enviar notificación de la creación del microcrédito
+        notificationService.sendPaymentNotification(
+                userBorrower.user.getEmail(),
+                userBorrower.user.getName() + " " + userBorrower.user.getSurname(),
+                microcredit.getAmount(),
+                "Microcrédito Creado",
+                "Te informamos que tu microcrédito con ID: " + microcredit.getId() + " ha sido creado exitosamente.",
+                "Gracias por participar en nuestro programa de microcréditos."
+        );
 
         //Agregar fecha de vencimiento del microcredito
         return microcreditMapper.responseDtoToMicrocredit(microcredit);
@@ -114,13 +129,12 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             throw new IllegalArgumentException("El usuario no tiene permiso para pagar este microcrédito.");
         }
 
-        if (microcredit.getTransactionStatus() == TransactionStatus.COMPLETED ||
-                microcredit.getTransactionStatus() == TransactionStatus.EXPIRED) {
+        if (microcredit.getTransactionStatus() == TransactionStatus.COMPLETED) {
             throw new ValidationException("No se puede pagar un microcrédito que ya está " +
                     microcredit.getTransactionStatus().toString().toLowerCase() + ".");
         }
 
-        if (microcredit.getTransactionStatus() == TransactionStatus.PENDENT && microcredit.getContributions().isEmpty()) {
+        if (microcredit.getTransactionStatus() == TransactionStatus.PENDING && microcredit.getContributions().isEmpty()) {
             throw new ValidationException("No se puede pagar un microcrédito sin contribuciones.");
         }
 
@@ -181,7 +195,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             throw new ValidationException("Ya tiene un microcrédito activo.");
         }
 
-        Optional<Microcredit> pendingMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.PENDENT);
+        Optional<Microcredit> pendingMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(borrowerAccountId, TransactionStatus.PENDING);
 
         if (pendingMicrocredit.isPresent()) {
             throw new ValidationException("Presenta un microcrédito pendiente.");
