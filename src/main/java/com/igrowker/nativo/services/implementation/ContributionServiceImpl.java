@@ -147,7 +147,7 @@ public class ContributionServiceImpl implements ContributionService {
 
     //Chequea el monto restante. Cambia el estado de la transacción
     private void updateRemainingAmount(Microcredit microcredit, BigDecimal contributionAmount) {
-        if (microcredit.getTransactionStatus() == TransactionStatus.PENDENT) {
+        if (microcredit.getTransactionStatus() == TransactionStatus.PENDING) {
             if (contributionAmount.compareTo(microcredit.getRemainingAmount()) > 0) {
                 throw new ValidationException("El monto de la contribución no puede ser mayor que el monto restante del microcrédito.");
             }

@@ -38,6 +38,6 @@ public class Payment {
     @PrePersist
     public void onCreate(){
         this.transactionDate = LocalDateTime.now();
-        this.transactionStatus = TransactionStatus.PENDENT;
+        this.transactionStatus = TransactionStatus.PENDING;
     }
 }

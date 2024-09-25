@@ -62,7 +62,6 @@ public class MicrocreditController {
         try {
             ResponseContributionDto response = contributionService.createContribution(requestContributionDto);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
-            // TODO enviar notificación
         } catch (ValidationException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (MessagingException e) {
@@ -82,7 +81,6 @@ public class MicrocreditController {
         try {
             ResponseMicrocreditPaymentDto response = microcreditService.payMicrocredit(id);
             return new ResponseEntity<>(response, HttpStatus.OK);
-            // TODO enviar notificación
         } catch (ValidationException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (ResourceNotFoundException e) {

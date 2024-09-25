@@ -65,7 +65,7 @@ public class MicrocreditControllerTest {
         ResponseMicrocreditDto responseMicrocreditDto = new ResponseMicrocreditDto("1234",
                 BigDecimal.valueOf(100000.00), BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
                 requestMicrocreditDto.expirationDate(),
-                "Test title", "Test Description", TransactionStatus.PENDENT);
+                "Test title", "Test Description", TransactionStatus.PENDING);
 
         when(microcreditService.createMicrocredit(requestMicrocreditDto)).thenReturn(responseMicrocreditDto);
 
@@ -88,7 +88,7 @@ public class MicrocreditControllerTest {
     public void getOne_ShouldReturnOk() throws Exception {
         ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
                 BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
-                "Test title", "Test Description", TransactionStatus.PENDENT, List.of());
+                "Test title", "Test Description", TransactionStatus.PENDING, List.of());
 
         when(microcreditService.getOne("1234")).thenReturn(responseMicrocreditGetDto);
 

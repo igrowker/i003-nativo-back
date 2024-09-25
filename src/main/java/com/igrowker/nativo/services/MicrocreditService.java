@@ -6,7 +6,7 @@ import jakarta.mail.MessagingException;
 import java.util.List;
 
 public interface MicrocreditService {
-    ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto);
+    ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) throws MessagingException;
 
     List<ResponseMicrocreditGetDto> getAll();
 
