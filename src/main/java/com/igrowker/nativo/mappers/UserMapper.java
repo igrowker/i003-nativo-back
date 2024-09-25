@@ -12,5 +12,8 @@ public interface UserMapper {
     ResponseUserDto userToUserDTO(User user);
 
     User UpdateUserDtoToUser(UpdateUserDto updateUserDto);
-    ResponseRegisterDto userToResponseUserDto(User user);
+    ResponseUpdateUserDto userToResponseUpdateUserDto(User user);
+
+    User updateMailDtoToUser(UpdateMailDto updateMailDto);
+    ResponseUpdateMailDto userToResponsUpdateMailDto(User user);
 }
