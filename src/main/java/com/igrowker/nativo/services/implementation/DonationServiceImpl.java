@@ -90,11 +90,6 @@ public class DonationServiceImpl implements DonationService {
         }
     }
 
-    private void returnAmount(String id, BigDecimal amount){
-        Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
-        donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(amount));
-        accountRepository.save(donorAccount);
-    }
 
     @Override
     public ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto) {
@@ -166,21 +161,9 @@ public class DonationServiceImpl implements DonationService {
     }
 
 
-    @Scheduled(fixedRate = 1440000)
-    public void checkPendingDonations() {
-        // Buscar todas las donaciones con estado PENDENT
-        List<Donation> pendingDonations = donationRepository.findByStatus(TransactionStatus.PENDENT).orElseThrow(()-> new ResourceNotFoundException("No hay donaciones pendientes"));
-
-        // Revisar cada donación pendiente
-        for (Donation donation : pendingDonations) {
-            // Verificar si ha pasado más de 1 minuto desde la creación
-            if (LocalDateTime.now().isAfter(donation.getCreatedAt().plusHours(24))) {
-                // Cambiar el estado a DENIED
-                returnAmount(donation.getAccountIdDonor(), donation.getAmount());
-                donation.setStatus(TransactionStatus.DENIED);
-                // Guardar el cambio en la base de datos
-                donationRepository.save(donation);
-            }
-        }
+    public void returnAmount(String id, BigDecimal amount){
+        Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+        donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(amount));
+        accountRepository.save(donorAccount);
     }
 }
