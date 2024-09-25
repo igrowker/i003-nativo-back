@@ -50,7 +50,7 @@ public class PaymentServiceImplTest {
         @Test
         public void create_qr_should_be_Ok() throws Exception {
             var paymentRequestDto = new RequestPaymentDto("receiverId", BigDecimal.valueOf(100.50), "description");
-            var payment = new Payment("paymentId", "senderId", "receiverId", BigDecimal.valueOf(100.50), LocalDateTime.now(), TransactionStatus.PENDENT, "description", "long-long-long-qr");
+            var payment = new Payment("paymentId", "senderId", "receiverId", BigDecimal.valueOf(100.50), LocalDateTime.now(), TransactionStatus.PENDING, "description", "long-long-long-qr");
             var paymentResponseDto = new ResponsePaymentDto("paymentId", "receiver", BigDecimal.valueOf(100.50), "description", "long-long-long-qr");
 
             when(paymentMapper.requestDtoToPayment(any())).thenReturn(payment);
@@ -92,11 +92,11 @@ public class PaymentServiceImplTest {
         @Test
         public void get_all_payments_should_be_Ok() throws Exception {
             var payment = new Payment("paymentId", "senderId", "receiverId", BigDecimal.valueOf(100.50),
-                    LocalDateTime.now(), TransactionStatus.PENDENT, "description", "qrCode");
+                    LocalDateTime.now(), TransactionStatus.PENDING, "description", "qrCode");
             List<Payment> paymentList = List.of(payment);
             var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderId",
                     "receiverId", BigDecimal.valueOf(100.50), "description",
-                    LocalDateTime.now(), TransactionStatus.PENDENT);
+                    LocalDateTime.now(), TransactionStatus.PENDING);
             List<ResponseRecordPayment> responseList = List.of(responseRecordPayment);
             var userAccountPair = new Validations.UserAccountPair(new User(), new Account());
 
