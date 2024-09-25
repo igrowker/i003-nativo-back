@@ -15,8 +15,11 @@ import com.igrowker.nativo.services.DonationService;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.validations.Validations;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -87,6 +90,12 @@ public class DonationServiceImpl implements DonationService {
         }
     }
 
+    private void returnAmount(String id, BigDecimal amount){
+        Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+        donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(amount));
+        accountRepository.save(donorAccount);
+    }
+
     @Override
     public ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto) {
 
@@ -102,9 +111,7 @@ public class DonationServiceImpl implements DonationService {
                 donation1.setAmount(donation.getAmount());
                 donation1.setCreatedAt(donation.getCreatedAt());
 
-                Account donorAccount = accountRepository.findById(donation1.getAccountIdDonor()).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
-                donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(donation.getAmount()));
-                accountRepository.save(donorAccount);
+                returnAmount(donation1.getAccountIdDonor(), donation.getAmount());
 
                 if (donation1.getStatus() == TransactionStatus.ACCEPTED) {
                     // Se agrega el monto al beneficiario y se descuenta de la cuenta de reserva del donador
@@ -158,4 +165,22 @@ public class DonationServiceImpl implements DonationService {
         }
     }
 
+
+    @Scheduled(fixedRate = 1440000)
+    public void checkPendingDonations() {
+        // Buscar todas las donaciones con estado PENDENT
+        List<Donation> pendingDonations = donationRepository.findByStatus(TransactionStatus.PENDENT).orElseThrow(()-> new ResourceNotFoundException("No hay donaciones pendientes"));
+
+        // Revisar cada donación pendiente
+        for (Donation donation : pendingDonations) {
+            // Verificar si ha pasado más de 1 minuto desde la creación
+            if (LocalDateTime.now().isAfter(donation.getCreatedAt().plusHours(24))) {
+                // Cambiar el estado a DENIED
+                returnAmount(donation.getAccountIdDonor(), donation.getAmount());
+                donation.setStatus(TransactionStatus.DENIED);
+                // Guardar el cambio en la base de datos
+                donationRepository.save(donation);
+            }
+        }
+    }
 }
