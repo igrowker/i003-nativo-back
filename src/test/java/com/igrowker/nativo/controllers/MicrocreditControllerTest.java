@@ -53,10 +53,6 @@ public class MicrocreditControllerTest {
 
     ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @BeforeEach
-    public void setUp() {
-    }
-
     @Test
     public void createMicrocredit_ShouldReturnOk() throws Exception {
         RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
@@ -85,10 +81,24 @@ public class MicrocreditControllerTest {
     }
 
     @Test
+    public void createMicrocredit_ShouldNotReturnOk() throws Exception {
+        RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test amount exception ", "Monto mayor al permitido",
+                BigDecimal.valueOf(100000.00), LocalDate.of(2024, 10, 17));
+
+        when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ 500000"));
+
+        mockMvc.perform(post("/api/microcreditos/solicitar")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(requestMicrocreditDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     public void getOne_ShouldReturnOk() throws Exception {
         ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
                 BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
-                "Test title", "Test Description", TransactionStatus.PENDING, List.of());
+                "Test getOne ok", "Test Description", TransactionStatus.PENDING, List.of());
 
         when(microcreditService.getOne("1234")).thenReturn(responseMicrocreditGetDto);
 
@@ -104,6 +114,19 @@ public class MicrocreditControllerTest {
                 .andExpect(jsonPath("$.description", Matchers.is(responseMicrocreditGetDto.description())))
                 .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
                 .andExpect(jsonPath("$.contributions", Matchers.hasSize(0)));
+    }
+
+    @Test
+    public void getOne_ShouldNotReturnOk() throws Exception {
+        ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                "Test getOne NOT ok", "Test Description", TransactionStatus.PENDING, List.of());
+
+        when(microcreditService.getOne(any())).
+                thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditGetDto.id()));
+        mockMvc.perform(get("/api/microcreditos/"+ responseMicrocreditGetDto.id()))
+                .andExpect(status().isNotFound())
+                        .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
     }
 
     @Test
@@ -226,31 +249,16 @@ public class MicrocreditControllerTest {
                 .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditPaymentDto.id())))
                 .andExpect(jsonPath("$.totalPaidAmount", Matchers.is(responseMicrocreditPaymentDto.totalPaidAmount().doubleValue())));
     }
-}
 
-
-
-/*
-// Andando! habría que limpiar de try/catch los métodos y usar sólo los de GlobalException.
     @Test
-    public void createMicrocredit_ShouldNotReturnOk() throws Exception {
-        RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
-                BigDecimal.valueOf(100000.00), LocalDate.of(2024, 10, 17));
-
-        when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("Usuario no encontrado"));
-
-        mockMvc.perform(post("/api/microcreditos/solicitar")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestMicrocreditDto)))
-                .andExpect(status().isBadRequest());
-    }
-
-// Andando! Revisar la excepción y mensaje que se quiera devolver... pero debería ser lo único (?
-@Test
-    public void getOne_ShouldNotReturnOk() throws Exception {
-        when(microcreditService.getOne(any())).thenThrow(new ResourceNotFoundException("Usuario no encontrado"));
-        mockMvc.perform(get("/api/microcreditos/1234"))
+    public void payMicrocredit_ShouldReturnNotOk() throws Exception {
+        ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
+                BigDecimal.valueOf(1000.00));
+        when(microcreditService.getOne(any())).
+                thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditPaymentDto.id()));
+        mockMvc.perform(get("/api/microcreditos/"+ responseMicrocreditPaymentDto.id()))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", Matchers.is("Usuario no encontrado")));
-* */
+                .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
+
+    }
+}
