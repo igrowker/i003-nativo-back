@@ -15,8 +15,11 @@ import com.igrowker.nativo.services.DonationService;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.validations.Validations;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -87,6 +90,7 @@ public class DonationServiceImpl implements DonationService {
         }
     }
 
+
     @Override
     public ResponseDonationConfirmationDto confirmationDonation(RequestDonationConfirmationDto requestDonationConfirmationDto) {
 
@@ -102,9 +106,7 @@ public class DonationServiceImpl implements DonationService {
                 donation1.setAmount(donation.getAmount());
                 donation1.setCreatedAt(donation.getCreatedAt());
 
-                Account donorAccount = accountRepository.findById(donation1.getAccountIdDonor()).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
-                donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(donation.getAmount()));
-                accountRepository.save(donorAccount);
+                returnAmount(donation1.getAccountIdDonor(), donation.getAmount());
 
                 if (donation1.getStatus() == TransactionStatus.ACCEPTED) {
                     // Se agrega el monto al beneficiario y se descuenta de la cuenta de reserva del donador
@@ -158,4 +160,10 @@ public class DonationServiceImpl implements DonationService {
         }
     }
 
+
+    public void returnAmount(String id, BigDecimal amount){
+        Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+        donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(amount));
+        accountRepository.save(donorAccount);
+    }
 }
