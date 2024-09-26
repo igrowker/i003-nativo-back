@@ -1,8 +1,7 @@
 package com.igrowker.nativo.utils;
 
 import com.igrowker.nativo.entities.*;
-import com.igrowker.nativo.exceptions.ResourceNotFoundException;
-import com.igrowker.nativo.exceptions.ValidationException;
+import com.igrowker.nativo.exceptions.*;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
@@ -42,10 +41,10 @@ public class MicrocreditScheduler {
                 List<Contribution> contributions = microcredit.getContributions();
 
                 Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
+                        .orElseThrow(() -> new InvalidUserCredentialsException("Cuenta del prestatario no encontrada."));
 
                 User borrowerUser = userRepository.findById(borrowerAccount.getUserId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Usuario del prestatario no encontrado."));
+                        .orElseThrow(() -> new InvalidUserCredentialsException("Usuario del prestatario no encontrado."));
 
                 if (contributions.isEmpty()) {
                     microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
@@ -111,10 +110,10 @@ public class MicrocreditScheduler {
         if (contributions.isEmpty()) return;
 
         Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
+                .orElseThrow(() -> new InvalidAccountException("Cuenta del prestatario no encontrada."));
 
         User borrowerUser = userRepository.findById(borrowerAccount.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
+                .orElseThrow(() -> new InvalidAccountException("Cuenta del prestatario no encontrada."));
 
         BigDecimal totalAmount = contributions.stream()
                 .map(Contribution::getAmount)
@@ -122,16 +121,16 @@ public class MicrocreditScheduler {
 
         try {
             if (borrowerAccount.getAmount().compareTo(totalAmount) < 0) {
-                throw new ValidationException("Fondos insuficientes");
+                throw new InsufficientFundsException("Fondos insuficientes");
             }
 
             for (Contribution contribution : contributions) {
                 processContribution(contribution, microcredit);
 
                 Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
+                        .orElseThrow(() -> new InvalidAccountException("Cuenta de prestamista no encontrada."));
                 User lenderUser = userRepository.findById(lenderAccount.getUserId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
+                        .orElseThrow(() -> new InvalidAccountException("Cuenta de prestamista no encontrada."));
 
                 notificationService.sendPaymentNotification(
                         lenderUser.getEmail(),
@@ -155,7 +154,7 @@ public class MicrocreditScheduler {
             microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
             microcreditRepository.save(microcredit);
 
-        } catch (ValidationException e) {
+        } catch (InsufficientFundsException e) {
             notificationService.sendPaymentNotification(
                     borrowerUser.getEmail(),
                     borrowerUser.getName() + " " + borrowerUser.getSurname(),
