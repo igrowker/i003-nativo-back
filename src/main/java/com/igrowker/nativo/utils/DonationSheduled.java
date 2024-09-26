@@ -25,7 +25,7 @@ public class DonationSheduled {
     @Scheduled(fixedRate = 1440000)
     public void checkPendingDonations() {
         // Buscar todas las donaciones con estado PENDENT
-        List<Donation> pendingDonations = donationRepository.findByStatus(TransactionStatus.PENDENT).orElseThrow(()-> new ResourceNotFoundException("No hay donaciones pendientes"));
+        List<Donation> pendingDonations = donationRepository.findByStatus(TransactionStatus.PENDING).orElseThrow(()-> new ResourceNotFoundException("No hay donaciones pendientes"));
 
         // Revisar cada donación pendiente
         for (Donation donation : pendingDonations) {
