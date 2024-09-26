@@ -17,5 +17,5 @@ public interface PaymentMapper {
 
     ResponseProcessPaymentDto paymentToResponseProcessDto(Payment payment);
 
-    List<ResponseRecordPayment> paymentListToResponseHistoryList(List<Payment> paymentList);
+    List<ResponseRecordPayment> paymentListToResponseRecordList(List<Payment> paymentList);
 }

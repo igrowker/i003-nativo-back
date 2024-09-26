@@ -3,6 +3,7 @@ package com.igrowker.nativo.services.implementation;
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.entities.*;
+import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.mappers.ContributionMapper;
@@ -46,7 +47,7 @@ public class ContributionServiceImpl implements ContributionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
 
         if (!validations.isUserAccountMismatch(microcredit.getBorrowerAccountId())) {
-            throw new IllegalArgumentException("El usuario contribuyente no puede ser el mismo que el solicitante del microcrédito.");
+            throw new InvalidUserCredentialsException("El usuario contribuyente no puede ser el mismo que el solicitante del microcrédito.");
         }
 
         if (!validations.validateTransactionUserFunds(requestContributionDto.amount())) {
@@ -147,7 +148,7 @@ public class ContributionServiceImpl implements ContributionService {
 
     //Chequea el monto restante. Cambia el estado de la transacción
     private void updateRemainingAmount(Microcredit microcredit, BigDecimal contributionAmount) {
-        if (microcredit.getTransactionStatus() == TransactionStatus.PENDENT) {
+        if (microcredit.getTransactionStatus() == TransactionStatus.PENDING) {
             if (contributionAmount.compareTo(microcredit.getRemainingAmount()) > 0) {
                 throw new ValidationException("El monto de la contribución no puede ser mayor que el monto restante del microcrédito.");
             }

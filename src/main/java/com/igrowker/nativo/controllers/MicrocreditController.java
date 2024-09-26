@@ -24,71 +24,52 @@ public class MicrocreditController {
     private final ContributionService contributionService;
 
     @PostMapping("/solicitar")
-    public ResponseEntity<?> createMicrocredit(@Valid @RequestBody RequestMicrocreditDto requestMicrocreditDto) {
-        try {
+    public ResponseEntity<ResponseMicrocreditDto> createMicrocredit(@Valid @RequestBody RequestMicrocreditDto requestMicrocreditDto) throws MessagingException {
             ResponseMicrocreditDto response = microcreditService.createMicrocredit(requestMicrocreditDto);
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-            // TODO enviar notificación
-        } catch (ValidationException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return new ResponseEntity<>("Error interno del servidor", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+
+            return ResponseEntity.ok(response);
+
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseMicrocreditGetDto> getOne(@PathVariable String id) {
         ResponseMicrocreditGetDto response = microcreditService.getOne(id);
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping()
     public ResponseEntity<List<ResponseMicrocreditGetDto>> getAll() {
         List<ResponseMicrocreditGetDto> response = microcreditService.getAll();
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/historial-estados/{status}")
     public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsByTransactionStatus(@PathVariable String status) {
         List<ResponseMicrocreditGetDto> response = microcreditService.getMicrocreditsByTransactionStatus(status);
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/contribuir")
-    public ResponseEntity<?> createContribution(@Valid @RequestBody RequestContributionDto requestContributionDto) {
-        try {
+    public ResponseEntity<?> createContribution(@Valid @RequestBody RequestContributionDto requestContributionDto) throws MessagingException {
             ResponseContributionDto response = contributionService.createContribution(requestContributionDto);
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-            // TODO enviar notificación
-        } catch (ValidationException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (MessagingException e) {
-            throw new RuntimeException(e);
-        }
+
+            return ResponseEntity.ok(response);
     }
 
     @GetMapping("/estado/{status}")
     public ResponseEntity<List<ResponseMicrocreditGetDto>> getBy(@PathVariable String status) {
         List<ResponseMicrocreditGetDto> response = microcreditService.getBy(status);
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/pagar/{id}")
-    public ResponseEntity<?> payMicrocredit(@PathVariable String id) {
-        try {
-            ResponseMicrocreditPaymentDto response = microcreditService.payMicrocredit(id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-            // TODO enviar notificación
-        } catch (ValidationException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (ResourceNotFoundException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch (MessagingException e) {
-            throw new RuntimeException(e);
-        }
+    public ResponseEntity<ResponseMicrocreditPaymentDto> payMicrocredit(@PathVariable String id) throws MessagingException {
+        ResponseMicrocreditPaymentDto response = microcreditService.payMicrocredit(id);
+
+        return ResponseEntity.ok(response);
     }
 }

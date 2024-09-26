@@ -1,7 +1,7 @@
 package com.igrowker.nativo.utils;
 
 import com.igrowker.nativo.entities.*;
-import com.igrowker.nativo.exceptions.ResourceNotFoundException;
+import com.igrowker.nativo.exceptions.*;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
@@ -28,8 +28,8 @@ public class MicrocreditScheduler {
     private final NotificationService notificationService;
 
     @Transactional
-    @Scheduled(cron = "0 0 0 * * ?", zone = "America/Argentina/Buenos_Aires")
-    public void checkAndExpireMicrocredits() {
+    @Scheduled(cron = "0 0 0 * * ?", zone = "America/Argentina/Buenos_Aires") // Ejecuta todos los días a la medianoche
+    public void checkAndExpireMicrocredits() throws MessagingException {
         LocalDate today = LocalDate.now();
 
         List<Microcredit> expiredMicrocredits = microcreditRepository
@@ -37,25 +37,57 @@ public class MicrocreditScheduler {
                         today, List.of(TransactionStatus.EXPIRED, TransactionStatus.COMPLETED));
 
         for (Microcredit microcredit : expiredMicrocredits) {
-            List<Contribution> contributions = microcredit.getContributions();
+            try {
+                List<Contribution> contributions = microcredit.getContributions();
 
-            if (contributions.isEmpty()) {
-                microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
-            } else {
-                microcredit.setTransactionStatus(TransactionStatus.EXPIRED);
+                Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
+                        .orElseThrow(() -> new InvalidUserCredentialsException("Cuenta del prestatario no encontrada."));
+
+                User borrowerUser = userRepository.findById(borrowerAccount.getUserId())
+                        .orElseThrow(() -> new InvalidUserCredentialsException("Usuario del prestatario no encontrado."));
+
+                if (contributions.isEmpty()) {
+                    microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
+
+                    notificationService.sendPaymentNotification(
+                            borrowerUser.getEmail(),
+                            borrowerUser.getName() + " " + borrowerUser.getSurname(),
+                            BigDecimal.ZERO,
+                            "Finalización del Microcrédito",
+                            "Te informamos que tu microcrédito con ID: " + microcredit.getId() + " ha finalizado debido a que no recibió ninguna contribución.",
+                            "Gracias por participar en nuestro sistema de microcréditos."
+                    );
+                } else {
+                    microcredit.setTransactionStatus(TransactionStatus.EXPIRED);
+
+                    BigDecimal totalAmount = contributions.stream()
+                            .map(Contribution::getAmount)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    notificationService.sendPaymentNotification(
+                            borrowerUser.getEmail(),
+                            borrowerUser.getName() + " " + borrowerUser.getSurname(),
+                            totalAmount,
+                            "Microcrédito Vencido",
+                            "Te informamos que tu microcrédito con ID: " + microcredit.getId() + " ha vencido porque no se realizó el pago en la fecha de vencimiento.",
+                            "Te recomendamos que revises tu cuenta para regularizar la situación."
+                    );
+                }
+
+                microcreditRepository.save(microcredit);
+            } catch (ResourceNotFoundException | MessagingException e) {
+                e.printStackTrace();
             }
-
-            microcreditRepository.save(microcredit);
         }
     }
 
     @Transactional
-    @Scheduled(cron = "0 0 17 * * ?", zone = "America/Argentina/Buenos_Aires") //Todos los días a las 17.00 hs
+    @Scheduled(cron = "0 0 17 * * MON-FRI", zone = "America/Argentina/Buenos_Aires")
+    // Ejecuta a las 17:00 horas. Todos los días y todos los meses. Solo de lunes a viernes.
     public void processPayAutomaticMicrocredits() {
         LocalDate today = LocalDate.now();
-        processMicrocreditPayments(today, TransactionStatus.PENDENT);
+        processMicrocreditPayments(today, TransactionStatus.PENDING);
         processMicrocreditPayments(today, TransactionStatus.ACCEPTED);
-
     }
 
     private void processMicrocreditPayments(LocalDate today, TransactionStatus status) {
@@ -78,45 +110,94 @@ public class MicrocreditScheduler {
         if (contributions.isEmpty()) return;
 
         Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
+                .orElseThrow(() -> new InvalidAccountException("Cuenta del prestatario no encontrada."));
 
         User borrowerUser = userRepository.findById(borrowerAccount.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
+                .orElseThrow(() -> new InvalidAccountException("Cuenta del prestatario no encontrada."));
 
         BigDecimal totalAmount = contributions.stream()
                 .map(Contribution::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        for (Contribution contribution : contributions) {
-            processContribution(contribution, microcredit);
+        try {
+            if (borrowerAccount.getAmount().compareTo(totalAmount) < 0) {
+                throw new InsufficientFundsException("Fondos insuficientes");
+            }
 
-            Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
-            User lenderUser = userRepository.findById(lenderAccount.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
+            for (Contribution contribution : contributions) {
+                processContribution(contribution, microcredit);
 
-            notificationService.sendPaymentNotification(lenderUser.getEmail(), (lenderUser.getName() + " " + lenderUser.getSurname()),
-                    contribution.getAmount(), "Devolución cuota microcrédito",
-                    "Te informamos que se ha procesado la devolución de tu contribución al microcrédito con ID: " + microcredit.getId(),
-                    "Gracias por tu participación en nuestro programa de microcréditos. Esperamos seguir contando con tu confianza.");
+                Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
+                        .orElseThrow(() -> new InvalidAccountException("Cuenta de prestamista no encontrada."));
+                User lenderUser = userRepository.findById(lenderAccount.getUserId())
+                        .orElseThrow(() -> new InvalidAccountException("Cuenta de prestamista no encontrada."));
+
+                notificationService.sendPaymentNotification(
+                        lenderUser.getEmail(),
+                        lenderUser.getName() + " " + lenderUser.getSurname(),
+                        contribution.getAmount(),
+                        "Devolución cuota microcrédito",
+                        "Te informamos que se ha procesado la devolución de tu contribución al microcrédito con ID: " + microcredit.getId(),
+                        "Gracias por tu participación en nuestro programa de microcréditos. Esperamos seguir contando con tu confianza."
+                );
+            }
+
+            notificationService.sendPaymentNotification(
+                    borrowerUser.getEmail(),
+                    borrowerUser.getName() + " " + borrowerUser.getSurname(),
+                    totalAmount,
+                    "Descuento cuota del microcrédito",
+                    "Te informamos que se ha procesado el descuento por el microcrédito con ID: " + microcredit.getId(),
+                    "Si no tienes saldo suficiente en la cuenta en este momento, el monto pendiente se deducirá automáticamente en tu próximo ingreso."
+            );
+
+            microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
+            microcreditRepository.save(microcredit);
+
+        } catch (InsufficientFundsException e) {
+            notificationService.sendPaymentNotification(
+                    borrowerUser.getEmail(),
+                    borrowerUser.getName() + " " + borrowerUser.getSurname(),
+                    totalAmount,
+                    "Saldo insuficiente para el microcrédito",
+                    "No tienes saldo suficiente para pagar el microcrédito con ID: " + microcredit.getId(),
+                    "Te recomendamos que deposites fondos en tu cuenta para procesar el pago en el futuro."
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        notificationService.sendPaymentNotification(borrowerUser.getEmail(), (borrowerUser.getName() + " " + borrowerUser.getSurname()),
-                totalAmount, "Descuento cuota del microcrédito",
-                "Te informamos que se ha procesado el descuento por el microcrédito con ID: " + microcredit.getId(),
-                "Si no tienes saldo suficiente en la cuenta en este momento, el monto pendiente se deducirá automáticamente en tu próximo ingreso.");
-
-        microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
-        microcreditRepository.save(microcredit);
     }
 
     private void processContribution(Contribution contribution, Microcredit microcredit) {
-        generalTransactions.updateBalances(
-                microcredit.getBorrowerAccountId(),
-                contribution.getLenderAccountId(),
-                contribution.getAmount());
+        try {
+            generalTransactions.updateBalances(
+                    microcredit.getBorrowerAccountId(),
+                    contribution.getLenderAccountId(),
+                    contribution.getAmount());
 
-        contribution.setTransactionStatus(TransactionStatus.COMPLETED);
-        contributionRepository.save(contribution);
+            contribution.setTransactionStatus(TransactionStatus.COMPLETED);
+            contributionRepository.save(contribution);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Transactional
+    @Scheduled(cron = "0 0 18 * * MON-FRI", zone = "America/Argentina/Buenos_Aires")
+    // Ejecuta a las 18:00 horas. Todos los días y todos los meses. Solo de lunes a viernes.
+    public void processExpiredMicrocreditPayments() {
+        LocalDate today = LocalDate.now();
+
+        List<Microcredit> microcredits = microcreditRepository.findByTransactionStatus(TransactionStatus.EXPIRED);
+
+        for (Microcredit microcredit : microcredits) {
+            if (microcredit.getExpirationDate().isBefore(today) || microcredit.getExpirationDate().isEqual(today)) {
+                try {
+                    payMicrocreditAndContributors(microcredit);
+                } catch (ResourceNotFoundException | MessagingException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

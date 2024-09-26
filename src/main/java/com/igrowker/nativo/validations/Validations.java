@@ -63,8 +63,8 @@ public class Validations {
                 return TransactionStatus.COMPLETED;
             case "EXPIRED":
                 return TransactionStatus.EXPIRED;
-            case "PENDENT":
-                return TransactionStatus.PENDENT;
+            case "PENDING":
+                return TransactionStatus.PENDING;
             case "ACCEPTED":
                 return TransactionStatus.ACCEPTED;
             case "FAILED":
