@@ -50,6 +50,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         }
 
         // Verificar que el saldo de la cuenta sea mayor o igual a cero
+        //ESTE DEBEMOS CAMBIAR LA LOGICA
         if (userBorrower.account.getAmount().compareTo(BigDecimal.ZERO) < 0) {
             throw new InsufficientFundsException("El saldo de la cuenta debe ser mayor a cero para solicitar un microcrédito.");
         }
