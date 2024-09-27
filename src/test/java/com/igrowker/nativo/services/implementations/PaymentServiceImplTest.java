@@ -203,9 +203,9 @@ public class PaymentServiceImplTest {
             var userAccountPair = new Validations.UserAccountPair(new User(), new Account());
 
             when(validations.getAuthenticatedUserAndAccount()).thenReturn(userAccountPair);
-            when(paymentRepository.findPaymentsByTransactionDate(any(), any())).thenReturn(paymentList);
+            when(paymentRepository.findPaymentsByTransactionDate(any(), any(), any())).thenReturn(paymentList);
             when(paymentMapper.paymentListToResponseRecordList(any())).thenReturn(responseList);
-            var result = paymentServiceImpl.getPaymentsByStatus(TransactionStatus.DENIED.toString());
+            var result = paymentServiceImpl.getPaymentsByDate("2024-07-20");
 
             assertThat(result).isNotNull();
             assertThat(result).hasSize(1);
@@ -216,24 +216,22 @@ public class PaymentServiceImplTest {
             assertThat(result.get(0).transactionDate()).isEqualTo(responseRecordPayment.transactionDate());
             assertThat(result.get(0).transactionStatus()).isEqualTo(responseRecordPayment.transactionStatus());
             verify(validations, times(1)).getAuthenticatedUserAndAccount();
-            verify(validations, times(1)).statusConvert(any());
-            verify(paymentRepository, times(1)).findPaymentsByStatus(any(), any());
+            verify(paymentRepository, times(1)).findPaymentsByTransactionDate(any(), any(), any());
             verify(paymentMapper, times(1)).paymentListToResponseRecordList(any());
         }
-    }
+
+        @Test
+        public void get_payments_by_status_should_NOT_be_Ok_due_NOT_FOUND() throws Exception {
+            when(validations.getAuthenticatedUserAndAccount()).thenThrow(new ResourceNotFoundException("Cuenta no encontrada para el usuario"));
+            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
+                paymentServiceImpl.getPaymentsByDate("test");
+            });
+            String expectedMessage = "Cuenta no encontrada para el usuario";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
+
+        //ToDo. If checked exception of data time format is done,
+        // another test of that failing should be added, and it should be modified the one that pass.
     }
 }
-
-/*
-    @Override
-    public List<ResponseRecordPayment> getPaymentsByDate(String date) {
-        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate transactionDate = LocalDate.parse(date, formatter);
-        LocalDateTime startDate = transactionDate.atStartOfDay();
-        LocalDateTime endDate = transactionDate.plusDays(1).atStartOfDay();
-        List<Payment> paymentList = paymentRepository.findPaymentsByTransactionDate(
-                accountAndUser.account.getId(), startDate, endDate);
-        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
-        return result;
-    }*/
