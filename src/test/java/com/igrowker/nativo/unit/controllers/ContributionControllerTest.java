@@ -1,7 +1,8 @@
-package com.igrowker.nativo.controllers;
+package com.igrowker.nativo.unit.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.igrowker.nativo.controllers.ContributionController;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.security.JwtService;

@@ -1,6 +1,7 @@
-package com.igrowker.nativo.controllers;
+package com.igrowker.nativo.unit.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.igrowker.nativo.controllers.PaymentController;
 import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
 import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
 import com.igrowker.nativo.dtos.payment.ResponseRecordPayment;
