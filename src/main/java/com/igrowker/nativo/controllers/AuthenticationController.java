@@ -15,9 +15,9 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/registro")
-    public ResponseEntity<ResponseUserDto> registerUser(@Valid @RequestBody RequestRegisterDto requestRegisterDto) {
-        ResponseUserDto registeredUser = authenticationService.signUp(requestRegisterDto);
-        return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
+    public ResponseEntity<ResponseUserNonVerifiedDto> registerUser(@Valid @RequestBody RequestRegisterDto requestRegisterDto) {
+        ResponseUserNonVerifiedDto unverifiedRegisteredUser = authenticationService.signUp(requestRegisterDto);
+        return new ResponseEntity<>(unverifiedRegisteredUser, HttpStatus.CREATED);
     }
 
     @PostMapping("/inicio-sesion")
@@ -27,22 +27,14 @@ public class AuthenticationController {
     }
 
     @PostMapping("/verificacion-codigo")
-    public ResponseEntity<?> verifyUser(@RequestBody RequestVerifyUserDto verifyUserDto) {
-        try {
-            authenticationService.verifyUser(verifyUserDto);
-            return ResponseEntity.ok("Cuenta verificada correctamente.");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<ResponseUserVerifiedDto> verifyUser(@RequestBody RequestVerifyUserDto verifyUserDto) {
+        ResponseUserVerifiedDto verifiedRegisteredUser = authenticationService.verifyUser(verifyUserDto);
+        return new ResponseEntity<>(verifiedRegisteredUser, HttpStatus.OK);
     }
 
     @GetMapping("/reenvio-codigo")
     public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
-        try {
-            authenticationService.resendVerificationCode(email);
-            return ResponseEntity.ok("Código de verificación enviado.");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        ResponseUserNonVerifiedDto unverifiedRegisteredUser = authenticationService.resendVerificationCode(email);
+        return new ResponseEntity<>(unverifiedRegisteredUser, HttpStatus.OK);
     }
 }

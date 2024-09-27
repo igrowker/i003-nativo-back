@@ -9,11 +9,16 @@ import org.mapstruct.Mapper;
 public interface UserMapper {
 
     User registerUsertoUser(RequestRegisterDto requestRegisterDto);
-    ResponseUserDto userToUserDTO(User user);
+
+    ResponseUserNonVerifiedDto userToUserNonVerifiedDTO(User user);
+
+    ResponseUserVerifiedDto userToUserVerifiedDTO(User user);
 
     User UpdateUserDtoToUser(UpdateUserDto updateUserDto);
+
     ResponseUpdateUserDto userToResponseUpdateUserDto(User user);
 
     User updateMailDtoToUser(UpdateMailDto updateMailDto);
+
     ResponseUpdateMailDto userToResponsUpdateMailDto(User user);
 }
