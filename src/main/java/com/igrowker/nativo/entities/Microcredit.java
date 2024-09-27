@@ -20,23 +20,23 @@ public class Microcredit {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String borrowerAccountId; // solicitante
+    private String borrowerAccountId;
 
     @Column(length = 1000)
-    private BigDecimal amount; // monto solicitado
+    private BigDecimal amount;
 
     @Column(name = "remaining_amount")
-    private BigDecimal remainingAmount; // monto faltante para completar el microcredito
+    private BigDecimal remainingAmount;
 
     @Column(length = 300)
     private String title;
 
     @Column(length = 1000)
-    private String description; // motivo
+    private String description;
 
-    private LocalDate expirationDate; // fecha de vencimiento
+    private LocalDate expirationDate;
 
-    private LocalDate createdDate; // fecha de creacion
+    private LocalDate createdDate;
 
     //private Integer installmentCount; //cantidad de cuotas
 
@@ -45,14 +45,15 @@ public class Microcredit {
     //private Integer remainingInstallments; //cuotas pendientes
 
     @Enumerated(EnumType.STRING)
-    private TransactionStatus transactionStatus; // estado de la transaccion
+    private TransactionStatus transactionStatus;
 
     @OneToMany(mappedBy = "microcredit")
-    private List<Contribution> contributions; // listado de contribuyentes
+    private List<Contribution> contributions;
 
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDate.now();
+        this.expirationDate = LocalDate.now().plusDays(30);
         this.transactionStatus = TransactionStatus.PENDING;
         this.remainingAmount = this.amount;
         //this.remainingInstallments = this.installmentCount;

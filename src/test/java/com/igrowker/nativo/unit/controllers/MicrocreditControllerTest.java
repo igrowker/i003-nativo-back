@@ -1,7 +1,8 @@
-package com.igrowker.nativo.controllers;
+package com.igrowker.nativo.unit.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.igrowker.nativo.controllers.MicrocreditController;
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
@@ -15,7 +16,6 @@ import com.igrowker.nativo.security.JwtService;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -56,11 +56,11 @@ public class MicrocreditControllerTest {
     @Test
     public void createMicrocredit_ShouldReturnOk() throws Exception {
         RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
-                BigDecimal.valueOf(100000.00), LocalDate.of(2024, 10, 17));
+                BigDecimal.valueOf(100000.00));
 
         ResponseMicrocreditDto responseMicrocreditDto = new ResponseMicrocreditDto("1234",
                 BigDecimal.valueOf(100000.00), BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
-                requestMicrocreditDto.expirationDate(),
+                LocalDate.now().plusDays(30),
                 "Test title", "Test Description", TransactionStatus.PENDING);
 
         when(microcreditService.createMicrocredit(requestMicrocreditDto)).thenReturn(responseMicrocreditDto);
@@ -83,7 +83,7 @@ public class MicrocreditControllerTest {
     @Test
     public void createMicrocredit_ShouldNotReturnOk() throws Exception {
         RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test amount exception ", "Monto mayor al permitido",
-                BigDecimal.valueOf(100000.00), LocalDate.of(2024, 10, 17));
+                BigDecimal.valueOf(100000.00));
 
         when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ 500000"));
 
@@ -124,9 +124,9 @@ public class MicrocreditControllerTest {
 
         when(microcreditService.getOne(any())).
                 thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditGetDto.id()));
-        mockMvc.perform(get("/api/microcreditos/"+ responseMicrocreditGetDto.id()))
+        mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditGetDto.id()))
                 .andExpect(status().isNotFound())
-                        .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
+                .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
     }
 
     @Test
@@ -256,7 +256,7 @@ public class MicrocreditControllerTest {
                 BigDecimal.valueOf(1000.00));
         when(microcreditService.getOne(any())).
                 thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditPaymentDto.id()));
-        mockMvc.perform(get("/api/microcreditos/"+ responseMicrocreditPaymentDto.id()))
+        mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditPaymentDto.id()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
 

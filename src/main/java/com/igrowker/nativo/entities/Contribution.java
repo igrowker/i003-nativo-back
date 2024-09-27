@@ -19,7 +19,7 @@ public class Contribution {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String lenderAccountId;     //contribuyente
+    private String lenderAccountId;
 
     @Column(length = 1000)
     private BigDecimal amount;

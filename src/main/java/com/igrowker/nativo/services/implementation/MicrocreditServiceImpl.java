@@ -98,8 +98,10 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     public List<ResponseMicrocreditGetDto> getBy(String transactionStatus) {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
         TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+
         List<Microcredit> microcredits = microcreditRepository.findByTransactionStatusAndBorrowerAccountId(
                 enumStatus, userBorrower.account.getId());
+
         if (microcredits.isEmpty()) {
             throw new ResourceNotFoundException("No se encontraron microcréditos para el usuario con el estado especificado.");
         }
@@ -112,15 +114,19 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     @Transactional
     public ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
+
         Microcredit microcredit = microcreditRepository.findById(microcreditId)
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado para el usuario"));
+
         if (!microcredit.getBorrowerAccountId().equals(userBorrower.account.getId())) {
             throw new InvalidUserCredentialsException("El usuario no tiene permiso para pagar este microcrédito.");
         }
+
         if (microcredit.getTransactionStatus() == TransactionStatus.COMPLETED) {
             throw new DeniedTransactionException("No se puede pagar un microcrédito que ya está " +
                     microcredit.getTransactionStatus().toString().toLowerCase() + ".");
         }
+
         if (microcredit.getTransactionStatus() == TransactionStatus.PENDING && microcredit.getContributions().isEmpty()) {
             throw new NoContributionsFoundException("No se puede pagar un microcrédito sin contribuciones.");
         }
