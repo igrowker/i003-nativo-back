@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -47,12 +48,12 @@ public class DonationControllerTest {
 
         // Arrange: Preparar las clases de Input y Output
         // se puede hacer fuera del test si son clases compartidas
-        var RequestDonationDto = new RequestDonationDto(new BigDecimal("100.0"),"348ad942-10aa-42b8-8173-a763c8d9b7e3","218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",true);
+        var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),"348ad942-10aa-42b8-8173-a763c8d9b7e3","218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",true);
 
         var ResponseDonationDtoTrue = new ResponseDonationDtoTrue("e17efc6c-6d57-4542-8ac1-637251e7662b",
-                new BigDecimal("100.0"),"348ad942-10aa-42b8-8173-a763c8d9b7e3",
+                BigDecimal.valueOf(100.0),"348ad942-10aa-42b8-8173-a763c8d9b7e3",
                 "Mario","Grande","218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",
-                "Ulises", "Gonzales", LocalDateTime.of(2024, 9, 26, 18, 19, 1),
+                "Ulises", "Gonzales", LocalDateTime.now(),
                 "PENDENT");
 
         // Probar BigDecimal.of o algo por ahi
@@ -68,14 +69,14 @@ public class DonationControllerTest {
                 // Assert: probar por verdadero o falso distintas aserciones
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", Matchers.is(ResponseDonationDtoTrue.id())))
-                .andExpect(jsonPath("$.amount", Matchers.is(ResponseDonationDtoTrue.amount())))
+                .andExpect(jsonPath("$.amount", Matchers.is(ResponseDonationDtoTrue.amount().doubleValue())))
                 .andExpect(jsonPath("$.accountIdDonor", Matchers.is(ResponseDonationDtoTrue.accountIdDonor())))
                 .andExpect(jsonPath("$.donorName", Matchers.is(ResponseDonationDtoTrue.donorName())))
                 .andExpect(jsonPath("$.donorLastName", Matchers.is(ResponseDonationDtoTrue.donorLastName())))
                 .andExpect(jsonPath("$.accountIdBeneficiary", Matchers.is(ResponseDonationDtoTrue.accountIdBeneficiary())))
                 .andExpect(jsonPath("$.beneficiaryName", Matchers.is(ResponseDonationDtoTrue.beneficiaryName())))
                 .andExpect(jsonPath("$.beneficiaryLastName", Matchers.is(ResponseDonationDtoTrue.beneficiaryLastName())))
-                .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoTrue.createdAt())))
+                .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoTrue.createdAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")))))
                 .andExpect(jsonPath("$.status", Matchers.is(ResponseDonationDtoTrue.status())));
     }
 
@@ -84,12 +85,12 @@ public class DonationControllerTest {
 
         // Arrange: Preparar las clases de Input y Output
         // se puede hacer fuera del test si son clases compartidas
-        var RequestDonationDto = new RequestDonationDto(new BigDecimal("100"),"348ad942-10aa-42b8-8173-a763c8d9b7e3","218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",false);
+        var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),"348ad942-10aa-42b8-8173-a763c8d9b7e3","218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",false);
 
         var ResponseDonationDtoFalse = new ResponseDonationDtoFalse("e17efc6c-6d57-4542-8ac1-637251e7662b",
-                new BigDecimal("100"),"348ad942-10aa-42b8-8173-a763c8d9b7e3",
+                BigDecimal.valueOf(100.0),"348ad942-10aa-42b8-8173-a763c8d9b7e3",
                 "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",
-                LocalDateTime.of(2024, 9, 26, 18, 19, 1),
+                LocalDateTime.now(),
                 "PENDENT");
 
         when(donationService.createDonationFalse(RequestDonationDto)).thenReturn(ResponseDonationDtoFalse);
@@ -103,10 +104,10 @@ public class DonationControllerTest {
                 // Assert: probar por verdadero o falso distintas aserciones
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", Matchers.is(ResponseDonationDtoFalse.id())))
-                .andExpect(jsonPath("$.amount", Matchers.is(ResponseDonationDtoFalse.amount())))
+                .andExpect(jsonPath("$.amount", Matchers.is(ResponseDonationDtoFalse.amount().doubleValue())))
                 .andExpect(jsonPath("$.accountIdDonor", Matchers.is(ResponseDonationDtoFalse.accountIdDonor())))
                 .andExpect(jsonPath("$.accountIdBeneficiary", Matchers.is(ResponseDonationDtoFalse.accountIdBeneficiary())))
-                .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoFalse.createdAt())))
+                .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoFalse.createdAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")))))
                 .andExpect(jsonPath("$.status", Matchers.is(ResponseDonationDtoFalse.status())));
     }
 
