@@ -7,6 +7,7 @@ import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
+import com.igrowker.nativo.exceptions.InvalidDataException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.mappers.PaymentMapper;
@@ -119,7 +120,7 @@ public class PaymentServiceImplTest {
         }
 
         @Test
-        public void get_all_payments_should_NOT_be_Ok_due_() throws Exception {
+        public void get_all_payments_should_NOT_be_Ok_due_NOT_FOUND() throws Exception {
             when(validations.getAuthenticatedUserAndAccount()).thenThrow(new ResourceNotFoundException("Cuenta no encontrada para el usuario"));
             Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
                 paymentServiceImpl.getAllPayments();
@@ -163,31 +164,67 @@ public class PaymentServiceImplTest {
             verify(paymentMapper, times(1)).paymentListToResponseRecordList(any());
         }
 
+        @Test
+        public void get_payments_by_status_should_NOT_be_Ok_due_NOT_FOUND() throws Exception {
+            when(validations.getAuthenticatedUserAndAccount()).thenThrow(new ResourceNotFoundException("Cuenta no encontrada para el usuario"));
+            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
+                paymentServiceImpl.getPaymentsByStatus("test");
+            });
+            String expectedMessage = "Cuenta no encontrada para el usuario";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
 
+        @Test
+        public void get_payments_by_status_should_NOT_be_Ok_due_BAD_REQUEST() throws Exception {
+            var userAccountPair = new Validations.UserAccountPair(new User(), new Account());
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(userAccountPair);
+            when(validations.statusConvert(any())).thenThrow(new InvalidDataException("El estado de la transacción no existe: "));
+            Exception exception = assertThrows( InvalidDataException.class, () -> {
+                paymentServiceImpl.getPaymentsByStatus("test");
+            });
+            String expectedMessage = "El estado de la transacción no existe: ";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
+    }
+
+    @Nested
+    class GetPaymentsByOneDateTests {
+        @Test
+        public void get_payments_by_date_should_be_Ok() throws Exception {
+            var payment = new Payment("paymentId", "senderId", "receiverId", BigDecimal.valueOf(100.50),
+                    LocalDateTime.now(), TransactionStatus.DENIED, "description", "qrCode");
+            List<Payment> paymentList = List.of(payment);
+            var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderId",
+                    "receiverId", BigDecimal.valueOf(100.50), "description",
+                    LocalDateTime.now(), TransactionStatus.DENIED);
+            List<ResponseRecordPayment> responseList = List.of(responseRecordPayment);
+            var userAccountPair = new Validations.UserAccountPair(new User(), new Account());
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(userAccountPair);
+            when(paymentRepository.findPaymentsByTransactionDate(any(), any())).thenReturn(paymentList);
+            when(paymentMapper.paymentListToResponseRecordList(any())).thenReturn(responseList);
+            var result = paymentServiceImpl.getPaymentsByStatus(TransactionStatus.DENIED.toString());
+
+            assertThat(result).isNotNull();
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).id()).isEqualTo(responseRecordPayment.id());
+            assertThat(result.get(0).receiverAccount()).isEqualTo(responseRecordPayment.receiverAccount());
+            assertThat(result.get(0).amount()).isEqualTo(responseRecordPayment.amount());
+            assertThat(result.get(0).description()).isEqualTo(responseRecordPayment.description());
+            assertThat(result.get(0).transactionDate()).isEqualTo(responseRecordPayment.transactionDate());
+            assertThat(result.get(0).transactionStatus()).isEqualTo(responseRecordPayment.transactionStatus());
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(validations, times(1)).statusConvert(any());
+            verify(paymentRepository, times(1)).findPaymentsByStatus(any(), any());
+            verify(paymentMapper, times(1)).paymentListToResponseRecordList(any());
+        }
+    }
     }
 }
 
-
-
-
 /*
-*  @Override
-    public List<ResponseRecordPayment> getAllPayments() {
-        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
-        List<Payment> paymentList = paymentRepository.findPaymentsByAccount(accountAndUser.account.getId());
-        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
-        return result;
-    }
-
-    @Override
-    public List<ResponseRecordPayment> getPaymentsByStatus(String status) {
-        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
-        TransactionStatus statusEnum = validations.statusConvert(status);
-        List<Payment> paymentList = paymentRepository.findPaymentsByStatus(accountAndUser.account.getId(), statusEnum);
-        var result = paymentMapper.paymentListToResponseHistoryList(paymentList);
-        return result;
-    }
-
     @Override
     public List<ResponseRecordPayment> getPaymentsByDate(String date) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
