@@ -42,7 +42,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public ResponseUserDto signUp(@Valid RequestRegisterDto requestRegisterDto) {
+    public ResponseUserNonVerifiedDto signUp(@Valid RequestRegisterDto requestRegisterDto) {
         if (userRepository.findByEmail(requestRegisterDto.email()).isPresent()) {
             throw new ResourceAlreadyExistsException("Ya hay una cuenta asociada con el email " + requestRegisterDto.email() + ".");
         }
@@ -66,7 +66,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         sendVerificationEmail(user);
         User savedUser = userRepository.save(user);
 
-        return userMapper.userToUserDTO(savedUser);
+        return userMapper.userToUserNonVerifiedDTO(savedUser);
     }
 
     @Override
@@ -90,47 +90,58 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         String jwtToken = jwtService.generateToken(user);
 
-        return new ResponseLoginDto(user.getId(), jwtToken, jwtService.getExpirationTime());
+        return new ResponseLoginDto(user.getId(), user.getAccountId(), jwtToken, jwtService.getExpirationTime());
     }
 
-    public void verifyUser(RequestVerifyUserDto verifyUserDto) {
+    public ResponseUserVerifiedDto verifyUser(RequestVerifyUserDto verifyUserDto) {
         Optional<User> optionalUser = userRepository.findByEmail(verifyUserDto.email());
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            if (user.getVerificationCode() == null) {
-                throw new InvalidDataException("Cuenta ya se encuentra verificada.");
-            }
-            if (user.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
-                throw new InvalidDataException("Código de verificación vencido.");
-            }
-            if (user.getVerificationCode().equals(verifyUserDto.verificationCode())) {
-                user.setEnabled(true);
-                user.setVerificationCode(null);
-                user.setVerificationCodeExpiresAt(null);
-                userService.assignAccountToUser(user.getDni(), user.getId());
-                userRepository.save(user);
-            } else {
-                throw new InvalidDataException("Código de verificación incorrecto.");
-            }
-        } else {
+
+        if (optionalUser.isEmpty()) {
             throw new ResourceNotFoundException("Usuario no encontrado.");
         }
+
+        User user = optionalUser.get();
+
+        if (user.getVerificationCode() == null) {
+            throw new InvalidDataException("Cuenta ya se encuentra verificada.");
+        }
+
+        if (user.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new InvalidDataException("Código de verificación vencido.");
+        }
+
+        if (!user.getVerificationCode().equals(verifyUserDto.verificationCode())) {
+            throw new InvalidDataException("Código de verificación incorrecto.");
+        }
+
+        user.setEnabled(true);
+        user.setVerificationCode(null);
+        user.setVerificationCodeExpiresAt(null);
+        userService.assignAccountToUser(user.getDni(), user.getId());
+        User savedUser = userRepository.save(user);
+
+        return userMapper.userToUserVerifiedDTO(savedUser);
     }
 
-    public void resendVerificationCode(String email) {
+    public ResponseUserNonVerifiedDto resendVerificationCode(String email) {
         Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            if (user.isEnabled()) {
-                throw new InvalidDataException("La cuenta ya se encuentra verificada.");
-            }
-            user.setVerificationCode(generateVerificationCode());
-            user.setVerificationCodeExpiresAt(LocalDateTime.now().plusHours(1));
-            sendVerificationEmail(user);
-            userRepository.save(user);
-        } else {
+
+        if (optionalUser.isEmpty()) {
             throw new ResourceNotFoundException("Usuario no encontrado.");
         }
+
+        User user = optionalUser.get();
+
+        if (user.isEnabled()) {
+            throw new InvalidDataException("La cuenta ya se encuentra verificada.");
+        }
+
+        user.setVerificationCode(generateVerificationCode());
+        user.setVerificationCodeExpiresAt(LocalDateTime.now().plusHours(1));
+        sendVerificationEmail(user);
+        User savedUser = userRepository.save(user);
+
+        return userMapper.userToUserNonVerifiedDTO(savedUser);
     }
 
     private void sendVerificationEmail(User user) {

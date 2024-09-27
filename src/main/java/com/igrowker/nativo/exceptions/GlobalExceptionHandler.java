@@ -2,11 +2,12 @@ package com.igrowker.nativo.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,6 +46,7 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
+
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleResourceAlreadyExistsException(ResourceAlreadyExistsException ex) {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
@@ -79,6 +81,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ExpiredTransactionException.class)
     public ResponseEntity<ErrorResponse> handleExpiredTransactionException(ExpiredTransactionException ex) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidDateFormat(HttpMessageNotReadableException ex) {
+        Throwable cause = ex.getCause();
+        if (cause instanceof DateTimeParseException || ex.getMessage().contains("LocalDate")) {
+            String errorMessage = "Formato de fecha no válido. Debe ser AAAA-MM-DD.";
+            return buildErrorResponse(HttpStatus.BAD_REQUEST, errorMessage);
+        }
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Error: " + ex.getMessage());
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message) {

@@ -9,13 +9,15 @@ public record RequestRegisterDto(
         @NotNull(message = "El DNI es obligatorio.")
         Long dni,
 
-        @NotNull(message = "El nombre es obligatorio.")
+        @NotBlank(message = "El nombre es obligatorio y no puede estar vacío.")
+        @Pattern(regexp = "^[a-zA-ZÀ-ÿ\\s]+$", message = "El nombre solo debe contener letras.")
         String name,
 
-        @NotNull(message = "El apellido es obligatorio.")
+        @NotBlank(message = "El apellido es obligatorio y no puede estar vacío.")
+        @Pattern(regexp = "^[a-zA-ZÀ-ÿ\\s]+$", message = "El apellido solo debe contener letras.")
         String surname,
 
-        @NotNull(message = "El email es obligatorio.")
+        @NotBlank(message = "El email es obligatorio y no puede estar vacío.")
         @Email(message = "Formato de email no válido.")
         String email,
 
@@ -24,7 +26,8 @@ public record RequestRegisterDto(
                 message = "La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial (!@#$%^&*()).")
         String password,
 
-        @NotNull(message = "El teléfono es obligatorio.")
+        @NotBlank(message = "El teléfono es obligatorio y no puede estar vacío.")
+        @Pattern(regexp = "^[0-9]+$", message = "El teléfono solo debe contener números.")
         String phone,
 
         @NotNull(message = "La fecha de nacimiento es obligatoria.")
