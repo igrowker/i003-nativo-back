@@ -28,6 +28,9 @@ public class Microcredit {
     @Column(name = "remaining_amount")
     private BigDecimal remainingAmount;
 
+    @Column
+    private BigDecimal amountFinal;
+
     @Column(length = 300)
     private String title;
 
@@ -38,9 +41,9 @@ public class Microcredit {
 
     private LocalDate createdDate;
 
-    //private Integer installmentCount; //cantidad de cuotas
+    private Integer installmentCount; //cantidad de cuotas
 
-    //private Integer interestRate; //tasa de interes
+    private BigDecimal interestRate = BigDecimal.valueOf(10); //tasa de interes
 
     //private Integer remainingInstallments; //cuotas pendientes
 
@@ -55,7 +58,8 @@ public class Microcredit {
         this.createdDate = LocalDate.now();
         this.expirationDate = LocalDate.now().plusDays(30);
         this.transactionStatus = TransactionStatus.PENDING;
+        this.installmentCount = 1;
         this.remainingAmount = this.amount;
-        //this.remainingInstallments = this.installmentCount;
+         //this.remainingInstallments = this.installmentCount;
     }
 }
