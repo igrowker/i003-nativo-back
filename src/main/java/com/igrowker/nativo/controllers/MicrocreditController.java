@@ -3,14 +3,11 @@ package com.igrowker.nativo.controllers;
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.*;
-import com.igrowker.nativo.exceptions.ResourceNotFoundException;
-import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
