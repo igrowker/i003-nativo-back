@@ -153,13 +153,16 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         BigDecimal totalPaidAmount = BigDecimal.ZERO;
 
         for (Contribution contribution : contributions) {
+            BigDecimal interest = (contribution.getAmount().multiply(microcredit.getInterestRate())).divide(BigDecimal.valueOf(100));
+            BigDecimal totalContributionAmountWithInterest = contribution.getAmount().add(interest);
+
             generalTransactions.updateBalances(microcredit.getBorrowerAccountId(), contribution.getLenderAccountId(),
-                    contribution.getAmount());
+                    totalContributionAmountWithInterest);
 
             contribution.setTransactionStatus(TransactionStatus.COMPLETED);
             contributionRepository.save(contribution);
 
-            totalPaidAmount = totalPaidAmount.add(contribution.getAmount());
+            totalPaidAmount = totalPaidAmount.add(totalContributionAmountWithInterest);
 
             Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
@@ -241,21 +244,22 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         );
     }
 
-    private BigDecimal totalAmountToPay(Microcredit microcredit) {
-
-        // Calcular el monto total (con intereses) a devolver a los contribuyentes
+    public BigDecimal totalAmountToPay(Microcredit microcredit) {
         BigDecimal totalAmountToPay = microcredit.getContributions().stream()
                 .map(contribution -> {
-                    BigDecimal interest = contribution.getAmount().multiply(microcredit.getInterestRate()).divide(BigDecimal.valueOf(100));
+                    BigDecimal interest = (contribution.getAmount().multiply(microcredit.getInterestRate())).divide(BigDecimal.valueOf(100));
                     return contribution.getAmount().add(interest);
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return totalAmountToPay;
     }
+
+
     private BigDecimal calculateAmountFinal(Microcredit microcredit) {
         BigDecimal interest = microcredit.getInterestRate().multiply(microcredit.getAmount()).divide(BigDecimal.valueOf(100));
         BigDecimal amountFinal = microcredit.getAmount().add(interest);
+
         return amountFinal;
     };
 

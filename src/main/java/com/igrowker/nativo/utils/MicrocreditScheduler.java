@@ -6,6 +6,7 @@ import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
+import com.igrowker.nativo.services.MicrocreditService;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class MicrocreditScheduler {
     private final ContributionRepository contributionRepository;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final MicrocreditService microcreditService;
     private final GeneralTransactions generalTransactions;
     private final NotificationService notificationService;
 
@@ -82,6 +84,7 @@ public class MicrocreditScheduler {
     }
 
     @Transactional
+    //@Scheduled(cron = "*/10 * * * * *")
     @Scheduled(cron = "0 0 17 * * MON-FRI", zone = "America/Argentina/Buenos_Aires")
     // Ejecuta a las 17:00 horas. Todos los días y todos los meses. Solo de lunes a viernes.
     public void processPayAutomaticMicrocredits() {
@@ -113,11 +116,9 @@ public class MicrocreditScheduler {
                 .orElseThrow(() -> new InvalidAccountException("Cuenta del prestatario no encontrada."));
 
         User borrowerUser = userRepository.findById(borrowerAccount.getUserId())
-                .orElseThrow(() -> new InvalidAccountException("Cuenta del prestatario no encontrada."));
+                .orElseThrow(() -> new InvalidAccountException("Cuenta del solicitante no encontrada."));
 
-        BigDecimal totalAmount = contributions.stream()
-                .map(Contribution::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalAmount = microcreditService.totalAmountToPay(microcredit);
 
         try {
             if (borrowerAccount.getAmount().compareTo(totalAmount) < 0) {
@@ -135,7 +136,7 @@ public class MicrocreditScheduler {
                 notificationService.sendPaymentNotification(
                         lenderUser.getEmail(),
                         lenderUser.getName() + " " + lenderUser.getSurname(),
-                        contribution.getAmount(),
+                        totalAmount,
                         "Devolución cuota microcrédito",
                         "Te informamos que se ha procesado la devolución de tu contribución al microcrédito con ID: " + microcredit.getId(),
                         "Gracias por tu participación en nuestro programa de microcréditos. Esperamos seguir contando con tu confianza."
@@ -169,11 +170,12 @@ public class MicrocreditScheduler {
     }
 
     private void processContribution(Contribution contribution, Microcredit microcredit) {
+
         try {
-            generalTransactions.updateBalances(
-                    microcredit.getBorrowerAccountId(),
-                    contribution.getLenderAccountId(),
-                    contribution.getAmount());
+            BigDecimal interest = (contribution.getAmount().multiply(microcredit.getInterestRate())).divide(BigDecimal.valueOf(100));
+            BigDecimal totalAmount = contribution.getAmount().add(interest);
+
+            generalTransactions.updateBalances(microcredit.getBorrowerAccountId(), contribution.getLenderAccountId(), totalAmount);
 
             contribution.setTransactionStatus(TransactionStatus.COMPLETED);
             contributionRepository.save(contribution);
