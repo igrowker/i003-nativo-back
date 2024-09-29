@@ -9,10 +9,7 @@ import com.igrowker.nativo.repositories.PaymentRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.security.JwtService;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -24,14 +21,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class PaymentControllerIntegrationTest {
+public class PaymentIntegrationTest {
 
     private String token; // token real, aquí no se mockea.
     private User savedUser;
@@ -79,64 +75,67 @@ public class PaymentControllerIntegrationTest {
         token = "Bearer " + jwtService.generateToken(savedUser);
     }
 
-    @Test
-    public void when_call_getAll_and_no_data_should_return_ok() throws Exception {
-        String baseURL = "http://localhost:" + port;
+    @Nested
+    class getAllTest {
 
-        given().baseUri(baseURL)
-                .header("Authorization", token)
-                .when()
-                .get("/api/pagos/todo")
-                .then()
-                .log()
-                .body()
-                .assertThat()
-                .statusCode(200)
-                .body("$", Matchers.hasSize(0));
-    }
+        @Test
+        public void when_call_getAll_and_no_data_should_return_ok() throws Exception {
+            String baseURL = "http://localhost:" + port;
 
-    @Test
-    public void when_call_getAll_and_one_data_should_return_ok() throws Exception {
-        String baseURL = "http://localhost:" + port;
-        Payment payment = new Payment(null, savedAccount.getId(), "receiver", BigDecimal.valueOf(250.00),
-                LocalDateTime.now(), TransactionStatus.ACCEPTED, "un chicle tutti frutti", "lalalalala-qr-lalalala");
-        paymentRepository.save(payment);
+            given().baseUri(baseURL)
+                    .header("Authorization", token)
+                    .when()
+                    .get("/api/pagos/todo")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(0));
+        }
 
-        given().baseUri(baseURL)
-                .header("Authorization", token)
-                .when()
-                .get("/api/pagos/todo")
-                .then()
-                .log()
-                .body()
-                .assertThat()
-                .statusCode(200)
-                .body("$", Matchers.hasSize(1));
-    }
+        @Test
+        public void when_call_getAll_and_one_data_should_return_ok() throws Exception {
+            String baseURL = "http://localhost:" + port;
+            Payment payment = new Payment(null, savedAccount.getId(), "receiver", BigDecimal.valueOf(250.00),
+                    LocalDateTime.now(), TransactionStatus.ACCEPTED, "un chicle tutti frutti", "lalalalala-qr-lalalala");
+            paymentRepository.save(payment);
 
-    @Test
-    public void when_call_getAll_with_wrong_token_should_return_404() throws Exception {
-        //La idea aquí es generar un token válido para un user diferente del que hace la petición.
-        String baseURL = "http://localhost:" + port;
-        User userNotFound = (new User(null, 123456788l, "Name", "Apellido", "notfound@gmail.com",
-                "password123", "123654789", null, LocalDate.of(1990, 12, 31),
-                LocalDateTime.now(), true, "123456",
-                LocalDateTime.now().plusMonths(1), true, true, true));
-        var savedUserNotFound = userRepository.save(userNotFound);
-        String tokenNotFound = jwtService.generateToken(savedUserNotFound);
+            given().baseUri(baseURL)
+                    .header("Authorization", token)
+                    .when()
+                    .get("/api/pagos/todo")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1));
+        }
 
-        given().baseUri(baseURL)
-                .header("Authorization", "Bearer " + tokenNotFound)
-                .when()
-                .get("/api/pagos/todo")
-                .then()
-                .log()
-                .body()
-                .assertThat()
-                .statusCode(404);
+        @Test
+        public void when_call_getAll_with_wrong_token_should_return_404() throws Exception {
+            //La idea aquí es generar un token válido para un user diferente del que hace la petición.
+            String baseURL = "http://localhost:" + port;
+            User userNotFound = (new User(null, 123456788l, "Name", "Apellido", "notfound@gmail.com",
+                    "password123", "123654789", null, LocalDate.of(1990, 12, 31),
+                    LocalDateTime.now(), true, "123456",
+                    LocalDateTime.now().plusMonths(1), true, true, true));
+            var savedUserNotFound = userRepository.save(userNotFound);
+            String tokenNotFound = jwtService.generateToken(savedUserNotFound);
+
+            given().baseUri(baseURL)
+                    .header("Authorization", "Bearer " + tokenNotFound)
+                    .when()
+                    .get("/api/pagos/todo")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404);
+        }
     }
 }
-
 
 /*
     @Test
