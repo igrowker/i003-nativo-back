@@ -53,8 +53,11 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         //ESTE DEBEMOS CAMBIAR LA LOGICA
         if (userBorrower.account.getAmount().compareTo(BigDecimal.ZERO) < 0) {
             throw new InsufficientFundsException("El saldo de la cuenta debe ser mayor a cero para solicitar un microcrédito.");
-        }
+        };
 
+        BigDecimal amountFinal = calculateAmountFinal(microcredit);
+
+        microcredit.setAmountFinal(amountFinal);
         microcredit.setBorrowerAccountId(userBorrower.account.getId());
         microcredit = microcreditRepository.save(microcredit);
 
@@ -131,9 +134,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             throw new NoContributionsFoundException("No se puede pagar un microcrédito sin contribuciones.");
         }
 
-        BigDecimal totalAmountToPay = microcredit.getContributions().stream()
-                .map(Contribution::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalAmountToPay = totalAmountToPay(microcredit);
 
         if (userBorrower.account.getAmount().compareTo(totalAmountToPay) < 0) {
             throw new InsufficientFundsException("Fondos insuficientes");
@@ -152,13 +153,16 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         BigDecimal totalPaidAmount = BigDecimal.ZERO;
 
         for (Contribution contribution : contributions) {
+            BigDecimal interest = (contribution.getAmount().multiply(microcredit.getInterestRate())).divide(BigDecimal.valueOf(100));
+            BigDecimal totalContributionAmountWithInterest = contribution.getAmount().add(interest);
+
             generalTransactions.updateBalances(microcredit.getBorrowerAccountId(), contribution.getLenderAccountId(),
-                    contribution.getAmount());
+                    totalContributionAmountWithInterest);
 
             contribution.setTransactionStatus(TransactionStatus.COMPLETED);
             contributionRepository.save(contribution);
 
-            totalPaidAmount = totalPaidAmount.add(contribution.getAmount());
+            totalPaidAmount = totalPaidAmount.add(totalContributionAmountWithInterest);
 
             Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
@@ -239,6 +243,25 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                 contributionsDto
         );
     }
+
+    public BigDecimal totalAmountToPay(Microcredit microcredit) {
+        BigDecimal totalAmountToPay = microcredit.getContributions().stream()
+                .map(contribution -> {
+                    BigDecimal interest = (contribution.getAmount().multiply(microcredit.getInterestRate())).divide(BigDecimal.valueOf(100));
+                    return contribution.getAmount().add(interest);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return totalAmountToPay;
+    }
+
+
+    private BigDecimal calculateAmountFinal(Microcredit microcredit) {
+        BigDecimal interest = microcredit.getInterestRate().multiply(microcredit.getAmount()).divide(BigDecimal.valueOf(100));
+        BigDecimal amountFinal = microcredit.getAmount().add(interest);
+
+        return amountFinal;
+    };
 
     /*
     Listar todos los microcreditos, comparar la fecha de vencimiento con la actual.
