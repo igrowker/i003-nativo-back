@@ -83,6 +83,7 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    /*Reveer y sino utilizar el de abajo (InvalidDateFormatException)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleInvalidDateFormat(HttpMessageNotReadableException ex) {
         Throwable cause = ex.getCause();
@@ -91,6 +92,18 @@ public class GlobalExceptionHandler {
             return buildErrorResponse(HttpStatus.BAD_REQUEST, errorMessage);
         }
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Error: " + ex.getMessage());
+    }
+
+     */
+
+    @ExceptionHandler(InvalidDateFormatException.class)
+    public ResponseEntity<ErrorResponse> handledInvalidDateFormatException(InvalidDateFormatException ex){
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(QrGenerationException.class)
+    public ResponseEntity<ErrorResponse> handledQrGenerationException(QrGenerationException ex){
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message) {

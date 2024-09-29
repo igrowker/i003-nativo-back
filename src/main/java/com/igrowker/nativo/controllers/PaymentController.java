@@ -51,31 +51,22 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
-    //Get all payments between dates
     @GetMapping("/entrefechas")
     public ResponseEntity<List<ResponseRecordPayment>> getPaymentsBetweenDates(
             @RequestParam String fromDate,
             @RequestParam String toDate) {
-        try {
-            List<ResponseRecordPayment> result = paymentService.getPaymentsBetweenDates(fromDate, toDate);
-            return ResponseEntity.ok(result);
-        } catch (DateTimeParseException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Formato de fecha inválido. Use 'yyyy-MM-dd'.", e);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha inicial debe ser anterior a la fecha final.", e);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error procesando la solicitud.", e);
-        }
+
+        List<ResponseRecordPayment> result = paymentService.getPaymentsBetweenDates(fromDate, toDate);
+        return ResponseEntity.ok(result);
+
     }
 
-    //Get all payments by account as client
     @GetMapping("realizados")
     public ResponseEntity<List<ResponseRecordPayment>> getPaymentsAsClient(){
         List<ResponseRecordPayment> result = paymentService.getPaymentsAsClient();
         return ResponseEntity.ok(result);
     }
 
-    //Get all payments by account as seller
     @GetMapping("recibidos")
     public ResponseEntity<List<ResponseRecordPayment>> getPaymentsAsSeller(){
         List<ResponseRecordPayment> result = paymentService.getPaymentsAsSeller();
