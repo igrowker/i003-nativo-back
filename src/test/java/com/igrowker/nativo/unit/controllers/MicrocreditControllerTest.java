@@ -59,9 +59,9 @@ public class MicrocreditControllerTest {
                 BigDecimal.valueOf(100000.00));
 
         ResponseMicrocreditDto responseMicrocreditDto = new ResponseMicrocreditDto("1234",
-                BigDecimal.valueOf(100000.00), BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
+                BigDecimal.valueOf(100000.00), BigDecimal.valueOf(1100000.00),BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
                 LocalDate.now().plusDays(30),
-                "Test title", "Test Description", TransactionStatus.PENDING);
+                "Test title", "Test Description", 1, BigDecimal.valueOf(10.0),TransactionStatus.PENDING);
 
         when(microcreditService.createMicrocredit(requestMicrocreditDto)).thenReturn(responseMicrocreditDto);
 

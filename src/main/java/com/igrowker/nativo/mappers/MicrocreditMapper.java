@@ -13,12 +13,13 @@ public interface MicrocreditMapper {
     //Crear
     Microcredit requestDtoToMicrocredit(RequestMicrocreditDto requestMicrocreditDto);
 
+    @Mapping(source = "remainingAmount", target = "remainingAmount")
     ResponseMicrocreditDto responseDtoToMicrocredit(Microcredit microcredit);
 
     //Get
     @Mapping(target = "contributions", source = "contributions")
     @Mapping(target = "borrowerAccountId", source = "borrowerAccountId")
-    @Mapping(target = "remainingAmount", source = "remainingAmount")
+    @Mapping(source = "remainingAmount", target = "remainingAmount")
     ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit);
 
     ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto(Microcredit microcredit);
