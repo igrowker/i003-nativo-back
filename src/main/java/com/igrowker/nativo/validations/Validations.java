@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @RequiredArgsConstructor
 @Service
@@ -86,4 +87,12 @@ public class Validations {
 
         return user.getSurname().toUpperCase() + ", " + user.getName();
     }
+
+    public boolean isSecondDateBefore(LocalDateTime startDate, LocalDateTime endDate) {
+        if(endDate.isBefore(startDate)){
+            return true;
+        }
+        else return false;
+    }
+
 }
