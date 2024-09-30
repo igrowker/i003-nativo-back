@@ -8,12 +8,13 @@ import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
 import com.igrowker.nativo.exceptions.InvalidDataException;
-import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
+import com.igrowker.nativo.exceptions.InvalidDateFormatException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.mappers.PaymentMapper;
 import com.igrowker.nativo.repositories.PaymentRepository;
 import com.igrowker.nativo.services.implementation.PaymentServiceImpl;
 import com.igrowker.nativo.services.implementation.QRService;
+import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.validations.Validations;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +46,8 @@ public class PaymentServiceImplTest {
     @Mock
     private Validations validations;
     @Mock
+    private DateFormatter dateFormatter;
+    @Mock
     private QRService qrService;
     @InjectMocks
     private PaymentServiceImpl paymentServiceImpl;
@@ -55,7 +61,7 @@ public class PaymentServiceImplTest {
             var paymentResponseDto = new ResponsePaymentDto("paymentId", "receiver", BigDecimal.valueOf(100.50), "description", "long-long-long-qr");
 
             when(paymentMapper.requestDtoToPayment(any())).thenReturn(payment);
-            when(validations.isUserAccountMismatch(any())).thenReturn(false);
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(new User(), new Account()));
             when(paymentRepository.save(any())).thenReturn(payment);
             when(qrService.generateQrCode(any())).thenReturn("long-long-long-qr");
             when(paymentMapper.paymentToResponseDto(any())).thenReturn(paymentResponseDto);
@@ -68,7 +74,7 @@ public class PaymentServiceImplTest {
             assertThat(res.amount()).isEqualTo(paymentResponseDto.amount());
             assertThat(res.qr()).isEqualTo(paymentResponseDto.qr());
             verify(paymentRepository, times(2)).save(any());
-            verify(validations, times(1)).isUserAccountMismatch(any());
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
             verify(qrService, times(1)).generateQrCode(any());
             verify(paymentMapper, times(1)).requestDtoToPayment(any());
             verify(paymentMapper, times(1)).paymentToResponseDto(any());
@@ -78,8 +84,8 @@ public class PaymentServiceImplTest {
         public void create_qr_should_NOT_be_Ok() throws Exception {
             var paymentRequestDto = new RequestPaymentDto("receiverId", BigDecimal.valueOf(100.50), "description");
 
-            when(validations.isUserAccountMismatch(any())).thenReturn(true);
-            Exception exception = assertThrows(InvalidUserCredentialsException.class, () -> {
+            when(validations.getAuthenticatedUserAndAccount()).thenThrow(new ResourceNotFoundException("La cuenta indicada no coincide con el usuario logueado en la aplicación"));
+            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
                 paymentServiceImpl.createQr(paymentRequestDto);
             });
             String expectedMessage = "La cuenta indicada no coincide con el usuario logueado en la aplicación";
@@ -193,7 +199,8 @@ public class PaymentServiceImplTest {
     class GetPaymentsByOneDateTests {
         @Test
         public void get_payments_by_date_should_be_Ok() throws Exception {
-            var payment = new Payment("paymentId", "senderId", "receiverId", BigDecimal.valueOf(100.50),
+            var payment = new Payment("paymentId", "senderId", "receiverId",
+                    BigDecimal.valueOf(100.50),
                     LocalDateTime.now(), TransactionStatus.DENIED, "description", "qrCode");
             List<Payment> paymentList = List.of(payment);
             var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderId",
@@ -201,11 +208,14 @@ public class PaymentServiceImplTest {
                     LocalDateTime.now(), TransactionStatus.DENIED);
             List<ResponseRecordPayment> responseList = List.of(responseRecordPayment);
             var userAccountPair = new Validations.UserAccountPair(new User(), new Account());
+            String todayWithoutHour = LocalDateTime.now().toLocalDate().toString();
+            List<LocalDateTime> today24hs = Arrays.asList(LocalDate.now().atStartOfDay(), LocalDate.now().plusDays(1).atStartOfDay());
 
             when(validations.getAuthenticatedUserAndAccount()).thenReturn(userAccountPair);
+            when(dateFormatter.getDateFromString(todayWithoutHour )).thenReturn(today24hs);
             when(paymentRepository.findPaymentsByTransactionDate(any(), any(), any())).thenReturn(paymentList);
             when(paymentMapper.paymentListToResponseRecordList(any())).thenReturn(responseList);
-            var result = paymentServiceImpl.getPaymentsByDate("2024-07-20");
+            var result = paymentServiceImpl.getPaymentsByDate(todayWithoutHour);
 
             assertThat(result).isNotNull();
             assertThat(result).hasSize(1);
@@ -231,7 +241,17 @@ public class PaymentServiceImplTest {
             assertTrue(actualMessage.contains(expectedMessage));
         }
 
-        //ToDo. If checked exception of data time format is done,
-        // another test of that failing should be added, and it should be modified the one that pass.
+        @Test
+        public void get_payments_by_status_should_NOT_be_Ok_due_BAD_REQUEST() throws Exception {
+            var userAccountPair = new Validations.UserAccountPair(new User(), new Account());
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(userAccountPair);
+            when(dateFormatter.getDateFromString(any())).thenThrow(new InvalidDateFormatException("Formato de fecha erroneo. Debe ingresar yyyy-MM-dd"));
+            Exception exception = assertThrows(InvalidDateFormatException.class, () -> {
+                paymentServiceImpl.getPaymentsByDate("test");
+            });
+            String expectedMessage = "Formato de fecha erroneo. Debe ingresar yyyy-MM-dd";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
     }
 }

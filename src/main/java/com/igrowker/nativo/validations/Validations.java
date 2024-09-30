@@ -26,7 +26,6 @@ public class Validations {
 
         User user = userRepository.findByEmail(userNameAuthentication)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-        //Esto de aquí arriba no pasaría nunca...
 
         Account account = accountRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada para el usuario: " + user.getEmail()));

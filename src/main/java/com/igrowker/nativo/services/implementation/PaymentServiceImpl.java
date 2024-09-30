@@ -34,10 +34,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponsePaymentDto createQr(RequestPaymentDto requestPaymentDto) {
-        //cambiar por el de las chicas!
-        if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
-        }
+        validations.getAuthenticatedUserAndAccount();
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
         Payment savedPayment = paymentRepository.save(payment);
         String qrCode = qrService.generateQrCode(savedPayment.getId());
@@ -49,10 +46,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto) {
-        //Usar el de las chicas!
-        if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
-        }
+        validations.getAuthenticatedUserAndAccount();
         TransactionStatus dtoStatus = validations.statusConvert(requestProcessPaymentDto.transactionStatus());
         Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
         Payment payment = paymentRepository.findById(newData.getId())
@@ -103,11 +97,9 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public List<ResponseRecordPayment> getPaymentsByDate(String date) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
-
         List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(date);
         LocalDateTime startDate = elapsedDate.get(0);
         LocalDateTime endDate = elapsedDate.get(1);
-
         List<Payment> paymentList = paymentRepository.findPaymentsByTransactionDate(
                 accountAndUser.account.getId(), startDate, endDate);
         var result = paymentMapper.paymentListToResponseRecordList(paymentList);
