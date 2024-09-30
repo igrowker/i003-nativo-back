@@ -8,6 +8,7 @@ import com.igrowker.nativo.exceptions.InsufficientFundsException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.mappers.PaymentMapper;
+import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.PaymentRepository;
 import com.igrowker.nativo.services.PaymentService;
 import com.igrowker.nativo.utils.DateFormatter;
@@ -26,6 +27,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
+    private final AccountRepository accountRepository;
     private final QRService qrService;
     private final Validations validations;
     private final GeneralTransactions transactions;
@@ -34,27 +36,26 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponsePaymentDto createQr(RequestPaymentDto requestPaymentDto) {
-        if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
-        }
+        var userAndAccount = validations.getAuthenticatedUserAndAccount();
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
         Payment savedPayment = paymentRepository.save(payment);
         String qrCode = qrService.generateQrCode(savedPayment.getId());
         savedPayment.setQr(qrCode);
         Payment withQrPayment = paymentRepository.save(savedPayment);
-        return paymentMapper.paymentToResponseDto(withQrPayment);
+        return paymentMapper.paymentToResponseDto(withQrPayment, userAndAccount.account.getAccountNumber().toString());
     }
 
     @Override
     @Transactional
     public ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto) {
-        if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
-        }
+        var senderAndAccount = validations.getAuthenticatedUserAndAccount();
         TransactionStatus dtoStatus = validations.statusConvert(requestProcessPaymentDto.transactionStatus());
         Payment newData = paymentMapper.requestProcessDtoToPayment(requestProcessPaymentDto);
         Payment payment = paymentRepository.findById(newData.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
+        var senderAccount = senderAndAccount.account.getAccountNumber().toString();
+        var receiverAccount = accountRepository.findById(payment.getReceiverAccount()).get().getAccountNumber().toString();
+
         if (!payment.getTransactionStatus().equals(TransactionStatus.PENDING)) {
             throw new ExpiredTransactionException("El QR ya fue utilizado.");
         }
@@ -69,7 +70,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (!updatedPayment.getTransactionStatus().equals(TransactionStatus.ACCEPTED)) {
             updatedPayment.setTransactionStatus(TransactionStatus.DENIED);
             var result = paymentRepository.save(updatedPayment);
-            return paymentMapper.paymentToResponseProcessDto(result);
+            return paymentMapper.paymentToResponseProcessDto(result, senderAccount, receiverAccount);
         }
         if(!validations.validateTransactionUserFunds(updatedPayment.getAmount())){
             updatedPayment.setTransactionStatus(TransactionStatus.FAILED);
@@ -78,14 +79,14 @@ public class PaymentServiceImpl implements PaymentService {
         }
         transactions.updateBalances(payment.getSenderAccount(), payment.getReceiverAccount(), payment.getAmount());
         Payment savedPayment = paymentRepository.save(updatedPayment);
-        return paymentMapper.paymentToResponseProcessDto(savedPayment);
+        return paymentMapper.paymentToResponseProcessDto(savedPayment, senderAccount, receiverAccount);
     }
 
     @Override
     public List<ResponseRecordPayment> getAllPayments() {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         List<Payment> paymentList = paymentRepository.findPaymentsByAccount(accountAndUser.account.getId());
-        var result = paymentMapper.paymentListToResponseRecordList(paymentList);
+        var result = paymentList.stream().map(this::mapPaymentToRecord).toList();
         return result;
     }
 
@@ -94,21 +95,19 @@ public class PaymentServiceImpl implements PaymentService {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         TransactionStatus statusEnum = validations.statusConvert(status);
         List<Payment> paymentList = paymentRepository.findPaymentsByStatus(accountAndUser.account.getId(), statusEnum);
-        var result = paymentMapper.paymentListToResponseRecordList(paymentList);
+        var result = paymentList.stream().map(this::mapPaymentToRecord).toList();
         return result;
     }
 
     @Override
     public List<ResponseRecordPayment> getPaymentsByDate(String date) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
-
         List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(date);
         LocalDateTime startDate = elapsedDate.get(0);
         LocalDateTime endDate = elapsedDate.get(1);
-
         List<Payment> paymentList = paymentRepository.findPaymentsByTransactionDate(
                 accountAndUser.account.getId(), startDate, endDate);
-        var result = paymentMapper.paymentListToResponseRecordList(paymentList);
+        var result = paymentList.stream().map(this::mapPaymentToRecord).toList();
         return result;
     }
 
@@ -123,7 +122,8 @@ public class PaymentServiceImpl implements PaymentService {
         List<Payment> paymentList = paymentRepository.findPaymentsBetweenDates(
                 accountAndUser.account.getId(), startDate, endDate);
 
-        return paymentMapper.paymentListToResponseRecordList(paymentList);
+        var result = paymentList.stream().map(this::mapPaymentToRecord).toList();
+        return result;
     }
 
     @Override
@@ -131,7 +131,7 @@ public class PaymentServiceImpl implements PaymentService {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         List<Payment> paymentList = paymentRepository.findPaymentsAsClient(
                 accountAndUser.account.getId());
-        List<ResponseRecordPayment> result = paymentMapper.paymentListToResponseRecordList(paymentList);
+        var result = paymentList.stream().map(this::mapPaymentToRecord).toList();
         return result;
     }
 
@@ -140,7 +140,13 @@ public class PaymentServiceImpl implements PaymentService {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
         List<Payment> paymentList = paymentRepository.findPaymentsAsSeller(
                 accountAndUser.account.getId());
-        List<ResponseRecordPayment> result = paymentMapper.paymentListToResponseRecordList(paymentList);
+        var result = paymentList.stream().map(this::mapPaymentToRecord).toList();
         return result;
+    }
+
+    private ResponseRecordPayment mapPaymentToRecord(Payment payment){
+        var senderAccount = accountRepository.findById(payment.getSenderAccount()).get().getAccountNumber().toString();
+        var receiverAccount = accountRepository.findById(payment.getReceiverAccount()).get().getAccountNumber().toString();
+        return paymentMapper.paymentToResponseRecord(payment, senderAccount, receiverAccount);
     }
 }
