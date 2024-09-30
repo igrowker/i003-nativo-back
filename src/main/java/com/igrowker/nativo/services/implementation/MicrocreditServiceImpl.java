@@ -2,6 +2,7 @@ package com.igrowker.nativo.services.implementation;
 
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.*;
+import com.igrowker.nativo.dtos.payment.ResponseRecordPayment;
 import com.igrowker.nativo.entities.*;
 import com.igrowker.nativo.exceptions.*;
 import com.igrowker.nativo.mappers.MicrocreditMapper;
@@ -10,6 +11,7 @@ import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.MicrocreditService;
+import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.utils.NotificationService;
 import com.igrowker.nativo.validations.Validations;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,6 +37,9 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     private final UserRepository userRepository;
     private final ContributionRepository contributionRepository;
     private final NotificationService notificationService;
+    private final DateFormatter dateFormatter;
+    private final Validations getValidations;
+
 
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) throws MessagingException {
@@ -49,19 +55,18 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             throw new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ " + limite);
         }
 
-        // Verificar que el saldo de la cuenta sea mayor o igual a cero
-        //ESTE DEBEMOS CAMBIAR LA LOGICA
-       /* if (userBorrower.account.getAmount().compareTo(BigDecimal.ZERO) < 0) {
-            throw new InsufficientFundsException("El saldo de la cuenta debe ser mayor a cero para solicitar un microcrédito.");
-        };*/
+        if (microcredit.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("El monto del microcrédito debe ser mayor a $ 0.00");
+        }
 
         BigDecimal amountFinal = calculateAmountFinal(microcredit);
+
+        //CHEQUEAR QUE SE CREA
 
         microcredit.setAmountFinal(amountFinal);
         microcredit.setBorrowerAccountId(userBorrower.account.getId());
         microcredit = microcreditRepository.save(microcredit);
 
-        // Enviar notificación de la creación del microcrédito
         notificationService.sendPaymentNotification(
                 userBorrower.user.getEmail(),
                 userBorrower.user.getName() + " " + userBorrower.user.getSurname(),
@@ -113,20 +118,16 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                 .collect(Collectors.toList());
     }
 
-    //BUSCAR ENTRE FECHAS
-
     @Override
     @Transactional
     public ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
 
-        //Agregar account y user para notificación de mail
-
         Microcredit microcredit = microcreditRepository.findById(microcreditId)
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado para el usuario"));
 
-        //isUserAccountMismatch
-        if (!microcredit.getBorrowerAccountId().equals(userBorrower.account.getId())) {
+        //Chequear que funcione
+        if (validations.isUserAccountMismatch(userBorrower.account.getId())) {
             throw new InvalidUserCredentialsException("El usuario no tiene permiso para pagar este microcrédito.");
         }
 
@@ -144,13 +145,6 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         if (userBorrower.account.getAmount().compareTo(totalAmountToPay) < 0) {
             throw new InsufficientFundsException("Fondos insuficientes");
         }
-
-        //SACARLO!!!!!!!!
-        Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
-
-        User borrowerUser = userRepository.findById(borrowerAccount.getUserId())
-                .orElseThrow(() -> new InvalidUserCredentialsException("Usuario del prestatario no encontrado."));
 
         List<Contribution> contributions = microcredit.getContributions();
 
@@ -171,9 +165,9 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             totalPaidAmount = totalPaidAmount.add(totalContributionAmountWithInterest);
 
             Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cuenta de prestamista no encontrada."));
+                    .orElseThrow(() -> new ResourceNotFoundException("Cuenta de contribuyente no encontrada."));
             User lenderUser = userRepository.findById(lenderAccount.getUserId())
-                    .orElseThrow(() -> new InvalidUserCredentialsException("Usuario de prestamista no encontrado."));
+                    .orElseThrow(() -> new InvalidUserCredentialsException("Usuario de contribuyente no encontrado."));
 
             notificationService.sendPaymentNotification(lenderUser.getEmail(), (lenderUser.getName() + " " + lenderUser.getSurname()),
                     contribution.getAmount(), "Devolución cuota microcrédito",
@@ -181,17 +175,16 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                     "Gracias por tu participación en nuestro programa de microcréditos. Esperamos seguir contando con tu confianza.");
         }
 
-        notificationService.sendPaymentNotification(borrowerUser.getEmail(), (borrowerUser.getName() + " " + borrowerUser.getSurname()),
+        notificationService.sendPaymentNotification(userBorrower.user.getEmail(), (userBorrower.user.getName() + " " + userBorrower.user.getSurname()),
                 totalPaidAmount, "Descuento cuota del microcrédito",
                 "Te informamos que se ha procesado el descuento por el microcrédito con ID: " + microcredit.getId(),
                 "Si no tienes saldo suficiente en la cuenta en este momento, el monto pendiente se deducirá automáticamente en tu próximo ingreso.");
 
         microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
 
-        //Guardar en una variable
-        microcreditRepository.save(microcredit);
+        Microcredit savedMicrocredit = microcreditRepository.save(microcredit);
 
-        return new ResponseMicrocreditPaymentDto(microcredit.getId(), totalPaidAmount);
+        return new ResponseMicrocreditPaymentDto(savedMicrocredit.getId(), totalPaidAmount);
     }
 
     private void checkForActiveOrRestrictedMicrocredit(String borrowerAccountId) {
@@ -220,7 +213,6 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     private ResponseMicrocreditGetDto getResponseMicrocreditGetDto(Microcredit microcredit) {
         List<ResponseContributionDto> contributionsDto = microcredit.getContributions().stream()
                 .map(contribution -> {
-                    Validations validations1 = new Validations(accountRepository, userRepository);
 
                     String lenderFullname = validations.fullname(contribution.getLenderAccountId());
                     String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
@@ -253,6 +245,21 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         );
     }
 
+    //FALTA VERIFICAR QUE FUNCIONE
+    @Override
+    public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(fromDate, toDate);
+        LocalDateTime startDate = elapsedDate.get(0);
+        LocalDateTime endDate = elapsedDate.get(1);
+
+        List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsBetweenDates(
+                accountAndUser.account.getId(), startDate, endDate);
+
+        return microcreditMapper.microcreditListToResponseRecordList(microcreditList);
+    }
+
     public BigDecimal totalAmountToPay(Microcredit microcredit) {
         BigDecimal totalAmountToPay = microcredit.getContributions().stream()
                 .map(contribution -> {
@@ -271,6 +278,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         return amountFinal;
     };
+
 
     /*
     Listar todos los microcreditos, comparar la fecha de vencimiento con la actual.

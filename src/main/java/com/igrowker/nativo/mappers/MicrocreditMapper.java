@@ -4,16 +4,17 @@ import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditPaymentDto;
+import com.igrowker.nativo.dtos.payment.ResponseRecordPayment;
 import com.igrowker.nativo.entities.Microcredit;
+import com.igrowker.nativo.entities.Payment;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;;
+import org.mapstruct.Mapping;;import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface MicrocreditMapper {
     //Crear
     Microcredit requestDtoToMicrocredit(RequestMicrocreditDto requestMicrocreditDto);
 
-    @Mapping(source = "remainingAmount", target = "remainingAmount")
     ResponseMicrocreditDto responseDtoToMicrocredit(Microcredit microcredit);
 
     //Get
@@ -23,4 +24,7 @@ public interface MicrocreditMapper {
     ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit);
 
     ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto(Microcredit microcredit);
+
+    List<ResponseMicrocreditGetDto> microcreditListToResponseRecordList(List<Microcredit> microcreditList);
+
 }
