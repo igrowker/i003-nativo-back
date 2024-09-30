@@ -43,7 +43,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         checkForActiveOrRestrictedMicrocredit(userBorrower.account.getId());
 
-        BigDecimal limite = new BigDecimal("500000");
+        BigDecimal limite = new BigDecimal(500000);
 
         if (microcredit.getAmount().compareTo(limite) > 0) {
             throw new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ " + limite);
@@ -51,9 +51,9 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         // Verificar que el saldo de la cuenta sea mayor o igual a cero
         //ESTE DEBEMOS CAMBIAR LA LOGICA
-        if (userBorrower.account.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+       /* if (userBorrower.account.getAmount().compareTo(BigDecimal.ZERO) < 0) {
             throw new InsufficientFundsException("El saldo de la cuenta debe ser mayor a cero para solicitar un microcrédito.");
-        };
+        };*/
 
         BigDecimal amountFinal = calculateAmountFinal(microcredit);
 
@@ -113,14 +113,19 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                 .collect(Collectors.toList());
     }
 
+    //BUSCAR ENTRE FECHAS
+
     @Override
     @Transactional
     public ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
 
+        //Agregar account y user para notificación de mail
+
         Microcredit microcredit = microcreditRepository.findById(microcreditId)
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado para el usuario"));
 
+        //isUserAccountMismatch
         if (!microcredit.getBorrowerAccountId().equals(userBorrower.account.getId())) {
             throw new InvalidUserCredentialsException("El usuario no tiene permiso para pagar este microcrédito.");
         }
@@ -131,7 +136,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         }
 
         if (microcredit.getTransactionStatus() == TransactionStatus.PENDING && microcredit.getContributions().isEmpty()) {
-            throw new NoContributionsFoundException("No se puede pagar un microcrédito sin contribuciones.");
+            throw new DeniedTransactionException("No se puede pagar un microcrédito sin contribuciones.");
         }
 
         BigDecimal totalAmountToPay = totalAmountToPay(microcredit);
@@ -140,6 +145,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
             throw new InsufficientFundsException("Fondos insuficientes");
         }
 
+        //SACARLO!!!!!!!!
         Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cuenta del prestatario no encontrada."));
 
@@ -181,6 +187,8 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                 "Si no tienes saldo suficiente en la cuenta en este momento, el monto pendiente se deducirá automáticamente en tu próximo ingreso.");
 
         microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
+
+        //Guardar en una variable
         microcreditRepository.save(microcredit);
 
         return new ResponseMicrocreditPaymentDto(microcredit.getId(), totalPaidAmount);
@@ -217,6 +225,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                     String lenderFullname = validations.fullname(contribution.getLenderAccountId());
                     String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
 
+                    //MAPPER!!     List<ResponseRecordPayment> paymentListToResponseRecordList(List<Payment> paymentList);
                     return new ResponseContributionDto(
                             contribution.getId(),
                             contribution.getLenderAccountId(),

@@ -64,9 +64,8 @@ public class ContributionServiceImpl implements ContributionService {
         GeneralTransactions generalTransactions = new GeneralTransactions(accountRepository);
         generalTransactions.updateBalances(userLenderId, contribution.getMicrocredit().getBorrowerAccountId(), contribution.getAmount());
 
+        //Guardar en variable! Chequear que microcreditID funcione sin agregar al mapper. Chequear el expirationdate también
         microcreditRepository.save(microcredit);
-
-        Validations validations1 = new Validations(accountRepository, userRepository);
 
         String lenderFullname = validations.fullname(contribution.getLenderAccountId());
         String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
@@ -88,6 +87,9 @@ public class ContributionServiceImpl implements ContributionService {
                     Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
                             .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado"));
 
+                    //inyectar
+                    //Crear metodo para reutilizar
+                    //Agregar a utils!
                     Validations validations1 = new Validations(accountRepository, userRepository);
 
                     String lenderFullname = validations1.fullname(contribution.getLenderAccountId());
