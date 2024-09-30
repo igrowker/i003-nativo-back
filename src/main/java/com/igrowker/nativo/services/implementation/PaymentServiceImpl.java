@@ -34,6 +34,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponsePaymentDto createQr(RequestPaymentDto requestPaymentDto) {
+        //cambiar por el de las chicas!
         if(validations.isUserAccountMismatch(requestPaymentDto.receiverAccount())){
             throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
         }
@@ -48,6 +49,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public ResponseProcessPaymentDto processPayment(RequestProcessPaymentDto requestProcessPaymentDto) {
+        //Usar el de las chicas!
         if(validations.isUserAccountMismatch(requestProcessPaymentDto.senderAccount())){
             throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicacion");
         }
