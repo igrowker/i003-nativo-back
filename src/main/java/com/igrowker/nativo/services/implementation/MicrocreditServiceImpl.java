@@ -21,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -124,9 +126,9 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 
-        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(fromDate, toDate);
-        LocalDateTime startDate = elapsedDate.get(0);
-        LocalDateTime endDate = elapsedDate.get(1);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate startDate = LocalDate.parse(fromDate, formatter);
+        LocalDate endDate = LocalDate.parse(toDate, formatter);
 
         List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsBetweenDates(
                 accountAndUser.account.getId(), startDate, endDate);
@@ -263,7 +265,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     }
 }
 
- /*
+    /*
     Listar todos los microcreditos, comparar la fecha de vencimiento con la actual.
     ACCEPTED -- SE COMPLETA EL MONTO TOTAL
     DENIED -- NO CUMPLE CON VENCIMIENTO O PENDIENTES,
