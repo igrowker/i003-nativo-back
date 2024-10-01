@@ -7,6 +7,7 @@ import com.igrowker.nativo.dtos.payment.ResponsePaymentDto;
 import com.igrowker.nativo.dtos.payment.ResponseRecordPayment;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.exceptions.InvalidDataException;
+import com.igrowker.nativo.exceptions.InvalidDateFormatException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.security.JwtService;
@@ -198,7 +199,13 @@ public class PaymentControllerTest {
                     .andExpect(status().isNotFound());
         }
 
-        //TODO. Add other test when date validation is coded.
+        @Test
+        public void get_by_date_should_NOT_be_ok_due_BAD_REQUEST() throws Exception {
+            var date = "2024-LALALA-20";
+            when(paymentService.getPaymentsByDate(date)).thenThrow(new InvalidDateFormatException("test message"));
+            mockMvc.perform(get("/api/pagos/fecha/{date}", date))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
 
