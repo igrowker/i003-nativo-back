@@ -1,14 +1,15 @@
 package com.igrowker.nativo.mappers;
 
+import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditPaymentDto;
-import com.igrowker.nativo.dtos.payment.ResponseRecordPayment;
 import com.igrowker.nativo.entities.Microcredit;
-import com.igrowker.nativo.entities.Payment;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;;import java.util.List;
+import org.mapstruct.Mapping;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface MicrocreditMapper {
@@ -19,12 +20,11 @@ public interface MicrocreditMapper {
 
     //Get
     @Mapping(target = "contributions", source = "contributions")
-    @Mapping(target = "borrowerAccountId", source = "borrowerAccountId")
-    @Mapping(source = "remainingAmount", target = "remainingAmount")
-    ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit);
+    ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit, List<ResponseContributionDto> contributions);
 
     ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto(Microcredit microcredit);
 
+    @Mapping(source = "contribution.microcredit.id", target = "microcreditId")
+    @Mapping(source = "contribution.microcredit.expirationDate", target = "expiredDateMicrocredit")
     List<ResponseMicrocreditGetDto> microcreditListToResponseRecordList(List<Microcredit> microcreditList);
-
 }
