@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -248,15 +250,19 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     //FALTA VERIFICAR QUE FUNCIONE
     @Override
     public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
+        // Obtén el usuario y la cuenta autenticada
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 
-        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(fromDate, toDate);
-        LocalDateTime startDate = elapsedDate.get(0);
-        LocalDateTime endDate = elapsedDate.get(1);
+        // Asegúrate de que el formato de las fechas sea adecuado para LocalDate
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate startDate = LocalDate.parse(fromDate, formatter);
+        LocalDate endDate = LocalDate.parse(toDate, formatter);
 
+        // Llama al repositorio para obtener los microcréditos entre fechas
         List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsBetweenDates(
                 accountAndUser.account.getId(), startDate, endDate);
 
+        // Mapea la lista de microcréditos a los DTOs de respuesta
         return microcreditMapper.microcreditListToResponseRecordList(microcreditList);
     }
 

@@ -25,13 +25,10 @@ public interface MicrocreditRepository extends JpaRepository<Microcredit, String
 
     List<Microcredit> findByExpirationDateBeforeAndTransactionStatusNotIn(LocalDate today, List<TransactionStatus> expired);
 
-    @Query("SELECT p FROM Payment p WHERE (p.senderAccount = :idAccount OR p.receiverAccount = :idAccount) " +
-            "AND p.transactionDate >= :startDate AND p.transactionDate < :endDate")
+    @Query("SELECT m FROM Microcredit m WHERE (m.borrowerAccountId = :idAccount) " +
+            "AND m.createdDate >= :startDate AND m.createdDate < :endDate")
     List<Microcredit> findMicrocreditsBetweenDates(@Param("idAccount") String idAccount,
-                                           @Param("startDate") LocalDateTime startDate,
-                                           @Param("endDate") LocalDateTime endDate);
-
-    @Query("SELECT p FROM Payment p WHERE p.senderAccount = :idAccount OR p.receiverAccount = :idAccount")
-    List<Microcredit> findMicrocreditsByAccount(@Param("idAccount") String idAccount);
+                                           @Param("startDate") LocalDate startDate,
+                                           @Param("endDate") LocalDate endDate);
 
 }
