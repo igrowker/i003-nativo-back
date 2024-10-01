@@ -247,22 +247,17 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         );
     }
 
-    //FALTA VERIFICAR QUE FUNCIONE
     @Override
     public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
-        // Obtén el usuario y la cuenta autenticada
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 
-        // Asegúrate de que el formato de las fechas sea adecuado para LocalDate
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate startDate = LocalDate.parse(fromDate, formatter);
         LocalDate endDate = LocalDate.parse(toDate, formatter);
 
-        // Llama al repositorio para obtener los microcréditos entre fechas
         List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsBetweenDates(
                 accountAndUser.account.getId(), startDate, endDate);
 
-        // Mapea la lista de microcréditos a los DTOs de respuesta
         return microcreditMapper.microcreditListToResponseRecordList(microcreditList);
     }
 
