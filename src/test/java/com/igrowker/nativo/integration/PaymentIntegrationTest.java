@@ -150,6 +150,7 @@ public class PaymentIntegrationTest {
 
     @Nested
     class getByStatusTest{
+
         @Test
         public void when_call_getStatus_and_no_data_should_return_ok() throws Exception {
             String baseURL = "http://localhost:" + port;
@@ -165,6 +166,140 @@ public class PaymentIntegrationTest {
                     .statusCode(200)
                     .body("$", Matchers.hasSize(0));
         }
+
+        @Test
+        public void when_call_getStatus_and_one_data_should_return_ok() throws Exception {
+            String baseURL = "http://localhost:" + port;
+            Payment payment = new Payment(null, savedAccount.getId(), savedAccount2.getId(), BigDecimal.valueOf(250.00),
+                    LocalDateTime.now(), TransactionStatus.PENDING, "un chicle tutti frutti", "lalalalala-qr-lalalala");
+            paymentRepository.save(payment);
+
+            given().baseUri(baseURL)
+                    .header("Authorization", token)
+                    .when()
+                    .get(String.format("/api/pagos/estado/%s", "PENDING"))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1));
+        }
+
+        @Test
+        public void when_call_getStatus_with_wrong_token_should_return_404() throws Exception {
+            String baseURL = "http://localhost:" + port;
+            User userNotFound = (new User(null, 123456788l, "Name", "Apellido", "notfound@gmail.com",
+                    "password123", "123654789", null, LocalDate.of(1990, 12, 31),
+                    LocalDateTime.now(), true, "123456",
+                    LocalDateTime.now().plusMonths(1), true, true, true));
+            var savedUserNotFound = userRepository.save(userNotFound);
+            String tokenNotFound = jwtService.generateToken(savedUserNotFound);
+
+            given().baseUri(baseURL)
+                    .header("Authorization", "Bearer " + tokenNotFound)
+                    .when()
+                    .get(String.format("/api/pagos/estado/%s", "PENDING"))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404);
+        }
+
+        @Test
+        public void when_call_getStatus_with_wrong_status_should_return_400() throws Exception{
+            String baseURL = "http://localhost:" + port;
+
+            given().baseUri(baseURL)
+                    .header("Authorization", token)
+                    .when()
+                    .get(String.format("/api/pagos/estado/%s", "PENDINGGGGG"))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(400);
+        }
+    }
+
+    @Nested
+    class getByOneDateTest {
+
+        @Test
+        public void when_call_getDate_and_no_data_should_return_ok() throws Exception {
+            String baseURL = "http://localhost:" + port;
+
+            given().baseUri(baseURL)
+                    .header("Authorization", token)
+                    .when()
+                    .get(String.format("/api/pagos/fecha/%s", "2024-04-09"))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(0));
+        }
+
+        @Test
+        public void when_call_getDate_and_one_data_should_return_ok() throws Exception {
+            String baseURL = "http://localhost:" + port;
+            String now = LocalDateTime.now().toLocalDate().toString();
+            Payment payment = new Payment(null, savedAccount.getId(), savedAccount2.getId(), BigDecimal.valueOf(250.00),
+                    LocalDateTime.now(), ACCEPTED,
+                    "un chicle tutti frutti", "lalalalala-qr-lalalala");
+            paymentRepository.save(payment);
+
+            given().baseUri(baseURL)
+                    .header("Authorization", token)
+                    .when()
+                    .get(String.format("/api/pagos/fecha/%s", now))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1));
+        }
+
+        @Test
+        public void when_call_getDate_with_wrong_token_should_return_404() throws Exception {
+            //La idea aquí es generar un token válido para un user diferente del que hace la petición.
+            String baseURL = "http://localhost:" + port;
+            User userNotFound = (new User(null, 123456788l, "Name", "Apellido", "notfound@gmail.com",
+                    "password123", "123654789", null, LocalDate.of(1990, 12, 31),
+                    LocalDateTime.now(), true, "123456",
+                    LocalDateTime.now().plusMonths(1), true, true, true));
+            var savedUserNotFound = userRepository.save(userNotFound);
+            String tokenNotFound = jwtService.generateToken(savedUserNotFound);
+
+            given().baseUri(baseURL)
+                    .header("Authorization", "Bearer " + tokenNotFound)
+                    .when()
+                    .get(String.format("/api/pagos/fecha/%s", "2024-04-03"))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404);
+        }
+
+        @Test
+        public void when_call_getStatus_with_wrong_date_format_should_return_400() throws Exception{
+            String baseURL = "http://localhost:" + port;
+
+            given().baseUri(baseURL)
+                    .header("Authorization", token)
+                    .when()
+                    .get(String.format("/api/pagos/fecha/%s", "2024-44-99"))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(400);
+        }
+
     }
 
     @Nested
@@ -194,6 +329,31 @@ public class PaymentIntegrationTest {
                     .jsonPath()
                     .getObject("$", ResponsePaymentDto.class);
 
+        }
+
+        @Test
+        public void when_call_createQr_with_wrong_token_should_return_404() throws Exception {
+            String baseURL = "http://localhost:" + port;
+            User userNotFound = (new User(null, 123456788l, "Name", "Apellido", "notfound@gmail.com",
+                    "password123", "123654789", null, LocalDate.of(1990, 12, 31),
+                    LocalDateTime.now(), true, "123456",
+                    LocalDateTime.now().plusMonths(1), true, true, true));
+            var savedUserNotFound = userRepository.save(userNotFound);
+            String tokenNotFound = jwtService.generateToken(savedUserNotFound);
+            var paymentRequestDto = new RequestPaymentDto(savedAccount.getId(), BigDecimal.valueOf(100.50),
+                    "description");
+
+            given().baseUri(baseURL)
+                    .header("Authorization", "Bearer " + tokenNotFound)
+                    .body(paymentRequestDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/pagos/crear-qr")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404);
         }
     }
 
