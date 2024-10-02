@@ -7,6 +7,7 @@ import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
 import com.igrowker.nativo.exceptions.InsufficientFundsException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
+import com.igrowker.nativo.exceptions.ResourceAlreadyExistsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.mappers.DonationMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
@@ -105,34 +106,36 @@ public class DonationServiceImpl implements DonationService {
         Donation donation = donationRepository.findById(requestDonationConfirmationDto.id())
                 .orElseThrow(() -> new ResourceNotFoundException("El id de la donacion no existe"));
 
-        if (validations.isUserAccountMismatch(donation.getAccountIdBeneficiary())) {
-            throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
+        if (donation.getStatus() == TransactionStatus.PENDING){
+            if (validations.isUserAccountMismatch(donation.getAccountIdBeneficiary())) {
+                throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
+            }
+
+            // Recibo el request y lo convierto a donation
+            Donation donation1 = donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto);
+
+            donation1.setAnonymousDonation(donation.getAnonymousDonation());
+            donation1.setAmount(donation.getAmount());
+            donation1.setCreatedAt(donation.getCreatedAt());
+
+            returnAmount(donation1.getAccountIdDonor(), donation.getAmount());
+
+            if (donation1.getStatus() == TransactionStatus.ACCEPTED) {
+                // Se agrega el monto al beneficiario y se descuenta de la cuenta de reserva del donador
+                generalTransactions.updateBalances(
+                        donation1.getAccountIdDonor(),
+                        donation1.getAccountIdBeneficiary(),
+                        donation1.getAmount());
+
+                return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
+            } else {
+                // Se agrega el monto al donante
+                return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
+            }
+
         }
 
-        // Recibo el request y lo convierto a donation
-        Donation donation1 = donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto);
-
-        donation1.setAnonymousDonation(donation.getAnonymousDonation());
-        donation1.setAmount(donation.getAmount());
-        donation1.setCreatedAt(donation.getCreatedAt());
-
-        returnAmount(donation1.getAccountIdDonor(), donation.getAmount());
-
-        if (donation1.getStatus() == TransactionStatus.ACCEPTED) {
-            // Se agrega el monto al beneficiario y se descuenta de la cuenta de reserva del donador
-            generalTransactions.updateBalances(
-                    donation1.getAccountIdDonor(),
-                    donation1.getAccountIdBeneficiary(),
-                    donation1.getAmount());
-
-            return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
-        } else {
-            // Se agrega el monto al donante
-            return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
-        }
-
-
-
+        throw new ResourceAlreadyExistsException("Esta donacion ya fue finalizada");
     }
 
 
