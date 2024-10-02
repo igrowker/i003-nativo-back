@@ -88,10 +88,19 @@ public class Validations {
     }
 
     public boolean isSecondDateBefore(LocalDateTime startDate, LocalDateTime endDate) {
-        if(endDate.isBefore(startDate)){
+        if (endDate.isBefore(startDate)) {
             return true;
-        }
-        else return false;
+        } else return false;
     }
 
+    public boolean validateUserFundsForJob(Account userAccount, BigDecimal transactionAmount) {
+        if (userAccount == null) {
+            throw new IllegalArgumentException("La cuenta del usuario no puede ser nula.");
+        }
+
+        BigDecimal userFunds = userAccount.getAmount();
+        BigDecimal reservedFunds = userAccount.getReservedAmount();
+
+        return userFunds.compareTo(transactionAmount.add(reservedFunds)) >= 0;
+    }
 }
