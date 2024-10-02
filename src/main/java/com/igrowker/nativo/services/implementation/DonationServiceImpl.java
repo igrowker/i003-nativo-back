@@ -127,7 +127,7 @@ public class DonationServiceImpl implements DonationService {
 
                 return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
             } else {
-                // Se agrega el monto al donante
+                // Se agrega el monto al donantea
                 return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
             }
 
