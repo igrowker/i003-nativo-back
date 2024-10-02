@@ -4,8 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.igrowker.nativo.controllers.DonationController;
 import com.igrowker.nativo.dtos.donation.*;
+import com.igrowker.nativo.dtos.payment.RequestPaymentDto;
 import com.igrowker.nativo.dtos.payment.ResponseRecordPayment;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.InsufficientFundsException;
+import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
+import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.security.JwtService;
 import com.igrowker.nativo.services.DonationService;
 import org.hamcrest.Matchers;
@@ -23,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -114,6 +119,20 @@ public class DonationControllerTest {
                     .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoFalse.createdAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")))))
                     .andExpect(jsonPath("$.status", Matchers.is(ResponseDonationDtoFalse.status())));
         }
+
+        @Test
+        public void createADonationTrue_should_NOT_be_ok() throws Exception {
+
+            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),"l","218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",true);
+            when(donationService.createDonationTrue(RequestDonationDto)).thenThrow(new ResourceNotFoundException("El id de la cuenta donante no existe"));
+
+            mockMvc.perform(post("/api/donaciones/crear-donacion")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(RequestDonationDto)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("El id de la cuenta donante no existe")));
+        }
     }
 
     @Nested
@@ -141,6 +160,21 @@ public class DonationControllerTest {
                     .andExpect(jsonPath("$.accountIdDonor", Matchers.is(ResponseDonationConfirmationDto.accountIdDonor())))
                     .andExpect(jsonPath("$.accountIdBeneficiary", Matchers.is(ResponseDonationConfirmationDto.accountIdBeneficiary())))
                     .andExpect(jsonPath("$.status", Matchers.is(ResponseDonationConfirmationDto.status().name())));
+        }
+
+        @Test
+        public void confirmation_should_NOT_be_ok() throws Exception {
+
+            var RequestDonationConfirmationDto = new RequestDonationConfirmationDto("e17efc6c-6d57-4542-8ac1-637251e7662","348ad942-10aa-42b8-8173-a763c8d9b7e3","218d6f62-d5cf-423d-a0ac-4df8d7f1d06c", TransactionStatus.ACCEPTED);
+
+            when(donationService.confirmationDonation(RequestDonationConfirmationDto)).thenThrow(new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación"));
+
+            mockMvc.perform(post("/api/donaciones/confirmar-donacion")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(RequestDonationConfirmationDto)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message", Matchers.is("La cuenta indicada no coincide con el usuario logueado en la aplicación")));
         }
     }
 
@@ -189,6 +223,30 @@ public class DonationControllerTest {
                     .andExpect(jsonPath("$[0].accountIdDonor", Matchers.is(responseRecordDonation.accountIdDonor())))
                     .andExpect(jsonPath("$[0].accountIdBeneficiary", Matchers.is(responseRecordDonation.accountIdBeneficiary())))
                     .andExpect(jsonPath("$[0].status", Matchers.is(responseRecordDonation.status().name())));
+        }
+
+        @Test
+        public void recordDonor_should_NOT_be_ok() throws Exception {
+
+            String idAccountDonor = "348ad942-10aa-42b8-8173-a763c8d9b7e3";
+
+            when(donationService.recordDonationDonor(idAccountDonor)).thenThrow(new ResourceNotFoundException("No hay donaciones recibidas"));
+
+            mockMvc.perform(get("/api/donaciones/historial-donaciones/donador/{idDonorAccount}",idAccountDonor))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No hay donaciones recibidas")));
+        }
+
+        @Test
+        public void recordBeneficiary_should_NOT_be_ok() throws Exception {
+
+            String idAccountBeneficiary = "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c";
+
+            when(donationService.recordDonationBeneficiary(idAccountBeneficiary)).thenThrow(new InsufficientFundsException("La cuenta del donador no existe"));
+
+            mockMvc.perform(get("/api/donaciones/historial-donaciones/beneficiario/{idBeneficiaryAccount}",idAccountBeneficiary))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("La cuenta del donador no existe")));
         }
 
 
