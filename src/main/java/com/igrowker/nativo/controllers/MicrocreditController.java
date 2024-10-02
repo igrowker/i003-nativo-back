@@ -3,6 +3,7 @@ package com.igrowker.nativo.controllers;
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.*;
+import com.igrowker.nativo.dtos.payment.ResponseRecordPayment;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
 import jakarta.mail.MessagingException;
@@ -68,5 +69,15 @@ public class MicrocreditController {
         ResponseMicrocreditPaymentDto response = microcreditService.payMicrocredit(id);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/entrefechas")
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getPaymentsBetweenDates(
+            @RequestParam String fromDate,
+            @RequestParam String toDate) {
+
+        List<ResponseMicrocreditGetDto> result = microcreditService.getMicrocreditsBetweenDates(fromDate, toDate);
+        return ResponseEntity.ok(result);
+
     }
 }

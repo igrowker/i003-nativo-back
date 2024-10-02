@@ -20,5 +20,9 @@ public interface MicrocreditService {
 
     ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException;
 
+    List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate);
+
     BigDecimal totalAmountToPay(Microcredit microcredit);
+
+    void updateMicrocreditAmounts(Microcredit microcredit);
 }

@@ -7,6 +7,7 @@ import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.MicrocreditService;
+import com.igrowker.nativo.validations.Validations;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class MicrocreditScheduler {
     private final UserRepository userRepository;
     private final MicrocreditService microcreditService;
     private final GeneralTransactions generalTransactions;
+    private final Validations validations;
     private final NotificationService notificationService;
 
     @Transactional
@@ -56,7 +59,8 @@ public class MicrocreditScheduler {
                             borrowerUser.getName() + " " + borrowerUser.getSurname(),
                             BigDecimal.ZERO,
                             "Finalización del Microcrédito",
-                            "Te informamos que tu microcrédito con ID: " + microcredit.getId() + " ha finalizado debido a que no recibió ninguna contribución.",
+                            "Te informamos que tu microcrédito con ID: " + microcredit.getId() + " ha finalizado" +
+                                    " debido a que no recibió ninguna contribución.",
                             "Gracias por participar en nuestro sistema de microcréditos."
                     );
                 } else {
@@ -84,7 +88,6 @@ public class MicrocreditScheduler {
     }
 
     @Transactional
-    //@Scheduled(cron = "*/10 * * * * *")
     @Scheduled(cron = "0 0 17 * * MON-FRI", zone = "America/Argentina/Buenos_Aires")
     // Ejecuta a las 17:00 horas. Todos los días y todos los meses. Solo de lunes a viernes.
     public void processPayAutomaticMicrocredits() {
@@ -120,12 +123,24 @@ public class MicrocreditScheduler {
 
         BigDecimal totalAmount = microcreditService.totalAmountToPay(microcredit);
 
-        try {
-            if (borrowerAccount.getAmount().compareTo(totalAmount) < 0) {
-                throw new InsufficientFundsException("Fondos insuficientes");
+        if (microcredit.getTransactionStatus() != TransactionStatus.EXPIRED) {
+            if (!validations.validateUserFundsForJob(borrowerAccount, totalAmount)) {
+                notificationService.sendPaymentNotification(
+                        borrowerUser.getEmail(),
+                        borrowerUser.getName() + " " + borrowerUser.getSurname(),
+                        totalAmount,
+                        "Saldo insuficiente para el microcrédito",
+                        "No tienes saldo suficiente para pagar el microcrédito con ID: " + microcredit.getId(),
+                        "Te recomendamos que deposites fondos en tu cuenta para procesar el pago en el futuro."
+                );
+                return; // Si no tiene fondos suficientes, sale del método.
             }
+        }
 
-            for (Contribution contribution : contributions) {
+        try {
+            List<Contribution> contributionCopy = new ArrayList<>(contributions);
+
+            for (Contribution contribution : contributionCopy) {
                 processContribution(contribution, microcredit);
 
                 Account lenderAccount = accountRepository.findById(contribution.getLenderAccountId())
@@ -155,15 +170,6 @@ public class MicrocreditScheduler {
             microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
             microcreditRepository.save(microcredit);
 
-        } catch (InsufficientFundsException e) {
-            notificationService.sendPaymentNotification(
-                    borrowerUser.getEmail(),
-                    borrowerUser.getName() + " " + borrowerUser.getSurname(),
-                    totalAmount,
-                    "Saldo insuficiente para el microcrédito",
-                    "No tienes saldo suficiente para pagar el microcrédito con ID: " + microcredit.getId(),
-                    "Te recomendamos que deposites fondos en tu cuenta para procesar el pago en el futuro."
-            );
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -175,7 +181,16 @@ public class MicrocreditScheduler {
             BigDecimal interest = (contribution.getAmount().multiply(microcredit.getInterestRate())).divide(BigDecimal.valueOf(100));
             BigDecimal totalAmount = contribution.getAmount().add(interest);
 
-            generalTransactions.updateBalances(microcredit.getBorrowerAccountId(), contribution.getLenderAccountId(), totalAmount);
+            if (microcredit.getTransactionStatus() == TransactionStatus.EXPIRED) {
+                generalTransactions.updateBalancesForExpiredMicrocredit(microcredit.getBorrowerAccountId(),
+                        contribution.getLenderAccountId(), totalAmount, microcredit);
+
+                BigDecimal newPendingAmount = microcredit.getPendingAmount().subtract(totalAmount);
+                microcredit.setPendingAmount(newPendingAmount);
+                microcreditRepository.save(microcredit);
+            } else {
+                generalTransactions.updateBalances(microcredit.getBorrowerAccountId(), contribution.getLenderAccountId(), totalAmount);
+            }
 
             contribution.setTransactionStatus(TransactionStatus.COMPLETED);
             contributionRepository.save(contribution);
@@ -195,7 +210,21 @@ public class MicrocreditScheduler {
         for (Microcredit microcredit : microcredits) {
             if (microcredit.getExpirationDate().isBefore(today) || microcredit.getExpirationDate().isEqual(today)) {
                 try {
-                    payMicrocreditAndContributors(microcredit);
+                    microcreditService.updateMicrocreditAmounts(microcredit);
+
+                    BigDecimal currentBalance = accountRepository.getBalanceByUserId(microcredit.getBorrowerAccountId());
+
+                    if (currentBalance.compareTo(microcredit.getPendingAmount()) < 0) {
+                        microcredit.setFrozenAmount(microcredit.getFrozenAmount().add(currentBalance));
+                        accountRepository.deductBalance(microcredit.getBorrowerAccountId(), currentBalance);
+                    }
+
+                    if (microcredit.getFrozenAmount().compareTo(microcredit.getPendingAmount()) >= 0) {
+                        payMicrocreditAndContributors(microcredit);
+                    }
+
+                    microcreditRepository.save(microcredit);
+
                 } catch (ResourceNotFoundException | MessagingException e) {
                     e.printStackTrace();
                 }

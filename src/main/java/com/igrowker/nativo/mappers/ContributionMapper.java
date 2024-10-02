@@ -6,18 +6,13 @@ import com.igrowker.nativo.entities.Contribution;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.time.LocalDate;
-
 @Mapper(componentModel = "spring")
 public interface ContributionMapper {
-    //Crear
     Contribution requestDtoToContribution(RequestContributionDto requestContributionDto);
 
-    @Mapping(target = "lenderFullname", source = "lenderFullname")
-    @Mapping(target = "borrowerFullname", source = "borrowerFullname")
-    ResponseContributionDto responseContributionDto(Contribution contribution, String lenderFullname,
-                                                    String borrowerFullname, String microcreditId,
-                                                    LocalDate expiredDateMicrocredit);
-
-    //Agregar fecha de vencimiento del microcredito
+    @Mapping(source = "contribution.microcredit.id", target = "microcreditId")
+    @Mapping(source = "contribution.microcredit.expirationDate", target = "expiredDateMicrocredit")
+    @Mapping(source = "lenderFullname", target = "lenderFullname")
+    @Mapping(source = "borrowerFullname", target = "borrowerFullname")
+    ResponseContributionDto responseContributionDto(Contribution contribution, String lenderFullname, String borrowerFullname);
 }

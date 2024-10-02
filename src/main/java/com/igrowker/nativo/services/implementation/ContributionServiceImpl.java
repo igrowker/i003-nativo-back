@@ -10,7 +10,6 @@ import com.igrowker.nativo.mappers.ContributionMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
-import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.utils.NotificationService;
@@ -21,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,8 +31,7 @@ public class ContributionServiceImpl implements ContributionService {
     private final MicrocreditRepository microcreditRepository;
     private final ContributionMapper contributionMapper;
     private final Validations validations;
-    private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
+    private final GeneralTransactions generalTransactions;
     private final NotificationService notificationService;
 
     @Override
@@ -47,7 +44,8 @@ public class ContributionServiceImpl implements ContributionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
 
         if (!validations.isUserAccountMismatch(microcredit.getBorrowerAccountId())) {
-            throw new InvalidUserCredentialsException("El usuario contribuyente no puede ser el mismo que el solicitante del microcrédito.");
+            throw new InvalidUserCredentialsException("El usuario contribuyente no puede ser el mismo que el solicitante" +
+                    " del microcrédito.");
         }
 
         if (!validations.validateTransactionUserFunds(requestContributionDto.amount())) {
@@ -61,44 +59,27 @@ public class ContributionServiceImpl implements ContributionService {
         contribution.setMicrocredit(microcredit);
         contribution = contributionRepository.save(contribution);
 
-        GeneralTransactions generalTransactions = new GeneralTransactions(accountRepository);
         generalTransactions.updateBalances(userLenderId, contribution.getMicrocredit().getBorrowerAccountId(), contribution.getAmount());
 
-        microcreditRepository.save(microcredit);
-
-        Validations validations1 = new Validations(accountRepository, userRepository);
+        microcredit = microcreditRepository.save(microcredit);
 
         String lenderFullname = validations.fullname(contribution.getLenderAccountId());
         String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
-        String microcreditId = microcredit.getId();
-        LocalDate expirationDate = microcredit.getExpirationDate();
 
-        notificationService.sendContributionNotificationToBorrower(microcredit, lenderFullname, contribution.getAmount());
+        notificationService.sendContributionNotificationToBorrower(microcredit, contribution.getLenderAccountId(), contribution.getAmount());
 
-        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
-                microcreditId, expirationDate);
+        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname);
     }
 
     @Override
     public List<ResponseContributionDto> getAll() {
         List<Contribution> contributions = contributionRepository.findAll();
 
-        return contributions.stream()
-                .map(contribution -> {
-                    Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
-                            .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado"));
+        if (contributions.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones.");
+        }
 
-                    Validations validations1 = new Validations(accountRepository, userRepository);
-
-                    String lenderFullname = validations1.fullname(contribution.getLenderAccountId());
-                    String borrowerFullname = validations1.fullname(microcredit.getBorrowerAccountId());
-                    String microcreditId = microcredit.getId();
-                    LocalDate expirationDate = microcredit.getExpirationDate();
-
-                    return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
-                            microcreditId, expirationDate);
-                })
-                .collect(Collectors.toList());
+        return mapContributionsToDto(contributions);
     }
 
     @Override
@@ -106,44 +87,26 @@ public class ContributionServiceImpl implements ContributionService {
         TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
         List<Contribution> contributions = contributionRepository.findByTransactionStatus(enumStatus);
 
-        return contributions.stream()
-                .map(contribution -> {
-                    Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
-                            .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado"));
+        if (contributions.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones con el estado especificado.");
+        }
 
-                    String lenderFullname = validations.fullname(contribution.getLenderAccountId());
-                    String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
-                    String microcreditId = microcredit.getId();
-                    LocalDate expirationDate = microcredit.getExpirationDate();
-
-                    return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
-                            microcreditId, expirationDate);
-                })
-                .collect(Collectors.toList());
+        return mapContributionsToDto(contributions);
     }
 
     @Override
     public ResponseContributionDto getOneContribution(String id) {
+        //si se coloca un id incorrecto da error 403
         Contribution contribution = contributionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contribution no encontrado con id: " + id));
 
         Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
                 .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + contribution.getMicrocredit().getId()));
 
-        Validations validations1 = new Validations(accountRepository, userRepository);
+        String lenderFullname = validations.fullname(contribution.getLenderAccountId());
+        String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
 
-        String lenderFullname = validations1.fullname(contribution.getLenderAccountId());
-        String borrowerFullname = validations1.fullname(microcredit.getBorrowerAccountId());
-        String microcreditId = microcredit.getId();
-        LocalDate expirationDate = microcredit.getExpirationDate();
-
-        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname,
-                microcreditId, expirationDate);
-    }
-
-    //Valida monto contribución
-    public boolean contributionOk(BigDecimal contributionAmount, BigDecimal microcreditRemainingAmount) {
-        return contributionAmount.compareTo(BigDecimal.ZERO) > 0 && contributionAmount.compareTo(microcreditRemainingAmount) <= 0;
+        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname);
     }
 
     //Chequea el monto restante. Cambia el estado de la transacción
@@ -166,6 +129,17 @@ public class ContributionServiceImpl implements ContributionService {
         } else {
             throw new IllegalStateException("No se puede contribuir en el microcrédito en estado " + microcredit.getTransactionStatus());
         }
+    }
+
+    private List<ResponseContributionDto> mapContributionsToDto(List<Contribution> contributions) {
+        return contributions.stream()
+                .map(contribution -> {
+                    String lenderFullname = validations.fullname(contribution.getLenderAccountId());
+                    String borrowerFullname = validations.fullname(contribution.getMicrocredit().getBorrowerAccountId());
+
+                    return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname);
+                })
+                .collect(Collectors.toList());
     }
 }
       /*
