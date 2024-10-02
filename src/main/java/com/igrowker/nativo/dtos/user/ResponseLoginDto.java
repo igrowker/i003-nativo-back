@@ -4,6 +4,7 @@ public record ResponseLoginDto(
         String id,
         String accountId,
         String token,
-        Long expiresIn
+        Long expiresIn,
+        ResponseUserVerifiedDto user
 ) {
 }
