@@ -31,7 +31,7 @@ public class ContributionServiceImpl implements ContributionService {
     private final MicrocreditRepository microcreditRepository;
     private final ContributionMapper contributionMapper;
     private final Validations validations;
-    private final AccountRepository accountRepository;
+    private final GeneralTransactions generalTransactions;
     private final NotificationService notificationService;
 
     @Override
@@ -44,7 +44,8 @@ public class ContributionServiceImpl implements ContributionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
 
         if (!validations.isUserAccountMismatch(microcredit.getBorrowerAccountId())) {
-            throw new InvalidUserCredentialsException("El usuario contribuyente no puede ser el mismo que el solicitante del microcrédito.");
+            throw new InvalidUserCredentialsException("El usuario contribuyente no puede ser el mismo que el solicitante" +
+                    " del microcrédito.");
         }
 
         if (!validations.validateTransactionUserFunds(requestContributionDto.amount())) {
@@ -58,7 +59,6 @@ public class ContributionServiceImpl implements ContributionService {
         contribution.setMicrocredit(microcredit);
         contribution = contributionRepository.save(contribution);
 
-        GeneralTransactions generalTransactions = new GeneralTransactions(accountRepository);
         generalTransactions.updateBalances(userLenderId, contribution.getMicrocredit().getBorrowerAccountId(), contribution.getAmount());
 
         microcredit = microcreditRepository.save(microcredit);
@@ -75,6 +75,10 @@ public class ContributionServiceImpl implements ContributionService {
     public List<ResponseContributionDto> getAll() {
         List<Contribution> contributions = contributionRepository.findAll();
 
+        if (contributions.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones.");
+        }
+
         return mapContributionsToDto(contributions);
     }
 
@@ -83,11 +87,16 @@ public class ContributionServiceImpl implements ContributionService {
         TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
         List<Contribution> contributions = contributionRepository.findByTransactionStatus(enumStatus);
 
+        if (contributions.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones con el estado especificado.");
+        }
+
         return mapContributionsToDto(contributions);
     }
 
     @Override
     public ResponseContributionDto getOneContribution(String id) {
+        //si se coloca un id incorrecto da error 403
         Contribution contribution = contributionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contribution no encontrado con id: " + id));
 

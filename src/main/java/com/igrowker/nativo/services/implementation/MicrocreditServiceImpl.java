@@ -11,7 +11,6 @@ import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.MicrocreditService;
-import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.utils.NotificationService;
 import com.igrowker.nativo.validations.Validations;
@@ -22,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -35,11 +33,11 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     private final MicrocreditMapper microcreditMapper;
     private final ContributionMapper contributionMapper;
     private final Validations validations;
+    private final GeneralTransactions generalTransactions;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final ContributionRepository contributionRepository;
     private final NotificationService notificationService;
-    private final DateFormatter dateFormatter;
     private final BigDecimal microcreditLimit = new BigDecimal(500000);
 
     @Override
@@ -81,6 +79,10 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     public List<ResponseMicrocreditGetDto> getAll() {
         List<Microcredit> microcredits = microcreditRepository.findAll();
 
+        if (microcredits.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron microcréditos.");
+        }
+
         return getResponseMicrocreditGetDtos(microcredits);
     }
 
@@ -91,10 +93,10 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         List<Microcredit> microcredits = microcreditRepository.findByTransactionStatus(enumStatus);
 
         if (microcredits.isEmpty()) {
-            throw new ResourceNotFoundException("No hay microcréditos con el estado especificado.");
-        } else {
-            return getResponseMicrocreditGetDtos(microcredits);
+            throw new ResourceNotFoundException("No se encontraron microcréditos con el estado especificado.");
         }
+
+        return getResponseMicrocreditGetDtos(microcredits);
     }
 
     @Override
@@ -117,6 +119,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         if (microcredits.isEmpty()) {
             throw new ResourceNotFoundException("No se encontraron microcréditos para el usuario con el estado especificado.");
         }
+
         return microcredits.stream()
                 .map(this::getResponseMicrocreditGetDto)
                 .collect(Collectors.toList());
@@ -160,13 +163,11 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         BigDecimal totalAmountToPay = totalAmountToPay(microcredit);
 
-        if (userBorrower.account.getAmount().compareTo(totalAmountToPay) < 0) {
+        if (!validations.validateTransactionUserFunds(totalAmountToPay)) {
             throw new InsufficientFundsException("Fondos insuficientes");
         }
 
         List<Contribution> contributions = microcredit.getContributions();
-
-        GeneralTransactions generalTransactions = new GeneralTransactions(accountRepository);
 
         BigDecimal totalPaidAmount = BigDecimal.ZERO;
 
@@ -263,8 +264,17 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
         return microcredit.getAmount().add(interest);
     }
-}
 
+    public void updateMicrocreditAmounts(Microcredit microcredit) {
+        BigDecimal totalAmountToPay = totalAmountToPay(microcredit);
+
+        microcredit.setAmountFinal(totalAmountToPay);
+
+        microcredit.setPendingAmount(totalAmountToPay);
+
+        microcreditRepository.save(microcredit);
+    }
+}
     /*
     Listar todos los microcreditos, comparar la fecha de vencimiento con la actual.
     ACCEPTED -- SE COMPLETA EL MONTO TOTAL
