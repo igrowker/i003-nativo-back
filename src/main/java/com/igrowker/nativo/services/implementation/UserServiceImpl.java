@@ -1,5 +1,6 @@
 package com.igrowker.nativo.services.implementation;
 
+import com.igrowker.nativo.exceptions.InvalidDataException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 
@@ -37,7 +38,7 @@ public class UserServiceImpl implements UserService{
             ResponseUpdateUserDto responseUpdateUserDto = userMapper.userToResponseUpdateUserDto(dbUser);
             return responseUpdateUserDto;
         } else {
-            throw new NoSuchElementException("No existe un user con ese id");
+            throw new ResourceNotFoundException("No existe un usuario con ese id");
         }
     }
 
@@ -45,23 +46,17 @@ public class UserServiceImpl implements UserService{
     @Transactional
     //al modificar el correo, se rompe la sesion actual
     public ResponseUpdateMailDto updateMail(UpdateMailDto updateMailDto) {
-        Optional<User> userOptional = userRepository.findById(updateMailDto.id());
-    
-        if (userOptional.isPresent()) {
-            User dbUser = userOptional.orElseThrow();
-
-            if (dbUser.getEmail().equals(updateMailDto.email())) {
-                throw new IllegalArgumentException("El nuevo correo electrónico es igual al actual.");
-            }
-            
-            dbUser.setEmail(updateMailDto.email());
-            userRepository.save(dbUser);
-    
-            ResponseUpdateMailDto responseUpdateMailDto = userMapper.userToResponsUpdateMailDto(dbUser);
-            return responseUpdateMailDto;
-        } else {
-            throw new NoSuchElementException("No existe un user con ese id");
+        User dbUser = userRepository.findById(updateMailDto.id())
+                .orElseThrow(() -> new ResourceNotFoundException("No existe un usuario con ese id"));
+                
+        if (dbUser.getEmail().equals(updateMailDto.email())) {
+            throw new InvalidDataException("El nuevo correo electrónico es igual al actual.");
         }
+    
+        dbUser.setEmail(updateMailDto.email());
+        userRepository.save(dbUser);
+    
+        return userMapper.userToResponsUpdateMailDto(dbUser);
     }
 
     @Override
