@@ -5,6 +5,7 @@ import com.igrowker.nativo.dtos.account.ResponseOtherAccountDto;
 import com.igrowker.nativo.dtos.account.ResponseSelfAccountDto;
 import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
+import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.mappers.AccountMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.services.AccountService;
@@ -28,7 +29,7 @@ public class AccountServiceImpl implements AccountService {
             throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
         }
         Account account = accountRepository.findById(addAmountAccountDto.id())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         var previousAmount = account.getAmount();
         account.setAmount(previousAmount.add(addAmountAccountDto.amount()));
         Account savedAccount = accountRepository.save(account);
@@ -41,14 +42,14 @@ public class AccountServiceImpl implements AccountService {
             throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
         }
         Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         return accountMapper.accountToResponseSelfDto(account);
     }
 
     @Override
     public ResponseOtherAccountDto readOtherAccount(String id) {
         Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         return accountMapper.accountToResponseOtherDto(account);
     }
 
