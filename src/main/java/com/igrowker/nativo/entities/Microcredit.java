@@ -31,6 +31,10 @@ public class Microcredit {
     @Column
     private BigDecimal amountFinal;
 
+    private BigDecimal pendingAmount = BigDecimal.ZERO;  // Monto pendiente de pago
+
+    private BigDecimal frozenAmount = BigDecimal.ZERO; // Monto congelado (saldo acumulado)
+
     @Column(length = 300)
     private String title;
 
@@ -60,6 +64,6 @@ public class Microcredit {
         this.transactionStatus = TransactionStatus.PENDING;
         this.installmentCount = 1;
         this.remainingAmount = this.amount;
-         //this.remainingInstallments = this.installmentCount;
+        //this.remainingInstallments = this.installmentCount;
     }
 }
