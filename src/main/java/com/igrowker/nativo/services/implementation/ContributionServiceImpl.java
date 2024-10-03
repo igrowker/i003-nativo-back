@@ -3,11 +3,8 @@ package com.igrowker.nativo.services.implementation;
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.entities.*;
-import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
-import com.igrowker.nativo.exceptions.ResourceNotFoundException;
-import com.igrowker.nativo.exceptions.ValidationException;
+import com.igrowker.nativo.exceptions.*;
 import com.igrowker.nativo.mappers.ContributionMapper;
-import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.services.ContributionService;
@@ -21,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -40,8 +38,22 @@ public class ContributionServiceImpl implements ContributionService {
         Validations.UserAccountPair userLender = validations.getAuthenticatedUserAndAccount();
         String userLenderId = userLender.account.getId();
 
+        Optional<Microcredit> expiredMicrocredit = microcreditRepository.findByBorrowerAccountIdAndTransactionStatus(userLenderId, TransactionStatus.EXPIRED);
+        if (expiredMicrocredit.isPresent()) {
+            throw new ExpiredTransactionException("No puede contribuir. Presenta un microcrédito vencido. " +
+                    "Debe regularizar su deuda.");
+        }
+
         Microcredit microcredit = microcreditRepository.findById(requestContributionDto.microcreditId())
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
+
+        if (microcredit.getTransactionStatus() == TransactionStatus.ACCEPTED) {
+            throw new ResourceAlreadyExistsException("El microcrédito ya tiene la totalidad del monto solicitado.");
+        }
+
+        if (microcredit.getTransactionStatus() != TransactionStatus.PENDING) {
+            throw new ResourceAlreadyExistsException("No se puede contribuir a un microcrédito con estado " + microcredit.getTransactionStatus());
+        }
 
         if (!validations.isUserAccountMismatch(microcredit.getBorrowerAccountId())) {
             throw new InvalidUserCredentialsException("El usuario contribuyente no puede ser el mismo que el solicitante" +
