@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface AccountRepository extends JpaRepository<Account, String> {
     Optional<Account> findByUserId(String userId);
+    Optional<Account> findByAccountNumber(Long accountNumber);
 
     @Query("SELECT a.amount FROM Account a WHERE a.id = :accountId")
     BigDecimal getBalanceByUserId(@Param("accountId") String accountId);
