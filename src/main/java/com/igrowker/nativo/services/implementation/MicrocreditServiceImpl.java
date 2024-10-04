@@ -126,6 +126,27 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     }
 
     @Override
+    public List<ResponseMicrocreditGetDto> getAllMicrocreditsByUser() {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        String borrowerAccountId = accountAndUser.account.getId();
+
+        List<Microcredit> microcreditList = microcreditRepository.findAllByBorrowerAccountId(borrowerAccountId);
+
+        if (microcreditList.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron microcréditos.");
+        }
+
+        return microcreditList.stream()
+                .map(microcredit -> {
+                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
+
+                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 

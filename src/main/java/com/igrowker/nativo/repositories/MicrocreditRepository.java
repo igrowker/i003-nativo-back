@@ -1,5 +1,6 @@
 package com.igrowker.nativo.repositories;
 
+import com.igrowker.nativo.entities.Contribution;
 import com.igrowker.nativo.entities.Microcredit;
 import com.igrowker.nativo.entities.Payment;
 import com.igrowker.nativo.entities.TransactionStatus;
@@ -18,6 +19,8 @@ public interface MicrocreditRepository extends JpaRepository<Microcredit, String
     Optional<Microcredit> findByBorrowerAccountIdAndTransactionStatus(String borrowerAccountId, TransactionStatus transactionStatus);
 
     Optional<Microcredit> findByBorrowerAccountIdAndCreatedDate(String borrowerAccountId, LocalDate createdDate);
+
+    List<Microcredit> findAllByBorrowerAccountId(String borrowerAccountId);
 
     List<Microcredit> findByTransactionStatus(TransactionStatus transactionStatus);
 

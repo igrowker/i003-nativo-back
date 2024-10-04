@@ -80,4 +80,11 @@ public class MicrocreditController {
         return ResponseEntity.ok(result);
 
     }
+
+    @GetMapping("/usuario-logueado")
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getAllByUser() {
+        List<ResponseMicrocreditGetDto> response = microcreditService.getAllMicrocreditsByUser();
+
+        return ResponseEntity.ok(response);
+    }
 }
