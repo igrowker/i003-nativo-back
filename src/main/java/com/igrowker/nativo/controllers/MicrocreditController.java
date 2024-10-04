@@ -72,12 +72,19 @@ public class MicrocreditController {
     }
 
     @GetMapping("/entrefechas")
-    public ResponseEntity<List<ResponseMicrocreditGetDto>> getPaymentsBetweenDates(
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsBetweenDates(
             @RequestParam String fromDate,
             @RequestParam String toDate) {
 
         List<ResponseMicrocreditGetDto> result = microcreditService.getMicrocreditsBetweenDates(fromDate, toDate);
         return ResponseEntity.ok(result);
 
+    }
+
+    @GetMapping("/usuario-logueado")
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getAllByUser() {
+        List<ResponseMicrocreditGetDto> response = microcreditService.getAllMicrocreditsByUser();
+
+        return ResponseEntity.ok(response);
     }
 }

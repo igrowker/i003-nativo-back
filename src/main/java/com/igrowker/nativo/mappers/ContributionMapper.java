@@ -6,6 +6,8 @@ import com.igrowker.nativo.entities.Contribution;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface ContributionMapper {
     Contribution requestDtoToContribution(RequestContributionDto requestContributionDto);
@@ -15,4 +17,6 @@ public interface ContributionMapper {
     @Mapping(source = "lenderFullname", target = "lenderFullname")
     @Mapping(source = "borrowerFullname", target = "borrowerFullname")
     ResponseContributionDto responseContributionDto(Contribution contribution, String lenderFullname, String borrowerFullname);
+
+    List<ResponseContributionDto> contributionListToResponseRecordList(List<Contribution> contributionList);
 }

@@ -9,14 +9,21 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ContributionRepository extends JpaRepository<Contribution, String> {
-    Optional<Contribution> findByLenderAccountIdAndCreatedDate(String lenderAccountId, LocalDate createdDate);
 
     List<Contribution> findByTransactionStatus(TransactionStatus enumStatus);
 
+    List<Contribution> findAllByLenderAccountId(String lenderAccountId);
+
+    @Query("SELECT c FROM Contribution c WHERE (c.lenderAccountId = :idAccount) " +
+            "AND c.createdDate >= :startDate AND c.createdDate < :endDate")
+    List<Contribution> findContributionsBetweenDates(@Param("idAccount") String idAccount,
+                                                     @Param("startDate") LocalDate startDate,
+                                                     @Param("endDate") LocalDate endDate);
+
+    //Estas queries unen a microcrédito porque son usadas en el historial general, donde debe corroborarse tanto las contribuciones hechas como recibidas.
     @Query("SELECT c FROM Contribution c JOIN c.microcredit m WHERE c.lenderAccountId = :idAccount OR m.borrowerAccountId = :idAccount")
     List<Contribution> findContributionsByAccount(@Param("idAccount") String idAccount);
 
