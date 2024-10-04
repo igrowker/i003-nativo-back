@@ -38,6 +38,8 @@ public class PaymentServiceImpl implements PaymentService {
     public ResponsePaymentDto createQr(RequestPaymentDto requestPaymentDto) {
         var userAndAccount = validations.getAuthenticatedUserAndAccount();
         Payment payment = paymentMapper.requestDtoToPayment(requestPaymentDto);
+        payment.setReceiverName(userAndAccount.user.getName());
+        payment.setReceiverSurname(userAndAccount.user.getSurname());
         Payment savedPayment = paymentRepository.save(payment);
         String qrCode = qrService.generateQrCode(savedPayment.getId());
         savedPayment.setQr(qrCode);
@@ -64,6 +66,8 @@ public class PaymentServiceImpl implements PaymentService {
             Payment result = paymentRepository.save(payment);
             throw new ExpiredTransactionException("El QR no puede ser procesado por exceso en el limite de tiempo. Genere uno nuevo.");
         }
+        payment.setSenderName(senderAndAccount.user.getName());
+        payment.setSenderSurname(senderAndAccount.user.getSurname());
         payment.setSenderAccount(newData.getSenderAccount());
         payment.setTransactionStatus(dtoStatus);
         Payment updatedPayment = paymentRepository.save(payment);

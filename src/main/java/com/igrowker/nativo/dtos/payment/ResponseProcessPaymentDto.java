@@ -7,7 +7,11 @@ import java.time.LocalDateTime;
 
 public record ResponseProcessPaymentDto(
         String id,
+        String senderName,
+        String senderSurname,
         String senderAccount,
+        String receiverName,
+        String receiverSurname,
         String receiverAccount,
         BigDecimal amount,
         TransactionStatus transactionStatus,

@@ -3,11 +3,14 @@ package com.igrowker.nativo.controllers;
 import com.igrowker.nativo.dtos.account.AddAmountAccountDto;
 import com.igrowker.nativo.dtos.account.ResponseOtherAccountDto;
 import com.igrowker.nativo.dtos.account.ResponseSelfAccountDto;
+import com.igrowker.nativo.dtos.payment.ResponseRecordPayment;
 import com.igrowker.nativo.services.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController

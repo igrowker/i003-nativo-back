@@ -56,7 +56,8 @@ public class PaymentControllerTest {
             var RequestPaymentDto = new RequestPaymentDto("abcReceiver",
                     BigDecimal.valueOf(100.50), "un chicle tutti frutti");
 
-            var ResponsePaymentDto = new ResponsePaymentDto("abcPayment", "abcSender",
+            var ResponsePaymentDto = new ResponsePaymentDto("abcPayment", "abcReceiver",
+                    "Name", "Surname",
                     BigDecimal.valueOf(100.50), "un chicle tutti frutti", "qrlalalala12");
             when(paymentService.createQr(any())).thenReturn(ResponsePaymentDto);
 
@@ -98,9 +99,9 @@ public class PaymentControllerTest {
     class GetAllPaymentsTests {
         @Test
         public void get_all_should_be_ok() throws Exception {
-            var responseRecordPayment = new ResponseRecordPayment("payment1",
-                    "sender1", "receiver1", BigDecimal.valueOf(100.5),
-                    "un chicle de tutti frutti",
+            var responseRecordPayment = new ResponseRecordPayment("payment1", "name1", "surname1",
+                    "sender1", "name2", "surname2", "receiver1",
+                    BigDecimal.valueOf(100.5), "un chicle de tutti frutti",
                     LocalDateTime.of(2024, 9, 20, 12, 05),
                     TransactionStatus.ACCEPTED);
             when(paymentService.getAllPayments()).thenReturn(List.of(responseRecordPayment));
@@ -130,11 +131,11 @@ public class PaymentControllerTest {
         @Test
         public void get_by_status_should_be_ok() throws Exception {
             var status = TransactionStatus.ACCEPTED;
-            var responseRecordPayment = new ResponseRecordPayment("payment1",
-                    "sender1", "receiver1", BigDecimal.valueOf(100.5),
-                    "un chicle de tutti frutti",
+            var responseRecordPayment = new ResponseRecordPayment("payment1", "name1", "surname1",
+                    "sender1", "name2", "surname2", "receiver1",
+                    BigDecimal.valueOf(100.5), "un chicle de tutti frutti",
                     LocalDateTime.of(2024, 9, 20, 12, 05),
-                    status );
+                    status);
             when(paymentService.getPaymentsByStatus(status.toString())).thenReturn(List.of(responseRecordPayment));
 
             mockMvc.perform(get("/api/pagos/estado/{status}", status.toString()))
@@ -172,11 +173,11 @@ public class PaymentControllerTest {
         @Test
         public void get_by_date_should_be_ok() throws Exception {
             var date = "2024-09-20";
-            var responseRecordPayment = new ResponseRecordPayment("payment1",
-                    "sender1", "receiver1", BigDecimal.valueOf(100.5),
-                    "un chicle de tutti frutti",
+            var responseRecordPayment = new ResponseRecordPayment("payment1", "name1",
+                    "surname1", "sender1", "name2", "surname2",
+                    "receiver1", BigDecimal.valueOf(100.5), "un chicle de tutti frutti",
                     LocalDateTime.of(2024, 9, 20, 12, 05),
-                    TransactionStatus.ACCEPTED );
+                    TransactionStatus.ACCEPTED);
             when(paymentService.getPaymentsByDate(date)).thenReturn(List.of(responseRecordPayment));
 
             mockMvc.perform(get("/api/pagos/fecha/{date}", date))
