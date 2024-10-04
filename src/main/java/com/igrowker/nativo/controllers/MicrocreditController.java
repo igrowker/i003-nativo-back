@@ -72,7 +72,7 @@ public class MicrocreditController {
     }
 
     @GetMapping("/entrefechas")
-    public ResponseEntity<List<ResponseMicrocreditGetDto>> getPaymentsBetweenDates(
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsBetweenDates(
             @RequestParam String fromDate,
             @RequestParam String toDate) {
 
