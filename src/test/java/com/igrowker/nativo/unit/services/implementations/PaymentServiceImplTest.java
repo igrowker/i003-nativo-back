@@ -61,8 +61,10 @@ public class PaymentServiceImplTest {
         @Test
         public void create_qr_should_be_Ok() throws Exception {
             var paymentRequestDto = new RequestPaymentDto("receiverId", BigDecimal.valueOf(100.50), "description");
-            var payment = new Payment("paymentId", "senderId", "receiverId", BigDecimal.valueOf(100.50), LocalDateTime.now(), TransactionStatus.PENDING, "description", "long-long-long-qr");
-            var paymentResponseDto = new ResponsePaymentDto("paymentId", "receiver", BigDecimal.valueOf(100.50), "description", "long-long-long-qr");
+            var payment = new Payment("paymentId", "senderName", "senderSurname", "senderId",
+                    "receiverName", "receiverSurname", "receiverId", BigDecimal.valueOf(100.50), LocalDateTime.now(), TransactionStatus.PENDING, "description", "long-long-long-qr");
+            var paymentResponseDto = new ResponsePaymentDto("paymentId", "receiverAccount",
+                    "receiverName", "receiverSurname", BigDecimal.valueOf(100.50), "description", "long-long-long-qr");
             Account testAccount = new Account();
             testAccount.setAccountNumber(123456789l);
 
@@ -104,11 +106,13 @@ public class PaymentServiceImplTest {
     class GetAllPaymentsTests {
         @Test
         public void get_all_payments_should_be_Ok() throws Exception {
-            var payment = new Payment("paymentId", "senderId", "receiverId", BigDecimal.valueOf(100.50),
+            var payment = new Payment("paymentId", "senderName", "senderSurname", "senderId",
+                    "receiverName", "receiverSurname", "receiverId",
+                    BigDecimal.valueOf(100.50),
                     LocalDateTime.now(), TransactionStatus.PENDING, "description", "qrCode");
             List<Payment> paymentList = List.of(payment);
-            var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderId",
-                    "receiverId", BigDecimal.valueOf(100.50), "description",
+            var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderName", "senderSurname", "senderAccount",
+                    "receiverName", "receiverSurname", "receiverAccount",  BigDecimal.valueOf(100.50), "description",
                     LocalDateTime.now(), TransactionStatus.PENDING);
             List<ResponseRecordPayment> responseList = List.of(responseRecordPayment);
             var userAccountPair = new Validations.UserAccountPair(new User(), new Account());
@@ -151,11 +155,13 @@ public class PaymentServiceImplTest {
     class GetPaymentsByStatusTests {
         @Test
         public void get_payments_by_status_should_be_Ok() throws Exception {
-            var payment = new Payment("paymentId", "senderId", "receiverId", BigDecimal.valueOf(100.50),
+            var payment = new Payment("paymentId", "senderName", "senderSurname", "senderId",
+                    "receiverName", "receiverSurname", "receiverId",
+                    BigDecimal.valueOf(100.50),
                     LocalDateTime.now(), TransactionStatus.DENIED, "description", "qrCode");
             List<Payment> paymentList = List.of(payment);
-            var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderId",
-                    "receiverId", BigDecimal.valueOf(100.50), "description",
+            var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderName", "senderSurname", "senderAccount",
+                    "receiverName", "receiverSurname", "receiverAccount",  BigDecimal.valueOf(100.50), "description",
                     LocalDateTime.now(), TransactionStatus.DENIED);
             List<ResponseRecordPayment> responseList = List.of(responseRecordPayment);
             var userAccountPair = new Validations.UserAccountPair(new User(), new Account());
@@ -213,12 +219,13 @@ public class PaymentServiceImplTest {
     class GetPaymentsByOneDateTests {
         @Test
         public void get_payments_by_date_should_be_Ok() throws Exception {
-            var payment = new Payment("paymentId", "senderId", "receiverId",
+            var payment = new Payment("paymentId", "senderName", "senderSurname", "senderId",
+                    "receiverName", "receiverSurname", "receiverId",
                     BigDecimal.valueOf(100.50),
                     LocalDateTime.now(), TransactionStatus.DENIED, "description", "qrCode");
             List<Payment> paymentList = List.of(payment);
-            var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderId",
-                    "receiverId", BigDecimal.valueOf(100.50), "description",
+            var responseRecordPayment = new ResponseRecordPayment("paymentId", "senderName", "senderSurname", "senderAccount",
+                    "receiverName", "receiverSurname", "receiverAccount", BigDecimal.valueOf(100.50), "description",
                     LocalDateTime.now(), TransactionStatus.DENIED);
             List<ResponseRecordPayment> responseList = List.of(responseRecordPayment);
             var userAccountPair = new Validations.UserAccountPair(new User(), new Account());

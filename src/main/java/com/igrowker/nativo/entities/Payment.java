@@ -19,7 +19,12 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    private String senderName;
+    private String senderSurname;
     private String senderAccount;
+
+    private String receiverName;
+    private String receiverSurname;
     private String receiverAccount;
 
     @Column(length=1000)

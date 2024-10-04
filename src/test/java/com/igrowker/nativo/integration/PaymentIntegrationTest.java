@@ -109,7 +109,8 @@ public class PaymentIntegrationTest {
         @Test
         public void when_call_getAll_and_one_data_should_return_ok() throws Exception {
             String baseURL = "http://localhost:" + port;
-            Payment payment = new Payment(null, savedAccount.getId(), savedAccount2.getId(), BigDecimal.valueOf(250.00),
+            Payment payment = new Payment(null, savedUser.getName(), savedUser.getSurname(), savedAccount.getId(),
+                    savedUser2.getName(), savedUser2.getSurname(), savedAccount2.getId(), BigDecimal.valueOf(250.00),
                     LocalDateTime.now(), ACCEPTED, "un chicle tutti frutti", "lalalalala-qr-lalalala");
             paymentRepository.save(payment);
 
@@ -170,7 +171,8 @@ public class PaymentIntegrationTest {
         @Test
         public void when_call_getStatus_and_one_data_should_return_ok() throws Exception {
             String baseURL = "http://localhost:" + port;
-            Payment payment = new Payment(null, savedAccount.getId(), savedAccount2.getId(), BigDecimal.valueOf(250.00),
+            Payment payment = new Payment(null, savedUser.getName(), savedUser.getSurname(), savedAccount.getId(),
+                    savedUser2.getName(), savedUser2.getSurname(), savedAccount2.getId(),  BigDecimal.valueOf(250.00),
                     LocalDateTime.now(), TransactionStatus.PENDING, "un chicle tutti frutti", "lalalalala-qr-lalalala");
             paymentRepository.save(payment);
 
@@ -246,7 +248,8 @@ public class PaymentIntegrationTest {
         public void when_call_getDate_and_one_data_should_return_ok() throws Exception {
             String baseURL = "http://localhost:" + port;
             String now = LocalDateTime.now().toLocalDate().toString();
-            Payment payment = new Payment(null, savedAccount.getId(), savedAccount2.getId(), BigDecimal.valueOf(250.00),
+            Payment payment = new Payment(null, savedUser.getName(), savedUser.getSurname(), savedAccount.getId(),
+                    savedUser2.getName(), savedUser2.getSurname(), savedAccount2.getId(), BigDecimal.valueOf(250.00),
                     LocalDateTime.now(), ACCEPTED,
                     "un chicle tutti frutti", "lalalalala-qr-lalalala");
             paymentRepository.save(payment);
