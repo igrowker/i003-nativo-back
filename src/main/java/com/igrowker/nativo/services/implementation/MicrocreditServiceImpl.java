@@ -126,18 +126,55 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     }
 
     @Override
+    public List<ResponseMicrocreditGetDto> getAllMicrocreditsByUser() {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        String borrowerAccountId = accountAndUser.account.getId();
+
+        List<Microcredit> microcreditList = microcreditRepository.findAllByBorrowerAccountId(borrowerAccountId);
+
+        if (microcreditList.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron microcréditos.");
+        }
+
+        return microcreditList.stream()
+                .map(microcredit -> {
+                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
+
+                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate startDate = LocalDate.parse(fromDate, formatter);
-        LocalDate endDate = LocalDate.parse(toDate, formatter);
+        LocalDate endDate = LocalDate.parse(toDate, formatter).plusDays(1);
+
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        }
 
         List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsBetweenDates(
                 accountAndUser.account.getId(), startDate, endDate);
 
-        return microcreditMapper.microcreditListToResponseRecordList(microcreditList);
+        if (microcreditList.isEmpty()) {
+            throw new ResourceNotFoundException("No posee microcréditos solicitados");
+        }
+
+        return microcreditList.stream()
+                .map(microcredit -> {
+                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
+
+                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
+                })
+                .collect(Collectors.toList());
     }
+
+
 
     @Override
     @Transactional
@@ -273,6 +310,17 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         microcredit.setPendingAmount(totalAmountToPay);
 
         microcreditRepository.save(microcredit);
+    }
+
+    private List<ResponseContributionDto> mapContributionsToDto(List<Contribution> contributions) {
+        return contributions.stream()
+                .map(contribution -> {
+                    String lenderFullname = validations.fullname(contribution.getLenderAccountId());
+                    String borrowerFullname = validations.fullname(contribution.getMicrocredit().getBorrowerAccountId());
+
+                    return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname);
+                })
+                .collect(Collectors.toList());
     }
 }
     /*

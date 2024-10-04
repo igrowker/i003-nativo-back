@@ -1,14 +1,12 @@
 package com.igrowker.nativo.controllers;
 
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
+import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.services.ContributionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -37,5 +35,21 @@ public class ContributionController {
         List<ResponseContributionDto> response = contributionService.getContributionsByTransactionStatus(status);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/entrefechas")
+    public ResponseEntity<List<ResponseContributionDto>> getContributionsBetweenDates(
+            @RequestParam String fromDate,
+            @RequestParam String toDate) {
+        List<ResponseContributionDto> result = contributionService.getContributionsBetweenDates(fromDate, toDate);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/usuario-logueado")
+    public ResponseEntity<List<ResponseContributionDto>> getAllByUser() {
+        List<ResponseContributionDto> response = contributionService.getAllContributionsByUser();
+
+        return ResponseEntity.ok(response);
     }
 }

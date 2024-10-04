@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -141,6 +143,44 @@ public class ContributionServiceImpl implements ContributionService {
         } else {
             throw new IllegalStateException("No se puede contribuir en el microcrédito en estado " + microcredit.getTransactionStatus());
         }
+    }
+
+    @Override
+    public List<ResponseContributionDto> getAllContributionsByUser() {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        String lenderAccounId = accountAndUser.account.getId();
+
+        List<Contribution> contributions = contributionRepository.findAllByLenderAccountId(lenderAccounId);
+
+        if (contributions.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones.");
+        }
+
+        return mapContributionsToDto(contributions);
+    }
+
+    @Override
+    public List<ResponseContributionDto> getContributionsBetweenDates(String fromDate, String toDate) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        LocalDate startDate = LocalDate.parse(fromDate, formatter);
+        LocalDate endDate = LocalDate.parse(toDate, formatter).plusDays(1);
+
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        }
+
+        List<Contribution> contributionList = contributionRepository.findContributionsBetweenDates(
+                accountAndUser.account.getId(), startDate, endDate);
+
+        if (contributionList.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones en el rango de fechas proporcionado.");
+        }
+
+        return mapContributionsToDto(contributionList);
     }
 
     private List<ResponseContributionDto> mapContributionsToDto(List<Contribution> contributions) {
