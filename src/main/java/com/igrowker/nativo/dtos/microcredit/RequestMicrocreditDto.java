@@ -13,8 +13,6 @@ public record RequestMicrocreditDto(
         String description,
 
         @NotNull(message = "El monto solicitado es obligatorio.")
-        @Positive(message = "El monto debe ser mayor a 0.")
-        @Max(value = 500000, message = "El monto debe ser menor a $500.000.")
         BigDecimal amount
 ) {
 }
