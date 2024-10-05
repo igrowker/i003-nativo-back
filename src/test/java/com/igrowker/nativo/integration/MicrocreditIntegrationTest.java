@@ -246,7 +246,78 @@ public class MicrocreditIntegrationTest {
                     .log().all()
                     .assertThat()
                     .statusCode(409)
-                    .body("message", Matchers.comparesEqualTo("El microcrédito ya tiene la totalidad del monto solicitado."));
+                    .body("message", Matchers.comparesEqualTo("El microcrédito ya tiene la totalidad del " +
+                            "monto solicitado."));
+        }
+
+        @Test
+        public void createContribution_wrong_microcredit_is_completed_return_409() throws Exception {
+            microcreditRepository.save(microcredit);
+            microcredit.setTransactionStatus(TransactionStatus.COMPLETED);
+            microcreditRepository.save(microcredit);
+
+            RequestContributionDto requestContributionDto = new RequestContributionDto(microcredit.getId(),
+                    contribution.getAmount());
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .body(requestContributionDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/contribuir")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(409)
+                    .body("message", Matchers.comparesEqualTo("No se puede contribuir a un microcrédito con " +
+                            "estado COMPLETED"));
+        }
+
+        @Test
+        public void createContribution_wrong_microcredit_is_expired_return_409() throws Exception {
+            microcreditRepository.save(microcredit);
+            microcredit.setTransactionStatus(TransactionStatus.EXPIRED);
+            microcreditRepository.save(microcredit);
+
+            RequestContributionDto requestContributionDto = new RequestContributionDto(microcredit.getId(),
+                    contribution.getAmount());
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .body(requestContributionDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/contribuir")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(409)
+                    .body("message", Matchers.comparesEqualTo("No se puede contribuir a un microcrédito con " +
+                            "estado EXPIRED"));
+        }
+
+        @Test
+        public void createContribution_unauthorized_return_401() throws Exception {
+            microcreditRepository.save(microcredit);
+
+            RequestContributionDto requestContributionDto = new RequestContributionDto(microcredit.getId(),
+                    contribution.getAmount());
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .body(requestContributionDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/contribuir")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(401)
+                    .body("message", Matchers.comparesEqualTo("El usuario contribuyente no puede ser el mismo" +
+                            " que el solicitante del microcrédito."));
         }
     }
 }
