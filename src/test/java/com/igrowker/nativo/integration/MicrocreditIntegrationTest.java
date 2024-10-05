@@ -206,5 +206,27 @@ public class MicrocreditIntegrationTest {
             assertThat(response.microcreditId()).isEqualTo(microcredit.getId());
             assertThat(response.amount()).isEqualByComparingTo(contribution.getAmount());
         }
-}
+
+
+        @Test
+        public void createContribution_wrong_id_return_404() throws Exception {
+            String microcreditIdWrong = "12345";
+
+            RequestContributionDto requestContributionDto = new RequestContributionDto(microcreditIdWrong,
+                    contribution.getAmount());
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .body(requestContributionDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/contribuir")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.comparesEqualTo("Microcrédito no encontrado"));
+        }
+    }
 }
