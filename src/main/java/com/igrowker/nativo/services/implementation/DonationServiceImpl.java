@@ -56,9 +56,8 @@ public class DonationServiceImpl implements DonationService {
 
             Donation donation = donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto));
 
-            Account donorAccount = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new ResourceNotFoundException("La cuenta del donador no existe"));
-            donorAccount.setReservedAmount(donorAccount.getReservedAmount().add(requestDonationDto.amount()));
-            accountRepository.save(donorAccount);
+            accountDonor.setReservedAmount(accountDonor.getReservedAmount().add(requestDonationDto.amount()));
+            accountRepository.save(accountDonor);
 
             return new ResponseDonationDtoTrue(
                     donation.getId(),
@@ -88,7 +87,7 @@ public class DonationServiceImpl implements DonationService {
         }
 
         if (validations.validateTransactionUserFunds(requestDonationDto.amount())){
-            Account donorAccount = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new ResourceNotFoundException("La cuenta del donador no existe"));
+            Account donorAccount = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new ResourceNotFoundException("El id de la cuenta donante no existe"));
             donorAccount.setReservedAmount(donorAccount.getReservedAmount().add(requestDonationDto.amount()));
             accountRepository.save(donorAccount);
             return donationMapper.donationToResponseDtoFalse(donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto)));
@@ -124,12 +123,10 @@ public class DonationServiceImpl implements DonationService {
                         donation1.getAccountIdDonor(),
                         donation1.getAccountIdBeneficiary(),
                         donation1.getAmount());
-
-                return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
-            } else {
-                // Se agrega el monto al donantea
-                return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
             }
+            // Se agrega el monto al donantea
+            return donationMapper.donationToResponseConfirmationDto(donationRepository.save(donation1));
+
 
         }
 
