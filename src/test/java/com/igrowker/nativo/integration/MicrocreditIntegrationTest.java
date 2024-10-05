@@ -1,9 +1,12 @@
 package com.igrowker.nativo.integration;
 
 
+import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
+import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.entities.Account;
+import com.igrowker.nativo.entities.Contribution;
 import com.igrowker.nativo.entities.Microcredit;
 import com.igrowker.nativo.entities.User;
 import com.igrowker.nativo.repositories.*;
@@ -50,6 +53,7 @@ public class MicrocreditIntegrationTest {
     private AccountRepository accountRepository;
     private String baseURL;
     private Microcredit microcredit;
+    private Contribution contribution;
 
     @Container
     @ServiceConnection
@@ -73,8 +77,9 @@ public class MicrocreditIntegrationTest {
     public void setupTest() {
         userRepository.deleteAll();
         accountRepository.deleteAll();
-        microcreditRepository.deleteAll();
         contributionRepository.deleteAll();
+        microcreditRepository.deleteAll();
+
         borrowerUser = userRepository.save(new User(null, 123456789l, "Borrower", "Test", "borrower.test@gmail.com",
                 "password123", "123654789", null, LocalDate.of(1990, 12, 31),
                 LocalDateTime.now(), true, "123456",
@@ -92,6 +97,9 @@ public class MicrocreditIntegrationTest {
 
         microcredit = new Microcredit(null, borrowerAccount.getId(), BigDecimal.valueOf(5000.00), null, null, null, null, "Test de integración", "Realizando test de integración", null, null, null, null, null, null);
 
+        contribution = new Contribution(null, lenderAccount.getId(), BigDecimal.valueOf(1000.00), null,
+                null, microcredit);
+
         baseURL = "http://localhost:" + port;
     }
 
@@ -100,7 +108,8 @@ public class MicrocreditIntegrationTest {
 
         @Test
         public void createMicrocredit_ShouldReturnOk() throws Exception {
-            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto(microcredit.getTitle(), microcredit.getDescription(), microcredit.getAmount());
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto(microcredit.getTitle(),
+                    microcredit.getDescription(), microcredit.getAmount());
 
             ResponseMicrocreditDto response = given()
                     .baseUri(baseURL)
@@ -129,7 +138,8 @@ public class MicrocreditIntegrationTest {
         @Test
         public void createMicrocredit_wrong_amount_return_400() throws Exception {
             BigDecimal amountWrong = new BigDecimal(6000000.00);
-            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto(microcredit.getTitle(), microcredit.getDescription(), amountWrong);
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto(microcredit.getTitle(),
+                    microcredit.getDescription(), amountWrong);
 
             given()
                     .baseUri(baseURL)
@@ -142,7 +152,8 @@ public class MicrocreditIntegrationTest {
                     .log().all()
                     .assertThat()
                     .statusCode(400)
-                    .body("message", Matchers.comparesEqualTo("El monto del microcrédito tiene que ser igual o menor a: $ 500000"));
+                    .body("message", Matchers.comparesEqualTo("El monto del microcrédito tiene que ser igual" +
+                            " o menor a: $ 500000"));
         }
 
         @Test
@@ -164,4 +175,36 @@ public class MicrocreditIntegrationTest {
                     .body("message", Matchers.comparesEqualTo("El monto del microcrédito debe ser mayor a $ 0.00"));
         }
     }
+
+    @Nested
+    class createContribution {
+
+        @Test
+        public void createContribution_ShouldReturnOk() throws Exception {
+            microcredit = microcreditRepository.save(microcredit);
+
+            RequestContributionDto requestContributionDto = new RequestContributionDto(microcredit.getId(),
+                    contribution.getAmount());
+
+            ResponseContributionDto response = given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .body(requestContributionDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/contribuir")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("microcreditId", Matchers.is(microcredit.getId()))
+                    .body("amount", Matchers.is(contribution.getAmount().floatValue()))
+                    .extract()
+                    .as(ResponseContributionDto.class);
+
+            assertThat(response.microcreditId()).isEqualTo(microcredit.getId());
+            assertThat(response.amount()).isEqualByComparingTo(contribution.getAmount());
+        }
+}
 }
