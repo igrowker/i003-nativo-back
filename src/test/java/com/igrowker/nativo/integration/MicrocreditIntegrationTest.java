@@ -5,10 +5,7 @@ import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
-import com.igrowker.nativo.entities.Account;
-import com.igrowker.nativo.entities.Contribution;
-import com.igrowker.nativo.entities.Microcredit;
-import com.igrowker.nativo.entities.User;
+import com.igrowker.nativo.entities.*;
 import com.igrowker.nativo.repositories.*;
 import com.igrowker.nativo.security.JwtService;
 import io.restassured.http.ContentType;
@@ -227,6 +224,29 @@ public class MicrocreditIntegrationTest {
                     .assertThat()
                     .statusCode(404)
                     .body("message", Matchers.comparesEqualTo("Microcrédito no encontrado"));
+        }
+
+        @Test
+        public void createContribution_wrong_microcredit_is_accepted_return_409() throws Exception {
+            microcreditRepository.save(microcredit);
+            microcredit.setTransactionStatus(TransactionStatus.ACCEPTED);
+            microcreditRepository.save(microcredit);
+
+            RequestContributionDto requestContributionDto = new RequestContributionDto(microcredit.getId(),
+                    contribution.getAmount());
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .body(requestContributionDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/contribuir")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(409)
+                    .body("message", Matchers.comparesEqualTo("El microcrédito ya tiene la totalidad del monto solicitado."));
         }
     }
 }
