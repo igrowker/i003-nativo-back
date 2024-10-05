@@ -9,13 +9,15 @@ import java.util.List;
 public interface ContributionService {
     ResponseContributionDto createContribution(RequestContributionDto requestContributionDto) throws MessagingException;
 
-    List<ResponseContributionDto> getAll();
+    List<ResponseContributionDto> getAllContributionsByUser();
 
-    List<ResponseContributionDto> getContributionsByTransactionStatus(String transactionStatus);
+    List<ResponseContributionDto> getAllContributionsByUserByStatus(String transactionStatus);
+
+    List<ResponseContributionDto> getContributionsBetweenDates(String fromDate, String toDate);
+
+    List<ResponseContributionDto> getAll();
 
     ResponseContributionDto getOneContribution(String id);
 
-    List<ResponseContributionDto> getAllContributionsByUser();
-
-    List<ResponseContributionDto> getContributionsBetweenDates(String fromDate, String toDate);
+    List<ResponseContributionDto> getContributionsByTransactionStatus(String transactionStatus);
 }

@@ -13,15 +13,17 @@ import java.util.List;
 @Repository
 public interface ContributionRepository extends JpaRepository<Contribution, String> {
 
-    List<Contribution> findByTransactionStatus(TransactionStatus enumStatus);
-
     List<Contribution> findAllByLenderAccountId(String lenderAccountId);
+
+    List<Contribution> findByTransactionStatusAndLenderAccountId(TransactionStatus enumStatus, String id);
 
     @Query("SELECT c FROM Contribution c WHERE (c.lenderAccountId = :idAccount) " +
             "AND c.createdDate >= :startDate AND c.createdDate < :endDate")
     List<Contribution> findContributionsBetweenDates(@Param("idAccount") String idAccount,
                                                      @Param("startDate") LocalDate startDate,
                                                      @Param("endDate") LocalDate endDate);
+
+    List<Contribution> findByTransactionStatus(TransactionStatus enumStatus);
 
     //Estas queries unen a microcrédito porque son usadas en el historial general, donde debe corroborarse tanto las contribuciones hechas como recibidas.
     @Query("SELECT c FROM Contribution c JOIN c.microcredit m WHERE c.lenderAccountId = :idAccount OR m.borrowerAccountId = :idAccount")
@@ -38,4 +40,5 @@ public interface ContributionRepository extends JpaRepository<Contribution, Stri
     List<Contribution> findContributionsByDateRange(@Param("idAccount") String idAccount,
                                                               @Param("fromDate") LocalDate fromDate,
                                                               @Param("toDate") LocalDate toDate);
+
 }

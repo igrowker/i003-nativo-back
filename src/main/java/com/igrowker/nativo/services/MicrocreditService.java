@@ -10,19 +10,19 @@ import java.util.List;
 public interface MicrocreditService {
     ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) throws MessagingException;
 
+    ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException;
+
+    List<ResponseMicrocreditGetDto> getAllMicrocreditsByUser();
+
+    List<ResponseMicrocreditGetDto> getAllMicrocreditsByUserByStatus(String transactionStatus);
+
+    List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate);
+
     List<ResponseMicrocreditGetDto> getAll();
 
     ResponseMicrocreditGetDto getOne(String id);
 
     List<ResponseMicrocreditGetDto> getMicrocreditsByTransactionStatus(String transactionStatus);
-
-    List<ResponseMicrocreditGetDto> getBy(String transactionStatus);
-
-    ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException;
-
-    List<ResponseMicrocreditGetDto> getAllMicrocreditsByUser();
-
-    List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate);
 
     BigDecimal totalAmountToPay(Microcredit microcredit);
 

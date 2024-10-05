@@ -59,9 +59,9 @@ public class MicrocreditControllerTest {
                 BigDecimal.valueOf(100000.00));
 
         ResponseMicrocreditDto responseMicrocreditDto = new ResponseMicrocreditDto("1234",
-                BigDecimal.valueOf(100000.00), BigDecimal.valueOf(1100000.00),BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
+                BigDecimal.valueOf(100000.00), BigDecimal.valueOf(1100000.00), BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
                 LocalDate.now().plusDays(30),
-                "Test title", "Test Description", 1, BigDecimal.valueOf(10.0),TransactionStatus.PENDING);
+                "Test title", "Test Description", 1, BigDecimal.valueOf(10.0), TransactionStatus.PENDING);
 
         when(microcreditService.createMicrocredit(requestMicrocreditDto)).thenReturn(responseMicrocreditDto);
 
@@ -216,7 +216,7 @@ public class MicrocreditControllerTest {
                 BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
                 "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
 
-        when(microcreditService.getBy("COMPLETED")).thenReturn(List.of(responseMicrocreditGetDto));
+        when(microcreditService.getAllMicrocreditsByUserByStatus("COMPLETED")).thenReturn(List.of(responseMicrocreditGetDto));
 
         mockMvc.perform(get("/api/microcreditos/estado/COMPLETED"))
                 .andExpect(status().isOk())

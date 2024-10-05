@@ -76,108 +76,6 @@ public class MicrocreditServiceImpl implements MicrocreditService {
 
     @Override
     @Transactional
-    public List<ResponseMicrocreditGetDto> getAll() {
-        List<Microcredit> microcredits = microcreditRepository.findAll();
-
-        if (microcredits.isEmpty()) {
-            throw new ResourceNotFoundException("No se encontraron microcréditos.");
-        }
-
-        return getResponseMicrocreditGetDtos(microcredits);
-    }
-
-    @Override
-    @Transactional
-    public List<ResponseMicrocreditGetDto> getMicrocreditsByTransactionStatus(String transactionStatus) {
-        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
-        List<Microcredit> microcredits = microcreditRepository.findByTransactionStatus(enumStatus);
-
-        if (microcredits.isEmpty()) {
-            throw new ResourceNotFoundException("No se encontraron microcréditos con el estado especificado.");
-        }
-
-        return getResponseMicrocreditGetDtos(microcredits);
-    }
-
-    @Override
-    @Transactional
-    public ResponseMicrocreditGetDto getOne(String id) {
-        Microcredit microcredit = microcreditRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado con id: " + id));
-
-        return getResponseMicrocreditGetDto(microcredit);
-    }
-
-    @Override
-    public List<ResponseMicrocreditGetDto> getBy(String transactionStatus) {
-        Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
-        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
-
-        List<Microcredit> microcredits = microcreditRepository.findByTransactionStatusAndBorrowerAccountId(
-                enumStatus, userBorrower.account.getId());
-
-        if (microcredits.isEmpty()) {
-            throw new ResourceNotFoundException("No se encontraron microcréditos para el usuario con el estado especificado.");
-        }
-
-        return microcredits.stream()
-                .map(this::getResponseMicrocreditGetDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ResponseMicrocreditGetDto> getAllMicrocreditsByUser() {
-        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
-
-        String borrowerAccountId = accountAndUser.account.getId();
-
-        List<Microcredit> microcreditList = microcreditRepository.findAllByBorrowerAccountId(borrowerAccountId);
-
-        if (microcreditList.isEmpty()) {
-            throw new ResourceNotFoundException("No se encontraron microcréditos.");
-        }
-
-        return microcreditList.stream()
-                .map(microcredit -> {
-                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
-
-                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
-                })
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
-        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate startDate = LocalDate.parse(fromDate, formatter);
-        LocalDate endDate = LocalDate.parse(toDate, formatter).plusDays(1);
-
-        if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
-        }
-
-        List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsBetweenDates(
-                accountAndUser.account.getId(), startDate, endDate);
-
-        if (microcreditList.isEmpty()) {
-            throw new ResourceNotFoundException("No posee microcréditos solicitados");
-        }
-
-        return microcreditList.stream()
-                .map(microcredit -> {
-                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
-
-                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
-                })
-                .collect(Collectors.toList());
-    }
-
-
-
-    @Override
-    @Transactional
     public ResponseMicrocreditPaymentDto payMicrocredit(String microcreditId) throws MessagingException {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
 
@@ -241,6 +139,106 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         Microcredit savedMicrocredit = microcreditRepository.save(microcredit);
 
         return new ResponseMicrocreditPaymentDto(savedMicrocredit.getId(), totalPaidAmount);
+    }
+
+    @Override
+    public List<ResponseMicrocreditGetDto> getAllMicrocreditsByUser() {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        String borrowerAccountId = accountAndUser.account.getId();
+
+        List<Microcredit> microcreditList = microcreditRepository.findAllByBorrowerAccountId(borrowerAccountId);
+
+        if (microcreditList.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron microcréditos.");
+        }
+
+        return microcreditList.stream()
+                .map(microcredit -> {
+                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
+
+                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ResponseMicrocreditGetDto> getAllMicrocreditsByUserByStatus(String transactionStatus) {
+        Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+
+        List<Microcredit> microcredits = microcreditRepository.findByTransactionStatusAndBorrowerAccountId(
+                enumStatus, userBorrower.account.getId());
+
+        if (microcredits.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron microcréditos para el usuario con el estado especificado.");
+        }
+
+        return microcredits.stream()
+                .map(this::getResponseMicrocreditGetDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate startDate = LocalDate.parse(fromDate, formatter);
+        LocalDate endDate = LocalDate.parse(toDate, formatter).plusDays(1);
+
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        }
+
+        List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsBetweenDates(
+                accountAndUser.account.getId(), startDate, endDate);
+
+        if (microcreditList.isEmpty()) {
+            throw new ResourceNotFoundException("No posee microcréditos solicitados");
+        }
+
+        return microcreditList.stream()
+                .map(microcredit -> {
+                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
+
+                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public List<ResponseMicrocreditGetDto> getAll() {
+        List<Microcredit> microcredits = microcreditRepository.findAll();
+
+        if (microcredits.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron microcréditos.");
+        }
+
+        return getResponseMicrocreditGetDtos(microcredits);
+    }
+
+    @Override
+    @Transactional
+    public ResponseMicrocreditGetDto getOne(String id) {
+        Microcredit microcredit = microcreditRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado con id: " + id));
+
+        return getResponseMicrocreditGetDto(microcredit);
+    }
+
+    @Override
+    @Transactional
+    public List<ResponseMicrocreditGetDto> getMicrocreditsByTransactionStatus(String transactionStatus) {
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+        List<Microcredit> microcredits = microcreditRepository.findByTransactionStatus(enumStatus);
+
+        if (microcredits.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron microcréditos con el estado especificado.");
+        }
+
+        return getResponseMicrocreditGetDtos(microcredits);
     }
 
     private void checkForActiveOrRestrictedMicrocredit(String borrowerAccountId) {
