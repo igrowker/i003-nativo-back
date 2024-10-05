@@ -1,123 +1,167 @@
 package com.igrowker.nativo.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
+import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Microcredit;
-import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
-import com.igrowker.nativo.repositories.AccountRepository;
-import com.igrowker.nativo.repositories.MicrocreditRepository;
-import com.igrowker.nativo.repositories.UserRepository;
-import com.igrowker.nativo.utils.NotificationService;
-import org.junit.jupiter.api.Test;
+import com.igrowker.nativo.repositories.*;
+import com.igrowker.nativo.security.JwtService;
+import io.restassured.http.ContentType;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Optional;
+import java.time.LocalDateTime;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@WithMockUser(roles = {"USER"})
+@Testcontainers
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MicrocreditIntegrationTest {
 
+    private String borrowerToken;
+    private String lenderToken;
+    private User borrowerUser;
+    private User lenderUser;
+    private Account borrowerAccount;
+    private Account lenderAccount;
+    @LocalServerPort
+    private int port;
     @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
     private MicrocreditRepository microcreditRepository;
-
-    @MockBean
-    private NotificationService notificationService;
-
-    @MockBean
+    @Autowired
+    private ContributionRepository contributionRepository;
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
     private UserRepository userRepository;
-
-    @MockBean
+    @Autowired
     private AccountRepository accountRepository;
+    private String baseURL;
+    private Microcredit microcredit;
 
-    ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    @Container
+    @ServiceConnection
+    private static final PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:latest")
+            .withDatabaseName("nativo")
+            .withUsername("postgres")
+            .withPassword("postgres");
 
-    @Test
-    @WithMockUser(username = "test1@gmail.com", roles = "USER")
-    public void createMicrocredit_ShouldReturnOk() throws Exception {
-        // Mock Data: Request DTO
-        RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto(
-                "Test title",
-                "Test Description",
-                BigDecimal.valueOf(100000.00)
-        );
+    @BeforeAll
+    public static void setup() {
+        postgreSQLContainer.start();
+        assertThat(postgreSQLContainer.isRunning()).isTrue();
+    }
 
-        // Mock User
-        User borrowerUserMock = mock(User.class);
-        when(borrowerUserMock.getEmail()).thenReturn("test1@gmail.com");
-        when(borrowerUserMock.getName()).thenReturn("Pedro");
-        when(borrowerUserMock.getSurname()).thenReturn("Barbano");
-        when(borrowerUserMock.getPassword()).thenReturn("securePassword123");
-        when(borrowerUserMock.getPhone()).thenReturn("1234567890");
-        when(borrowerUserMock.getBirthday()).thenReturn(LocalDate.of(1990, 1, 1));
-        when(borrowerUserMock.getId()).thenReturn("123456789");
+    @AfterAll
+    public static void teardown() { //Cuando termine, se cierra. :D
+        postgreSQLContainer.stop();
+    }
 
-        // Mock Account
-        Account borrowerAccountMock = mock(Account.class);
-        when(borrowerAccountMock.getId()).thenReturn("123456789");
-        when(borrowerAccountMock.getAmount()).thenReturn(BigDecimal.valueOf(500000.00));
-        when(borrowerAccountMock.getAccountNumber()).thenReturn(123456789L);
-        when(borrowerAccountMock.getReservedAmount()).thenReturn(BigDecimal.valueOf(0.00));
+    @BeforeEach
+    public void setupTest() {
+        userRepository.deleteAll();
+        accountRepository.deleteAll();
+        microcreditRepository.deleteAll();
+        contributionRepository.deleteAll();
+        borrowerUser = userRepository.save(new User(null, 123456789l, "Borrower", "Test", "borrower.test@gmail.com",
+                "password123", "123654789", null, LocalDate.of(1990, 12, 31),
+                LocalDateTime.now(), true, "123456",
+                LocalDateTime.now().plusMonths(1), true, true, true));
+        borrowerAccount = accountRepository.save(new Account(null, borrowerUser.getDni(), BigDecimal.ZERO,
+                true, borrowerUser.getId(), BigDecimal.ZERO));
+        lenderUser = userRepository.save(new User(null, 987654321l, "Lender", "Test", "lender.test@gmail.com",
+                "password123", "123654789", null, LocalDate.of(1990, 12, 31),
+                LocalDateTime.now(), true, "123456",
+                LocalDateTime.now().plusMonths(1), true, true, true));
+        lenderAccount = accountRepository.save(new Account(null, lenderUser.getDni(), BigDecimal.valueOf(100000.00),
+                true, lenderUser.getId(), BigDecimal.ZERO));
+        borrowerToken = "Bearer " + jwtService.generateToken(borrowerUser);
+        lenderToken = "Bearer " + jwtService.generateToken(lenderUser);
 
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(borrowerUserMock));
+        microcredit = new Microcredit(null, borrowerAccount.getId(), BigDecimal.valueOf(5000.00), null, null, null, null, "Test de integración", "Realizando test de integración", null, null, null, null, null, null);
 
-        when(accountRepository.findByUserId(borrowerUserMock.getId())).thenReturn(Optional.of(borrowerAccountMock));
+        baseURL = "http://localhost:" + port;
+    }
 
-        Microcredit microcreditMock = new Microcredit();
-        microcreditMock.setId("testID123");
-        microcreditMock.setBorrowerAccountId("123456789");
-        microcreditMock.setAmount(BigDecimal.valueOf(100000.00));
-        microcreditMock.setRemainingAmount(BigDecimal.valueOf(100000.00));
-        microcreditMock.setTitle("Test title");
-        microcreditMock.setDescription("Test Description");
-        microcreditMock.setExpirationDate(LocalDate.now().plusDays(30));
-        microcreditMock.setCreatedDate(LocalDate.now());
-        microcreditMock.setTransactionStatus(TransactionStatus.PENDING);
+    @Nested
+    class createTest {
 
-        when(microcreditRepository.save(any(Microcredit.class))).thenReturn(microcreditMock);
+        @Test
+        public void createMicrocredit_ShouldReturnOk() throws Exception {
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto(microcredit.getTitle(), microcredit.getDescription(), microcredit.getAmount());
 
-        mockMvc.perform(post("/api/microcreditos/solicitar")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestMicrocreditDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.amount").value(requestMicrocreditDto.amount().doubleValue()))
-                .andExpect(jsonPath("$.remainingAmount").value(requestMicrocreditDto.amount().doubleValue()))
-                .andExpect(jsonPath("$.createdDate").exists())
-                .andExpect(jsonPath("$.expirationDate").exists())
-                .andExpect(jsonPath("$.title").value(requestMicrocreditDto.title()))
-                .andExpect(jsonPath("$.description").value(requestMicrocreditDto.description()))
-                .andExpect(jsonPath("$.transactionStatus").value(TransactionStatus.PENDING.toString()));
+            ResponseMicrocreditDto response = given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .body(requestMicrocreditDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/solicitar")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("title", Matchers.is(microcredit.getTitle()))
+                    .body("description", Matchers.is(microcredit.getDescription()))
+                    .body("amount", Matchers.is(microcredit.getAmount().floatValue()))
+                    .extract()
+                    .as(ResponseMicrocreditDto.class);
 
-        verify(notificationService, times(1)).sendPaymentNotification(
-                eq("test1@gmail.com"),
-                eq("Pedro Barbano"),
-                eq(BigDecimal.valueOf(100000.00)),
-                eq("Microcrédito Creado"),
-                contains("ha sido creado exitosamente."),
-                contains("Gracias por participar en nuestro programa de microcréditos.")
-        );
+            assertThat(response.title()).isEqualTo(microcredit.getTitle());
+            assertThat(response.description()).isEqualTo(microcredit.getDescription());
+            assertThat(response.amount()).isEqualByComparingTo(microcredit.getAmount());
+
+        }
+
+        @Test
+        public void createMicrocredit_wrong_amount_return_400() throws Exception {
+            BigDecimal amountWrong = new BigDecimal(6000000.00);
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto(microcredit.getTitle(), microcredit.getDescription(), amountWrong);
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .body(requestMicrocreditDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/solicitar")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.comparesEqualTo("El monto del microcrédito tiene que ser igual o menor a: $ 500000"));
+        }
+
+        @Test
+        public void createMicrocredit_negative_amount_return_400() throws Exception {
+            BigDecimal amountWrong = new BigDecimal(-1000.00);
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto(microcredit.getTitle(), microcredit.getDescription(), amountWrong);
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .body(requestMicrocreditDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/solicitar")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.comparesEqualTo("El monto del microcrédito debe ser mayor a $ 0.00"));
+        }
     }
 }
