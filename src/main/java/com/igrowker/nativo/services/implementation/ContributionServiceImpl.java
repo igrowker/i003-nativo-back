@@ -86,66 +86,6 @@ public class ContributionServiceImpl implements ContributionService {
     }
 
     @Override
-    public List<ResponseContributionDto> getAll() {
-        List<Contribution> contributions = contributionRepository.findAll();
-
-        if (contributions.isEmpty()) {
-            throw new ResourceNotFoundException("No se encontraron contribuciones.");
-        }
-
-        return mapContributionsToDto(contributions);
-    }
-
-    @Override
-    public List<ResponseContributionDto> getContributionsByTransactionStatus(String transactionStatus) {
-        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
-        List<Contribution> contributions = contributionRepository.findByTransactionStatus(enumStatus);
-
-        if (contributions.isEmpty()) {
-            throw new ResourceNotFoundException("No se encontraron contribuciones con el estado especificado.");
-        }
-
-        return mapContributionsToDto(contributions);
-    }
-
-    @Override
-    public ResponseContributionDto getOneContribution(String id) {
-        //si se coloca un id incorrecto da error 403
-        Contribution contribution = contributionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contribution no encontrado con id: " + id));
-
-        Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
-                .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + contribution.getMicrocredit().getId()));
-
-        String lenderFullname = validations.fullname(contribution.getLenderAccountId());
-        String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
-
-        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname);
-    }
-
-    //Chequea el monto restante. Cambia el estado de la transacción
-    private void updateRemainingAmount(Microcredit microcredit, BigDecimal contributionAmount) {
-        if (microcredit.getTransactionStatus() == TransactionStatus.PENDING) {
-            if (contributionAmount.compareTo(microcredit.getRemainingAmount()) > 0) {
-                throw new ValidationException("El monto de la contribución no puede ser mayor que el monto restante del microcrédito.");
-            }
-
-            BigDecimal remainingAmount = microcredit.getRemainingAmount().subtract(contributionAmount);
-            microcredit.setRemainingAmount(remainingAmount);
-
-            if (remainingAmount.compareTo(BigDecimal.ZERO) == 0) {
-                microcredit.setTransactionStatus(TransactionStatus.ACCEPTED);
-            }
-
-            microcreditRepository.saveAndFlush(microcredit);
-        } else if (microcredit.getTransactionStatus() == TransactionStatus.ACCEPTED) {
-            throw new IllegalStateException("No se puede agregar más dinero a un microcrédito que ya está en estado ACCEPTED.");
-        } else {
-            throw new IllegalStateException("No se puede contribuir en el microcrédito en estado " + microcredit.getTransactionStatus());
-        }
-    }
-
-    @Override
     public List<ResponseContributionDto> getAllContributionsByUser() {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 
@@ -155,6 +95,23 @@ public class ContributionServiceImpl implements ContributionService {
 
         if (contributions.isEmpty()) {
             throw new ResourceNotFoundException("No se encontraron contribuciones.");
+        }
+
+        return mapContributionsToDto(contributions);
+    }
+
+    @Override
+    public List<ResponseContributionDto> getAllContributionsByUserByStatus(String transactionStatus) {
+        Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+
+        String lenderAccounId = userBorrower.account.getId();
+
+        List<Contribution> contributions = contributionRepository.findByTransactionStatusAndLenderAccountId(enumStatus,
+                lenderAccounId);
+
+        if (contributions.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones para el usuario en el estado especificado.");
         }
 
         return mapContributionsToDto(contributions);
@@ -181,6 +138,64 @@ public class ContributionServiceImpl implements ContributionService {
         }
 
         return mapContributionsToDto(contributionList);
+    }
+
+    @Override
+    public List<ResponseContributionDto> getAll() {
+        List<Contribution> contributions = contributionRepository.findAll();
+
+        if (contributions.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones.");
+        }
+
+        return mapContributionsToDto(contributions);
+    }
+
+    @Override
+    public ResponseContributionDto getOneContribution(String id) {
+        Contribution contribution = contributionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Contribution no encontrado con id: " + id));
+
+        Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
+                .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + contribution.getMicrocredit().getId()));
+
+        String lenderFullname = validations.fullname(contribution.getLenderAccountId());
+        String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
+
+        return contributionMapper.responseContributionDto(contribution, lenderFullname, borrowerFullname);
+    }
+
+    @Override
+    public List<ResponseContributionDto> getContributionsByTransactionStatus(String transactionStatus) {
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+        List<Contribution> contributions = contributionRepository.findByTransactionStatus(enumStatus);
+
+        if (contributions.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron contribuciones con el estado especificado.");
+        }
+
+        return mapContributionsToDto(contributions);
+    }
+
+    private void updateRemainingAmount(Microcredit microcredit, BigDecimal contributionAmount) {
+        if (microcredit.getTransactionStatus() == TransactionStatus.PENDING) {
+            if (contributionAmount.compareTo(microcredit.getRemainingAmount()) > 0) {
+                throw new ValidationException("El monto de la contribución no puede ser mayor que el monto restante del microcrédito.");
+            }
+
+            BigDecimal remainingAmount = microcredit.getRemainingAmount().subtract(contributionAmount);
+            microcredit.setRemainingAmount(remainingAmount);
+
+            if (remainingAmount.compareTo(BigDecimal.ZERO) == 0) {
+                microcredit.setTransactionStatus(TransactionStatus.ACCEPTED);
+            }
+
+            microcreditRepository.saveAndFlush(microcredit);
+        } else if (microcredit.getTransactionStatus() == TransactionStatus.ACCEPTED) {
+            throw new IllegalStateException("No se puede agregar más dinero a un microcrédito que ya está en estado ACCEPTED.");
+        } else {
+            throw new IllegalStateException("No se puede contribuir en el microcrédito en estado " + microcredit.getTransactionStatus());
+        }
     }
 
     private List<ResponseContributionDto> mapContributionsToDto(List<Contribution> contributions) {

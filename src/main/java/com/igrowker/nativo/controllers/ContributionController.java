@@ -1,7 +1,6 @@
 package com.igrowker.nativo.controllers;
 
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
-import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.services.ContributionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,23 +15,16 @@ import java.util.List;
 public class ContributionController {
     private final ContributionService contributionService;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ResponseContributionDto> getOneContribution(@PathVariable String id) {
-        ResponseContributionDto response = contributionService.getOneContribution(id);
+    @GetMapping("/usuario-logueado")
+    public ResponseEntity<List<ResponseContributionDto>> getAllByUser() {
+        List<ResponseContributionDto> response = contributionService.getAllContributionsByUser();
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping()
-    public ResponseEntity<List<ResponseContributionDto>> getAll() {
-        List<ResponseContributionDto> response = contributionService.getAll();
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @GetMapping("/historial-estados/{status}")
-    public ResponseEntity<List<ResponseContributionDto>> getContributionsByTransactionStatus(@PathVariable String status) {
-        List<ResponseContributionDto> response = contributionService.getContributionsByTransactionStatus(status);
+    @GetMapping("/estado/{status}")
+    public ResponseEntity<List<ResponseContributionDto>> getAllContributionsByUserByStatus(@PathVariable String status) {
+        List<ResponseContributionDto> response = contributionService.getAllContributionsByUserByStatus(status);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -46,10 +38,24 @@ public class ContributionController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/usuario-logueado")
-    public ResponseEntity<List<ResponseContributionDto>> getAllByUser() {
-        List<ResponseContributionDto> response = contributionService.getAllContributionsByUser();
+    @GetMapping()
+    public ResponseEntity<List<ResponseContributionDto>> getAll() {
+        List<ResponseContributionDto> response = contributionService.getAll();
 
-        return ResponseEntity.ok(response);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ResponseContributionDto> getOneContribution(@PathVariable String id) {
+        ResponseContributionDto response = contributionService.getOneContribution(id);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/historial-estados/{status}")
+    public ResponseEntity<List<ResponseContributionDto>> getContributionsByTransactionStatus(@PathVariable String status) {
+        List<ResponseContributionDto> response = contributionService.getContributionsByTransactionStatus(status);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
