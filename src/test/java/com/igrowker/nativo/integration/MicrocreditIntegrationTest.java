@@ -319,5 +319,28 @@ public class MicrocreditIntegrationTest {
                     .body("message", Matchers.comparesEqualTo("El usuario contribuyente no puede ser el mismo" +
                             " que el solicitante del microcrédito."));
         }
+
+        @Test
+        public void createContribution_lender_insufficient_fund_return_400() throws Exception {
+            microcreditRepository.save(microcredit);
+            lenderAccount.setAmount(BigDecimal.valueOf(0.00));
+            accountRepository.save(lenderAccount);
+
+            RequestContributionDto requestContributionDto = new RequestContributionDto(microcredit.getId(),
+                    contribution.getAmount());
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .body(requestContributionDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/contribuir")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.comparesEqualTo("Fondos insuficientes"));
+        }
     }
 }
