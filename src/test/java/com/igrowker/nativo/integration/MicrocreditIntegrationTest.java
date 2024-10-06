@@ -342,5 +342,38 @@ public class MicrocreditIntegrationTest {
                     .statusCode(400)
                     .body("message", Matchers.comparesEqualTo("Fondos insuficientes"));
         }
+
+        @Test
+        public void createContribution_lender_has_an_expired_microcredit_return_400() throws Exception {
+            Microcredit microcreditTest = new Microcredit(null, lenderAccount.getId(), BigDecimal.valueOf(5000.00),
+                    null, null, null, null, "Test de integración",
+                    "Realizando test de integración", null, null, null,
+                    null, null, null);
+
+            microcreditRepository.save(microcreditTest);
+
+            microcreditTest.setTransactionStatus(TransactionStatus.EXPIRED);
+
+            microcreditRepository.save(microcreditTest);
+
+            microcreditRepository.save(microcredit);
+
+            RequestContributionDto requestContributionDto = new RequestContributionDto(microcredit.getId(),
+                    contribution.getAmount());
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .body(requestContributionDto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/microcreditos/contribuir")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.comparesEqualTo("No puede contribuir. Presenta un microcrédito vencido. " +
+                            "Debe regularizar su deuda."));
+        }
     }
 }
