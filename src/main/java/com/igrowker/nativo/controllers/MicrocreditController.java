@@ -3,14 +3,11 @@ package com.igrowker.nativo.controllers;
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.*;
-import com.igrowker.nativo.exceptions.ErrorResponse;
-import com.igrowker.nativo.exceptions.GlobalExceptionHandler;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -22,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Locale;
 
 @RequiredArgsConstructor
 @RestController
@@ -38,20 +34,15 @@ public class MicrocreditController {
             @ApiResponse(responseCode = "200", description = "Microcrédito creado con éxito",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseMicrocreditDto.class))),
-            @ApiResponse(responseCode = "400", description = "Error en el monto ingresado",
-                    content = @Content),
-            @ApiResponse(responseCode = "403", description = "Error en el monto ingresado",
-                    content = @Content),
-            @ApiResponse(responseCode = "409", description = "Error en el monto ingresado",
-                    content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor",, description = "Error en el monto ingresado",
-                    content = @Content),
+            @ApiResponse(responseCode = "400", content = @Content),
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "409", content = @Content)
     })
     @PostMapping("/solicitar")
     public ResponseEntity<ResponseMicrocreditDto> createMicrocredit(@Valid @RequestBody RequestMicrocreditDto requestMicrocreditDto) throws MessagingException {
-            ResponseMicrocreditDto response = microcreditService.createMicrocredit(requestMicrocreditDto);
+        ResponseMicrocreditDto response = microcreditService.createMicrocredit(requestMicrocreditDto);
 
-            return ResponseEntity.ok(response);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Realizar una contribución a un microcrédito",
@@ -59,11 +50,11 @@ public class MicrocreditController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Contribución realizada con éxito",
                     content = @Content(schema = @Schema(implementation = ResponseContributionDto.class))),
-            @ApiResponse(responseCode = "400", description = "Error en el monto ingresado"),
-            @ApiResponse(responseCode = "403", description = "No autenticado"),
-            @ApiResponse(responseCode = "404", description = "Microcrédito no encontrado"),
-            @ApiResponse(responseCode = "409", description = "Microcrédito completo"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "400", content = @Content),
+            @ApiResponse(responseCode = "401", content = @Content),
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "404", content = @Content),
+            @ApiResponse(responseCode = "409", content = @Content)
     })
     @PostMapping("/contribuir")
     public ResponseEntity<?> createContribution(@Valid @RequestBody RequestContributionDto requestContributionDto) throws MessagingException {
@@ -77,15 +68,14 @@ public class MicrocreditController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Microcrédito pagado con éxito",
                     content = @Content(schema = @Schema(implementation = ResponseMicrocreditPaymentDto.class))),
-            @ApiResponse(responseCode = "400", description = "Error en el monto ingresado"),
-            @ApiResponse(responseCode = "403", description = "No autenticado"),
-            @ApiResponse(responseCode = "404", description = "Microcrédito no encontrado"),
-            @ApiResponse(responseCode = "409", description = "El microcrédito ya ha sido pagado o no tiene contribuciones"),
-            @ApiResponse(responseCode = "402", description = "Fondos insuficientes"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "400", content = @Content),
+            @ApiResponse(responseCode = "401", content = @Content),
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "404", content = @Content),
+            @ApiResponse(responseCode = "409", content = @Content)
     })
     @PostMapping("/pagar/{id}")
-    public ResponseEntity<ResponseMicrocreditPaymentDto> payMicrocredit(@Parameter(required = true) @PathVariable String id) throws MessagingException {
+    public ResponseEntity<ResponseMicrocreditPaymentDto> payMicrocredit(@Parameter(description = "ID del microcrédito", required = true) @PathVariable String id) throws MessagingException {
         ResponseMicrocreditPaymentDto response = microcreditService.payMicrocredit(id);
 
         return ResponseEntity.ok(response);
@@ -94,10 +84,10 @@ public class MicrocreditController {
     @Operation(summary = "Obtener todos los microcréditos del usuario autenticado",
             description = "Endpoint que permite obtener todos los microcréditos del usuario autenticado.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de microcréditos obtenidos con éxito",
+            @ApiResponse(responseCode = "200", description = "Historial de microcréditos obtenidos con éxito",
                     content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
-            @ApiResponse(responseCode = "403", description = "No autenticado"),
-            @ApiResponse(responseCode = "404", description = "No se encontraron microcréditos para el usuario")
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "404", content = @Content),
     })
     @GetMapping("/usuario-logueado")
     public ResponseEntity<List<ResponseMicrocreditGetDto>> getAllByUser() {
@@ -109,14 +99,15 @@ public class MicrocreditController {
     @Operation(summary = "Obtener microcréditos del usuario autenticado por estado",
             description = "Endpoint que permite obtener todos los microcréditos del usuario autenticado filtrados por estado.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de microcréditos obtenidos con éxito",
+            @ApiResponse(responseCode = "200", description = "Historial de microcréditos por estado obtenidos con éxito",
                     content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
-            @ApiResponse(responseCode = "400", description = "Estado no válido"),
-            @ApiResponse(responseCode = "403", description = "No autenticado"),
-            @ApiResponse(responseCode = "404", description = "No se encontraron microcréditos para el usuario con el estado especificado")
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "404", content = @Content),
     })
     @GetMapping("/estado/{status}")
-    public ResponseEntity<List<ResponseMicrocreditGetDto>> getAllMicrocreditsByUserByStatus(@Parameter(description = "Datos del microcrédito a crear", required = true) @PathVariable String status) {
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getAllMicrocreditsByUserByStatus(@Parameter(description = "Seleccionar el estado del microcrédito a buscar", required = true,
+            schema = @Schema(allowableValues = {"ACCEPTED", "DENIED", "PENDING", "EXPIRED", "COMPLETED"}))
+                                                                                            @PathVariable String status) {
         List<ResponseMicrocreditGetDto> response = microcreditService.getAllMicrocreditsByUserByStatus(status);
 
         return ResponseEntity.ok(response);
@@ -125,16 +116,17 @@ public class MicrocreditController {
     @Operation(summary = "Obtener microcréditos entre fechas del usuario autenticado",
             description = "Endpoint que permite obtener todos los microcréditos del usuario autenticado dentro de un rango de fechas.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de microcréditos obtenidos con éxito",
+            @ApiResponse(responseCode = "200", description = "Historial de microcréditos, filtrado por fechas, obtenidos con éxito",
                     content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
-            @ApiResponse(responseCode = "400", description = "Formato de fecha inválido"),
-            @ApiResponse(responseCode = "403", description = "No autenticado"),
-            @ApiResponse(responseCode = "404", description = "No se encontraron microcréditos para el usuario en el rango de fechas especificado")
+            @ApiResponse(responseCode = "400", content = @Content),
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "404", content = @Content),
     })
     @GetMapping("/entrefechas")
-    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsBetweenDates(@Parameter(description = "Datos del microcrédito a crear", required = true)
-            @RequestParam String fromDate,
-            @RequestParam String toDate) {
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsBetweenDates(@Parameter(description = "Desde", required = true, example = "2023-03-21")
+                                                                                       @RequestParam String fromDate,
+                                                                                       @Parameter(description = "Hasta", required = true, example = "2024-03-21")
+                                                                                       @RequestParam String toDate) {
 
         List<ResponseMicrocreditGetDto> result = microcreditService.getMicrocreditsBetweenDates(fromDate, toDate);
         return ResponseEntity.ok(result);
@@ -146,7 +138,7 @@ public class MicrocreditController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de todos los microcréditos obtenidos con éxito",
                     content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
-            @ApiResponse(responseCode = "403", description = "No autorizado para acceder a esta información")
+            @ApiResponse(responseCode = "404", content = @Content)
     })
     @GetMapping()
     public ResponseEntity<List<ResponseMicrocreditGetDto>> getAll() {
@@ -160,11 +152,10 @@ public class MicrocreditController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Microcrédito obtenido con éxito",
                     content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
-            @ApiResponse(responseCode = "403", description = "No autorizado para acceder a esta información"),
-            @ApiResponse(responseCode = "404", description = "Microcrédito no encontrado")
+            @ApiResponse(responseCode = "404", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseMicrocreditGetDto> getOne(@Parameter(description = "Datos del microcrédito a crear", required = true) @PathVariable String id) {
+    public ResponseEntity<ResponseMicrocreditGetDto> getOne(@Parameter(description = "ID del microcrédito", required = true) @PathVariable String id) {
         ResponseMicrocreditGetDto response = microcreditService.getOne(id);
 
         return ResponseEntity.ok(response);
@@ -175,12 +166,11 @@ public class MicrocreditController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de microcréditos obtenidos con éxito",
                     content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
-            @ApiResponse(responseCode = "400", description = "Estado de transacción inválido"),
-            @ApiResponse(responseCode = "403", description = "No autorizado para acceder a esta información"),
-            @ApiResponse(responseCode = "404", description = "No se encontraron microcréditos con el estado de transacción especificado")
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "404", content = @Content)
     })
     @GetMapping("/historial-estados/{status}")
-    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsByTransactionStatus(@Parameter(description = "Datos del microcrédito a crear", required = true) @PathVariable String status) {
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsByTransactionStatus(@Parameter(description = "Seleccionar el estado del microcrédito a buscar", required = true, schema = @Schema(allowableValues = {"ACCEPTED", "DENIED", "PENDING", "EXPIRED", "COMPLETED"})) @PathVariable String status) {
         List<ResponseMicrocreditGetDto> response = microcreditService.getMicrocreditsByTransactionStatus(status);
 
         return ResponseEntity.ok(response);
