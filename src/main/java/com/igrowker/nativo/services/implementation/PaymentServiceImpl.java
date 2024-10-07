@@ -148,9 +148,39 @@ public class PaymentServiceImpl implements PaymentService {
         return result;
     }
 
+    @Override
+    public List<ResponseRecordPayment> getPaymentsByClient(String clientId) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        List<Payment> paymentList = paymentRepository.findPendingPaymentsBySender(accountAndUser.account.getId());
+        var result = paymentList.stream().map(this::mapPaymentToRecord).toList();
+        return result;
+    }
+
+    @Override
+    public ResponseRecordPayment getPaymentsById(String id) {
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("El Pago solicitado no fue encontrado"));
+        return paymentMapper.paymentToResponseRecord(payment, payment.getSenderAccount(), payment.getReceiverAccount());
+    }
+
     private ResponseRecordPayment mapPaymentToRecord(Payment payment){
         var senderAccount = accountRepository.findById(payment.getSenderAccount()).get().getAccountNumber().toString();
         var receiverAccount = accountRepository.findById(payment.getReceiverAccount()).get().getAccountNumber().toString();
         return paymentMapper.paymentToResponseRecord(payment, senderAccount, receiverAccount);
     }
+
+    @Override
+    @Transactional
+    public ResponsePaymentDto createQrId(DemodayDtoRequestPayment requestPaymentDto) {
+        var userAndAccount = validations.getAuthenticatedUserAndAccount();
+        Payment payment = paymentMapper.demodayDtoToPayment(requestPaymentDto);
+        payment.setReceiverName(userAndAccount.user.getName());
+        payment.setReceiverSurname(userAndAccount.user.getSurname());
+        Payment savedPayment = paymentRepository.save(payment);
+        String qrCode = qrService.generateQrCode(savedPayment.getId());
+        savedPayment.setQr(qrCode);
+        Payment withQrPayment = paymentRepository.save(savedPayment);
+        return paymentMapper.paymentToResponseDto(withQrPayment, userAndAccount.account.getAccountNumber().toString());
+    }
+
 }

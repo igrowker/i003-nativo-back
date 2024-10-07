@@ -24,4 +24,6 @@ public interface PaymentMapper {
     @Mapping(source = "senderAccountNumber", target = "senderAccount")
     @Mapping(source = "receiverAccountNumber", target = "receiverAccount")
     ResponseRecordPayment paymentToResponseRecord(Payment payment, String senderAccountNumber, String receiverAccountNumber);
+
+    Payment demodayDtoToPayment(DemodayDtoRequestPayment requestPaymentDto);
 }
