@@ -203,6 +203,62 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
+    class GetAllMicrocreditsBetweenDates {
+        @Test
+        public void getMicrocreditsBetweenDates_ShouldReturnOk() throws Exception {
+            String fromDate = LocalDate.now().toString();
+            String toDate = "2023-12-31";
+
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
+
+            when(microcreditService.getMicrocreditsBetweenDates(fromDate, toDate)).thenReturn(List.of(responseMicrocreditGetDto));
+
+            mockMvc.perform(get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
+                    .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
+                    .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
+                    .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
+                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
+        }
+
+        @Test
+        public void getMicrocreditsBetweenDates_ShouldReturnBadRequest() throws Exception {
+            String fromDate = "2023-12-31";
+            String toDate = LocalDate.now().toString();
+
+            when(microcreditService.getMicrocreditsBetweenDates(fromDate, toDate))
+                    .thenThrow(new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin."));
+
+            mockMvc.perform(get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("La fecha de inicio no puede ser " +
+                            "posterior a la fecha de fin.")));
+        }
+
+        @Test
+        public void getMicrocreditsBetweenDates_ShouldReturnNotFound() throws Exception {
+            String fromDate = LocalDate.now().toString();
+            String toDate = "2023-12-31";
+
+            when(microcreditService.getMicrocreditsBetweenDates(fromDate, toDate))
+                    .thenThrow(new ResourceNotFoundException("No posee microcréditos solicitados"));
+
+            mockMvc.perform(get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No posee microcréditos solicitados")));
+        }
+    }
+
+    @Nested
     class GetAllMicrocredits {
         @Test
         public void getAll_ShouldReturnOk() throws Exception {
