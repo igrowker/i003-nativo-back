@@ -46,9 +46,6 @@ public class MicrocreditControllerTest {
     private MicrocreditService microcreditService;
 
     @MockBean
-    private MicrocreditRepository microcreditRepository;
-
-    @MockBean
     private ContributionService contributionService;
 
     @MockBean

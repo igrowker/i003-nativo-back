@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.igrowker.nativo.controllers.ContributionController;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.security.JwtService;
 import com.igrowker.nativo.services.ContributionService;
 import org.hamcrest.Matchers;
@@ -18,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -61,6 +63,15 @@ public class ContributionControllerTest {
                     .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
                     .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
+        }
+
+        @Test
+        public void getAll_ShouldReturnNotFound_WhenNoContributions() throws Exception {
+            when(contributionService.getAll()).thenThrow (new ResourceNotFoundException("No se encontraron contribuciones."));
+
+            mockMvc.perform(get("/api/contribuciones"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron contribuciones.")));
         }
     }
 
