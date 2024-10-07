@@ -22,13 +22,13 @@ public class ContributionController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/estado/{status}")
+ /*   @GetMapping("/estado/{status}")
     public ResponseEntity<List<ResponseContributionDto>> getAllContributionsByUserByStatus(@PathVariable String status) {
         List<ResponseContributionDto> response = contributionService.getAllContributionsByUserByStatus(status);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
+*/
     @GetMapping("/entrefechas")
     public ResponseEntity<List<ResponseContributionDto>> getContributionsBetweenDates(
             @RequestParam String fromDate,
