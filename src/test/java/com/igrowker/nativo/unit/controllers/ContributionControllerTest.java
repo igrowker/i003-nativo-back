@@ -76,6 +76,43 @@ public class ContributionControllerTest {
     }
 
     @Nested
+    class GetAllContributionContributionByUserByStatus {
+        @Test
+        public void getAllContributionByUserByStatus_ShouldReturnOk() throws Exception {
+            ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
+                    "Test1", "Test2", "1234",
+                    BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+
+            when(contributionService.getAllContributionsByUserByStatus("ACCEPTED")).thenReturn(List.of(responseContributionDto));
+
+            mockMvc.perform(get("/api/contribuciones/estado/ACCEPTED"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseContributionDto.id())))
+                    .andExpect(jsonPath("$[0].lenderAccountId", Matchers.is(responseContributionDto.lenderAccountId())))
+                    .andExpect(jsonPath("$[0].lenderFullname", Matchers.is(responseContributionDto.lenderFullname())))
+                    .andExpect(jsonPath("$[0].borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
+                    .andExpect(jsonPath("$[0].microcreditId", Matchers.is(responseContributionDto.microcreditId())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseContributionDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
+                    .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                    .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
+        }
+
+        @Test
+        public void getAll_ShouldReturnNotFound_WhenNoContributions() throws Exception {
+            when(contributionService.getAllContributionsByUserByStatus("COMPLETED"))
+                    .thenThrow(new ResourceNotFoundException("No se encontraron contribuciones para el usuario en " +
+                            "el estado especificado."));
+
+            mockMvc.perform(get("/api/contribuciones/estado/COMPLETED"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron contribuciones para " +
+                            "el usuario en el estado especificado.")));
+        }
+    }
+
+    @Nested
     class GetAllContributions {
         @Test
         public void getAll_ShouldReturnOk() throws Exception {
