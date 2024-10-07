@@ -361,8 +361,16 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
                     .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
         }
-    }
 
+        @Test
+        public void getMicrocreditsByTransactionStatus_ShouldReturnNotFound() throws Exception {
+            when(microcreditService.getMicrocreditsByTransactionStatus("ACCEPTED")).thenThrow(new ResourceNotFoundException("No se encontraron microcréditos con el estado especificado."));
+
+            mockMvc.perform(get("/api/microcreditos/historial-estados/ACCEPTED"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron microcréditos con el estado especificado.")));
+        }
+    }
 
     @Nested
     class CreateContribution {
