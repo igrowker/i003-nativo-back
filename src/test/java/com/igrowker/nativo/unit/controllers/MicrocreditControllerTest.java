@@ -12,6 +12,7 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditPaymentDto;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
+import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.security.JwtService;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
@@ -29,7 +30,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -42,6 +43,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class MicrocreditControllerTest {
     @MockBean
     private MicrocreditService microcreditService;
+
+    @MockBean
+    private MicrocreditRepository microcreditRepository;
 
     @MockBean
     private ContributionService contributionService;
@@ -88,7 +92,8 @@ public class MicrocreditControllerTest {
             RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test amount exception ", "Monto mayor al permitido",
                     BigDecimal.valueOf(100000.00));
 
-            when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ 500000"));
+            when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito " +
+                    "tiene que ser igual o menor a: $ 500000"));
 
             mockMvc.perform(post("/api/microcreditos/solicitar")
                             .with(csrf())
@@ -401,8 +406,38 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$.createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
                     .andExpect(jsonPath("$.expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
                     .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
+        }
 
+        @Test
+        public void createContribution_ShouldReturnBadRequest() throws Exception {
+            RequestContributionDto requestContributionDto = new RequestContributionDto("1234",
+                    BigDecimal.valueOf(-10000.00));
 
+            when(contributionService.createContribution(requestContributionDto))
+                    .thenThrow(new ValidationException("El monto de la contribución debe ser mayor a $ 0.00"));
+
+            mockMvc.perform(post("/api/microcreditos/contribuir")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestContributionDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("El monto de la contribución debe ser mayor a $ 0.00")));
+        }
+
+        @Test
+        public void createContribution_ShouldReturn_insufficient_fund() throws Exception {
+            RequestContributionDto requestContributionDto = new RequestContributionDto("1234",
+                    BigDecimal.valueOf(10000.00));
+
+            when(contributionService.createContribution(requestContributionDto))
+                    .thenThrow(new ValidationException("Fondos insuficientes"));
+
+            mockMvc.perform(post("/api/microcreditos/contribuir")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestContributionDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("Fondos insuficientes")));
         }
     }
 }
