@@ -141,6 +141,61 @@ public class ContributionIntegrationTest {
                     .statusCode(404)
                     .body("message", Matchers.comparesEqualTo("No se encontraron contribuciones."));
         }
+
+        @Test
+        public void getAllContributionsByUser_return_200() throws Exception {
+            contribution = contributionRepository.save(contribution);
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .when()
+                    .get("/api/contribuciones/usuario-logueado")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1))
+                    .body("[0].microcreditId", Matchers.equalTo(microcredit.getId()))
+                    .body("[0].amount", Matchers.is(contribution.getAmount().floatValue()));
+        }
+
+        @Test
+        public void getAllContributionsByUser_notFoundContributions_return_404() throws Exception {
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/contribuciones/usuario-logueado")
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.comparesEqualTo("No se encontraron contribuciones."));
+        }
+    }
+
+    @Nested
+    class getAllContributionsByUserByStatus {
+        public void getAllContributions_return_200() throws Exception {
+            contribution = contributionRepository.save(contribution);
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .when()
+                    .get("/api/contribuciones/%s" + "ACCEPTED")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1))
+                    .body("[0].microcreditId", Matchers.equalTo(microcredit.getId()))
+                    .body("[0].amount", Matchers.is(contribution.getAmount().floatValue()));
+        }
     }
 
     @Nested
