@@ -13,4 +13,7 @@ public interface PaymentService {
     List<ResponseRecordPayment> getPaymentsBetweenDates(String fromDate, String toDate);
     List<ResponseRecordPayment> getPaymentsAsClient();
     List<ResponseRecordPayment> getPaymentsAsSeller();
+    List<ResponseRecordPayment> getPaymentsByClient(String clientId);
+    ResponseRecordPayment getPaymentsById(String id);
+    ResponsePaymentDto createQrId(DemodayDtoRequestPayment requestPaymentDto);
 }
