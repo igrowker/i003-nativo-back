@@ -154,10 +154,10 @@ public class ContributionServiceImpl implements ContributionService {
     @Override
     public ResponseContributionDto getOneContribution(String id) {
         Contribution contribution = contributionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contribution no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Contribución no encontrada con id: " + id));
 
         Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
-                .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + contribution.getMicrocredit().getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado con id: " + contribution.getMicrocredit().getId()));
 
         String lenderFullname = validations.fullname(contribution.getLenderAccountId());
         String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
