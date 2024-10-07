@@ -10,6 +10,7 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditPaymentDto;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.InsufficientFundsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
@@ -92,14 +93,29 @@ public class MicrocreditControllerTest {
             RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test amount exception ", "Monto mayor al permitido",
                     BigDecimal.valueOf(100000.00));
 
-            when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito " +
-                    "tiene que ser igual o menor a: $ 500000"));
+            when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ 500000"));
 
             mockMvc.perform(post("/api/microcreditos/solicitar")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(requestMicrocreditDto)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("El monto del microcrédito tiene que ser igual o menor a: $ 500000")));
+        }
+
+        @Test
+        public void createMicrocredit_ShouldReturnBadRequest() throws Exception {
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test amount exception ", "Monto mayor al permitido",
+                    BigDecimal.valueOf(-100000.00));
+
+            when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito debe ser mayor a $ 0.00"));
+
+            mockMvc.perform(post("/api/microcreditos/solicitar")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestMicrocreditDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("El monto del microcrédito debe ser mayor a $ 0.00")));
         }
     }
 
@@ -126,11 +142,27 @@ public class MicrocreditControllerTest {
         public void payMicrocredit_ShouldReturnNotOk() throws Exception {
             ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
                     BigDecimal.valueOf(1000.00));
+
             when(microcreditService.getOne(any())).
                     thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditPaymentDto.id()));
+
             mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditPaymentDto.id()))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
+
+        }
+
+        @Test
+        public void payMicrocredit_ShouldReturnBadRequest() throws Exception {
+            ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
+                    BigDecimal.valueOf(1000.00));
+
+            when(microcreditService.getOne(any())).
+                    thenThrow(new InsufficientFundsException("Fondos insuficientes"));
+
+            mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditPaymentDto.id()))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("Fondos insuficientes")));
 
         }
     }
