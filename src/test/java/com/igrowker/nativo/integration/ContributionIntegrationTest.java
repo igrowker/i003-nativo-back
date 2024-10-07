@@ -102,7 +102,7 @@ public class ContributionIntegrationTest {
     }
 
     @Nested
-    class getAllContributionTest {
+    class GetAllContributionTest {
 
         @Test
         public void getAllContributions_return_200() throws Exception {
@@ -174,7 +174,7 @@ public class ContributionIntegrationTest {
     }
 
     @Nested
-    class getAllContributionsByUserByStatus {
+    class GetAllContributionsByUserByStatus {
 
         @Test
         public void getAllContributionsByUserByStatus_return_200() throws Exception {
@@ -213,7 +213,7 @@ public class ContributionIntegrationTest {
     }
 
     @Nested
-    class getOneContribution {
+    class GetOneContribution {
         @Test
         public void getOneContributionById_return_200() throws Exception {
             contribution = contributionRepository.save(contribution);

@@ -101,7 +101,7 @@ public class MicrocreditIntegrationTest {
     }
 
     @Nested
-    class createTest {
+    class CreateTest {
 
         @Test
         public void createMicrocredit_ShouldReturnOk() throws Exception {
@@ -174,7 +174,7 @@ public class MicrocreditIntegrationTest {
     }
 
     @Nested
-    class createContribution {
+    class CreateContribution {
 
         @Test
         public void createContribution_ShouldReturnOk() throws Exception {
