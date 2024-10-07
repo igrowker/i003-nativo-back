@@ -13,7 +13,6 @@ import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.exceptions.InsufficientFundsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
-import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.security.JwtService;
 import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
@@ -365,6 +364,7 @@ public class MicrocreditControllerTest {
 
             when(microcreditService.getOne(any())).
                     thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditGetDto.id()));
+
             mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditGetDto.id()))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));

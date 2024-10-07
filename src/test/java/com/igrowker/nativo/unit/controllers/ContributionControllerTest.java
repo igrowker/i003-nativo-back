@@ -19,9 +19,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -67,7 +67,7 @@ public class ContributionControllerTest {
 
         @Test
         public void getAll_ShouldReturnNotFound_WhenNoContributions() throws Exception {
-            when(contributionService.getAll()).thenThrow (new ResourceNotFoundException("No se encontraron contribuciones."));
+            when(contributionService.getAll()).thenThrow(new ResourceNotFoundException("No se encontraron contribuciones."));
 
             mockMvc.perform(get("/api/contribuciones"))
                     .andExpect(status().isNotFound())
@@ -97,6 +97,22 @@ public class ContributionControllerTest {
                     .andExpect(jsonPath("$.expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
                     .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
         }
+
+        @Test
+        public void getOneContribution_ShouldNotReturnOk() throws Exception {
+            ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
+                    "Test1", "Test2", "1234",
+                    BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+
+            when(contributionService.getOneContribution(any())).thenThrow(new ResourceNotFoundException("Contribución no encontrada con id: "
+                    + responseContributionDto.id()));
+
+            mockMvc.perform(get("/api/contribuciones/" + responseContributionDto.id()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("Contribución no encontrada con id: "
+                            + responseContributionDto.id())));
+
+        }
     }
 
     @Nested
@@ -122,6 +138,18 @@ public class ContributionControllerTest {
                     .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
                     .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
+        }
+
+        @Test
+        public void getContributionsByTransactionStatus_ShouldReturnNotFound() throws Exception {
+            String invalidStatus = "INVALID_STATUS";
+
+            when(contributionService.getContributionsByTransactionStatus(invalidStatus))
+                    .thenThrow(new ResourceNotFoundException("No se encontraron contribuciones con el estado especificado."));
+
+            mockMvc.perform(get("/api/contribuciones/historial-estados/" + invalidStatus))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron contribuciones con el estado especificado.")));
         }
     }
 }
