@@ -21,7 +21,7 @@ public class PaymentController {
 
     @PostMapping("/crear-qr")
     public ResponseEntity<ResponsePaymentDto> generateQr(
-            @RequestBody @Valid RequestPaymentDto requestPaymentDto){
+            @RequestBody @Valid RequestPaymentDto requestPaymentDto) {
         ResponsePaymentDto result = paymentService.createQr(requestPaymentDto);
         return ResponseEntity.ok(result);
     }
@@ -34,19 +34,19 @@ public class PaymentController {
     }
 
     @GetMapping("/todo")
-    public ResponseEntity<List<ResponseRecordPayment>> getAllPayments(){
+    public ResponseEntity<List<ResponseRecordPayment>> getAllPayments() {
         List<ResponseRecordPayment> result = paymentService.getAllPayments();
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("estado/{status}")
-    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsByStatus(@PathVariable String status){
+    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsByStatus(@PathVariable String status) {
         List<ResponseRecordPayment> result = paymentService.getPaymentsByStatus(status);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("fecha/{date}")
-    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsByDate(@PathVariable String date){
+    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsByDate(@PathVariable String date) {
         List<ResponseRecordPayment> result = paymentService.getPaymentsByDate(date);
         return ResponseEntity.ok(result);
     }
@@ -62,14 +62,33 @@ public class PaymentController {
     }
 
     @GetMapping("realizados")
-    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsAsClient(){
+    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsAsClient() {
         List<ResponseRecordPayment> result = paymentService.getPaymentsAsClient();
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("recibidos")
-    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsAsSeller(){
+    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsAsSeller() {
         List<ResponseRecordPayment> result = paymentService.getPaymentsAsSeller();
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/cliente/{clientId}")
+    public ResponseEntity<List<ResponseRecordPayment>> getPaymentsByClient(@PathVariable String clientId) {
+        List<ResponseRecordPayment> result = paymentService.getPaymentsByClient(clientId);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/id/{id}")
+    public ResponseEntity<ResponseRecordPayment> getPaymentById(@PathVariable String id) {
+        ResponseRecordPayment result = paymentService.getPaymentsById(id);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/crear-qr-id")
+    public ResponseEntity<ResponsePaymentDto> generateQr(
+            @RequestBody @Valid DemodayDtoRequestPayment requestPaymentDto) {
+        ResponsePaymentDto result = paymentService.createQrId(requestPaymentDto);
         return ResponseEntity.ok(result);
     }
 }

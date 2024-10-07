@@ -49,6 +49,10 @@ public class ContributionServiceImpl implements ContributionService {
         Microcredit microcredit = microcreditRepository.findById(requestContributionDto.microcreditId())
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
 
+        if (microcredit.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("El monto de la contribución debe ser mayor a $ 0.00");
+        }
+
         if (microcredit.getTransactionStatus() == TransactionStatus.ACCEPTED) {
             throw new ResourceAlreadyExistsException("El microcrédito ya tiene la totalidad del monto solicitado.");
         }
@@ -154,10 +158,10 @@ public class ContributionServiceImpl implements ContributionService {
     @Override
     public ResponseContributionDto getOneContribution(String id) {
         Contribution contribution = contributionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contribution no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Contribución no encontrada con id: " + id));
 
         Microcredit microcredit = microcreditRepository.findById(contribution.getMicrocredit().getId())
-                .orElseThrow(() -> new RuntimeException("Microcrédito no encontrado con id: " + contribution.getMicrocredit().getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado con id: " + contribution.getMicrocredit().getId()));
 
         String lenderFullname = validations.fullname(contribution.getLenderAccountId());
         String borrowerFullname = validations.fullname(microcredit.getBorrowerAccountId());
