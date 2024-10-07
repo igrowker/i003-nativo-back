@@ -288,10 +288,19 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
                     .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0))); // Ajusta el tamaño según las contribuciones esperadas
         }
+
+        @Test
+        public void getAll_ShouldReturnNotFound() throws Exception {
+            when(microcreditService.getAll()).thenThrow(new ResourceNotFoundException("No se encontraron microcréditos."));
+
+            mockMvc.perform(get("/api/microcreditos"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron microcréditos.")));
+        }
     }
 
     @Nested
-    class GetOneContribution {
+    class GetOneMicrocredit {
         @Test
         public void getOne_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
