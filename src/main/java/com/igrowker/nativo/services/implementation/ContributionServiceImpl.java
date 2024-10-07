@@ -100,7 +100,7 @@ public class ContributionServiceImpl implements ContributionService {
         return mapContributionsToDto(contributions);
     }
 
-    @Override
+    /*@Override
     public List<ResponseContributionDto> getAllContributionsByUserByStatus(String transactionStatus) {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
         TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
@@ -116,7 +116,7 @@ public class ContributionServiceImpl implements ContributionService {
 
         return mapContributionsToDto(contributions);
     }
-
+*/
     @Override
     public List<ResponseContributionDto> getContributionsBetweenDates(String fromDate, String toDate) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();

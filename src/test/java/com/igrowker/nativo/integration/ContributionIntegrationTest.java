@@ -1,8 +1,5 @@
 package com.igrowker.nativo.integration;
 
-import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
-import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
-import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Contribution;
 import com.igrowker.nativo.entities.Microcredit;
@@ -12,7 +9,6 @@ import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.security.JwtService;
-import io.restassured.http.ContentType;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -179,14 +175,16 @@ public class ContributionIntegrationTest {
 
     @Nested
     class getAllContributionsByUserByStatus {
-        public void getAllContributions_return_200() throws Exception {
+
+        @Test
+        public void getAllContributionsByUserByStatus_return_200() throws Exception {
             contribution = contributionRepository.save(contribution);
 
             given()
                     .baseUri(baseURL)
                     .header("Authorization", lenderToken)
                     .when()
-                    .get("/api/contribuciones/%s" + "ACCEPTED")
+                    .get(String.format("/api/contribuciones/historial-estados/%s", "ACCEPTED"))
                     .then()
                     .log()
                     .body()
@@ -196,6 +194,22 @@ public class ContributionIntegrationTest {
                     .body("[0].microcreditId", Matchers.equalTo(microcredit.getId()))
                     .body("[0].amount", Matchers.is(contribution.getAmount().floatValue()));
         }
+
+        @Test
+        public void getAllContributionsByUserByStatus_notFoundContByStatus_return_404() throws Exception {
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .when()
+                    .get(String.format("/api/contribuciones/historial-estados/%s", "ACCEPTED"))
+                    .then()
+                    .log().all()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.comparesEqualTo("No se encontraron contribuciones con el estado especificado."));
+        }
+
     }
 
     @Nested
@@ -234,6 +248,68 @@ public class ContributionIntegrationTest {
                     .statusCode(404)
                     .body("message", Matchers.comparesEqualTo("Contribución no encontrada con id: " + contribution.getId()));
 
+        }
+    }
+
+    @Nested
+    class GetContributionsBetweenDatesTest {
+
+        @Test
+        public void getContributionsBetweenDates_return_200() throws Exception {
+            contribution = contributionRepository.save(contribution);
+
+            String fromDate = "2023-12-31";
+            String toDate = LocalDate.now().toString();
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .when()
+                    .get("/api/contribuciones/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate)
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1))
+                    .body("[0].microcreditId", Matchers.equalTo(contribution.getMicrocredit().getId()))
+                    .body("[0].amount", Matchers.is(contribution.getAmount().floatValue()));
+        }
+
+        @Test
+        public void getContributionsBetweenDates_invalidDateRange_return_400() throws Exception {
+            String fromDate = LocalDate.now().toString();
+            String toDate = "2023-12-31";
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .when()
+                    .get("/api/contribuciones/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate)
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.comparesEqualTo("La fecha de inicio no puede ser posterior a la fecha de fin."));
+        }
+
+        @Test
+        public void getContributionsBetweenDates_notFoundCont_return_404() throws Exception {
+            String fromDate = "2023-12-31";
+            String toDate = LocalDate.now().toString();
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", lenderToken)
+                    .when()
+                    .get("/api/contribuciones/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate)
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.comparesEqualTo("No se encontraron contribuciones en el rango de fechas proporcionado."));
         }
     }
 }
