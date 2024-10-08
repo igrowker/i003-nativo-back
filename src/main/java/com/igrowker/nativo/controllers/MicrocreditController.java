@@ -129,8 +129,8 @@ public class MicrocreditController {
                                                                                        @RequestParam String toDate) {
 
         List<ResponseMicrocreditGetDto> result = microcreditService.getMicrocreditsBetweenDates(fromDate, toDate);
-        return ResponseEntity.ok(result);
 
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Obtener todos los microcréditos",

@@ -28,6 +28,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -63,8 +65,9 @@ public class MicrocreditControllerTest {
                     BigDecimal.valueOf(100000.00));
 
             ResponseMicrocreditDto responseMicrocreditDto = new ResponseMicrocreditDto("1234",
-                    BigDecimal.valueOf(100000.00), BigDecimal.valueOf(1100000.00), BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
-                    LocalDate.now().plusDays(30),
+                    BigDecimal.valueOf(100000.00), BigDecimal.valueOf(1100000.00), BigDecimal.valueOf(0.00),
+                    LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Test title", "Test Description", 1, BigDecimal.valueOf(10.0), TransactionStatus.PENDING);
 
             when(microcreditService.createMicrocredit(requestMicrocreditDto)).thenReturn(responseMicrocreditDto);
@@ -77,8 +80,8 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditDto.id())))
                     .andExpect(jsonPath("$.amount", Matchers.is(responseMicrocreditDto.amount().doubleValue())))
                     .andExpect(jsonPath("$.remainingAmount", Matchers.is(responseMicrocreditDto.remainingAmount().doubleValue())))
-                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseMicrocreditDto.createdDate().toString())))
-                    .andExpect(jsonPath("$.expirationDate", Matchers.is(responseMicrocreditDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseMicrocreditDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$.expirationDate", Matchers.is(responseMicrocreditDto.expirationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$.title", Matchers.is(responseMicrocreditDto.title())))
                     .andExpect(jsonPath("$.description", Matchers.is(responseMicrocreditDto.description())))
                     .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseMicrocreditDto.transactionStatus().toString())));
@@ -168,7 +171,8 @@ public class MicrocreditControllerTest {
         @Test
         public void getAllMicrocreditsByUser_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
 
             when(microcreditService.getAllMicrocreditsByUser()).thenReturn(List.of(responseMicrocreditGetDto));
@@ -180,8 +184,8 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
                     .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
                     .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
                     .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
@@ -203,7 +207,8 @@ public class MicrocreditControllerTest {
         @Test
         public void getAllMicrocreditsByUserByStatus_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
 
             when(microcreditService.getAllMicrocreditsByUserByStatus("COMPLETED")).thenReturn(List.of(responseMicrocreditGetDto));
@@ -215,8 +220,8 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
                     .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
                     .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
                     .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
@@ -243,7 +248,8 @@ public class MicrocreditControllerTest {
             String toDate = "2023-12-31";
 
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.of(2024, 9, 20, 12, 05),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
 
             when(microcreditService.getMicrocreditsBetweenDates(fromDate, toDate)).thenReturn(List.of(responseMicrocreditGetDto));
@@ -255,8 +261,8 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
                     .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
                     .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
                     .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
@@ -269,12 +275,11 @@ public class MicrocreditControllerTest {
             String toDate = LocalDate.now().toString();
 
             when(microcreditService.getMicrocreditsBetweenDates(fromDate, toDate))
-                    .thenThrow(new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin."));
+                    .thenThrow(new ValidationException("La fecha final no puede ser menor a la inicial."));
 
             mockMvc.perform(get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message", Matchers.is("La fecha de inicio no puede ser " +
-                            "posterior a la fecha de fin.")));
+                    .andExpect(jsonPath("$.message", Matchers.is("La fecha final no puede ser menor a la inicial.")));
         }
 
         @Test
@@ -299,8 +304,8 @@ public class MicrocreditControllerTest {
                     "borrower1",
                     BigDecimal.valueOf(10000.00),
                     BigDecimal.valueOf(10000.00),
-                    LocalDate.of(2024, 9, 17),
-                    LocalDate.of(2024, 10, 17),
+                    LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Auxilio",
                     "Test exitoso",
                     TransactionStatus.ACCEPTED, List.of());
@@ -314,12 +319,12 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
                     .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
                     .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
                     .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
-                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0))); // Ajusta el tamaño según las contribuciones esperadas
+                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
         }
 
         @Test
@@ -337,7 +342,8 @@ public class MicrocreditControllerTest {
         @Test
         public void getOne_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Test getOne ok", "Test Description", TransactionStatus.PENDING, List.of());
 
             when(microcreditService.getOne("1234")).thenReturn(responseMicrocreditGetDto);
@@ -348,8 +354,8 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$.borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
                     .andExpect(jsonPath("$.amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
                     .andExpect(jsonPath("$.remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                    .andExpect(jsonPath("$.expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$.expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$.title", Matchers.is(responseMicrocreditGetDto.title())))
                     .andExpect(jsonPath("$.description", Matchers.is(responseMicrocreditGetDto.description())))
                     .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
@@ -359,7 +365,8 @@ public class MicrocreditControllerTest {
         @Test
         public void getOne_ShouldNotReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.now(),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Test getOne NOT ok", "Test Description", TransactionStatus.PENDING, List.of());
 
             when(microcreditService.getOne(any())).
@@ -376,7 +383,8 @@ public class MicrocreditControllerTest {
         @Test
         public void getMicrocreditsByTransactionStatus_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00),LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Test title", "Test Description", TransactionStatus.ACCEPTED, List.of());
 
             when(microcreditService.getMicrocreditsByTransactionStatus("ACCEPTED")).thenReturn(List.of(responseMicrocreditGetDto));
@@ -388,8 +396,8 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
                     .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
                     .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
                     .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
@@ -416,7 +424,8 @@ public class MicrocreditControllerTest {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("5678", "lenderAccountId_Test",
                     "Tester1", "Tester2", "1234",
 
-                    BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    BigDecimal.valueOf(10000.00),  LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 9, 17, 18, 20),
                     TransactionStatus.ACCEPTED);
 
             when(contributionService.createContribution(requestContributionDto)).thenReturn(responseContributionDto);
@@ -432,8 +441,8 @@ public class MicrocreditControllerTest {
                     .andExpect(jsonPath("$.borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
                     .andExpect(jsonPath("$.microcreditId", Matchers.is(responseContributionDto.microcreditId())))
                     .andExpect(jsonPath("$.amount", Matchers.is(responseContributionDto.amount().doubleValue())))
-                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
-                    .andExpect(jsonPath("$.expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseContributionDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$.expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
         }
 

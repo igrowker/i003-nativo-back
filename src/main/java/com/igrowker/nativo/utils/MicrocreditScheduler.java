@@ -15,7 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +35,7 @@ public class MicrocreditScheduler {
     @Transactional
     @Scheduled(cron = "0 0 0 * * ?", zone = "America/Argentina/Buenos_Aires") // Ejecuta todos los días a la medianoche
     public void checkAndExpireMicrocredits() throws MessagingException {
-        LocalDate today = LocalDate.now();
+        LocalDateTime today = LocalDateTime.now();
 
         List<Microcredit> expiredMicrocredits = microcreditRepository
                 .findByExpirationDateBeforeAndTransactionStatusNotIn(
@@ -91,12 +91,12 @@ public class MicrocreditScheduler {
     @Scheduled(cron = "0 0 17 * * MON-FRI", zone = "America/Argentina/Buenos_Aires")
     // Ejecuta a las 17:00 horas. Todos los días y todos los meses. Solo de lunes a viernes.
     public void processPayAutomaticMicrocredits() {
-        LocalDate today = LocalDate.now();
+        LocalDateTime today = LocalDateTime.now();
         processMicrocreditPayments(today, TransactionStatus.PENDING);
         processMicrocreditPayments(today, TransactionStatus.ACCEPTED);
     }
 
-    private void processMicrocreditPayments(LocalDate today, TransactionStatus status) {
+    private void processMicrocreditPayments(LocalDateTime today, TransactionStatus status) {
         List<Microcredit> microcredits = microcreditRepository.findByTransactionStatus(status);
 
         for (Microcredit microcredit : microcredits) {
@@ -203,7 +203,7 @@ public class MicrocreditScheduler {
     @Scheduled(cron = "0 0 18 * * MON-FRI", zone = "America/Argentina/Buenos_Aires")
     // Ejecuta a las 18:00 horas. Todos los días y todos los meses. Solo de lunes a viernes.
     public void processExpiredMicrocreditPayments() {
-        LocalDate today = LocalDate.now();
+        LocalDateTime today = LocalDateTime.now();
 
         List<Microcredit> microcredits = microcreditRepository.findByTransactionStatus(TransactionStatus.EXPIRED);
 

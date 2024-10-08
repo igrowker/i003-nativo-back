@@ -6,6 +6,7 @@ import com.igrowker.nativo.controllers.ContributionController;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
+import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.security.JwtService;
 import com.igrowker.nativo.services.ContributionService;
 import org.hamcrest.Matchers;
@@ -19,6 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -47,7 +50,9 @@ public class ContributionControllerTest {
         public void getAllContributionByUser_ShouldReturnOk() throws Exception {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
                     "Test1", "Test2", "1234",
-                    BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+                    BigDecimal.valueOf(10000.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
+                    TransactionStatus.ACCEPTED);
 
             when(contributionService.getAllContributionsByUser()).thenReturn(List.of(responseContributionDto));
 
@@ -60,8 +65,8 @@ public class ContributionControllerTest {
                     .andExpect(jsonPath("$[0].borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
                     .andExpect(jsonPath("$[0].microcreditId", Matchers.is(responseContributionDto.microcreditId())))
                     .andExpect(jsonPath("$[0].amount", Matchers.is(responseContributionDto.amount().doubleValue())))
-                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
-                    .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
         }
 
@@ -81,7 +86,9 @@ public class ContributionControllerTest {
         public void getAllContributionByUserByStatus_ShouldReturnOk() throws Exception {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
                     "Test1", "Test2", "1234",
-                    BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+                    BigDecimal.valueOf(10000.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
+                    TransactionStatus.ACCEPTED);
 
             when(contributionService.getAllContributionsByUserByStatus("ACCEPTED")).thenReturn(List.of(responseContributionDto));
 
@@ -94,8 +101,8 @@ public class ContributionControllerTest {
                     .andExpect(jsonPath("$[0].borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
                     .andExpect(jsonPath("$[0].microcreditId", Matchers.is(responseContributionDto.microcreditId())))
                     .andExpect(jsonPath("$[0].amount", Matchers.is(responseContributionDto.amount().doubleValue())))
-                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
-                    .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                     .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
         }
 
@@ -108,7 +115,9 @@ public class ContributionControllerTest {
 
                 ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
                         "Test1", "Test2", "1234",
-                        BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+                        BigDecimal.valueOf(10000.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                        LocalDateTime.of(2024, 10, 17, 18, 20),
+                        TransactionStatus.ACCEPTED);
 
                 when(contributionService.getContributionsBetweenDates(fromDate, toDate)).thenReturn(List.of(responseContributionDto));
 
@@ -121,8 +130,8 @@ public class ContributionControllerTest {
                         .andExpect(jsonPath("$[0].borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
                         .andExpect(jsonPath("$[0].microcreditId", Matchers.is(responseContributionDto.microcreditId())))
                         .andExpect(jsonPath("$[0].amount", Matchers.is(responseContributionDto.amount().doubleValue())))
-                        .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
-                        .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                        .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                        .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                         .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
             }
 
@@ -132,11 +141,11 @@ public class ContributionControllerTest {
                 String toDate = LocalDate.now().toString();
 
                 when(contributionService.getContributionsBetweenDates(fromDate, toDate))
-                        .thenThrow(new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin."));
+                        .thenThrow(new ValidationException("La fecha final no puede ser menor a la inicial."));
 
                 mockMvc.perform(get("/api/contribuciones/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate))
                         .andExpect(status().isBadRequest())
-                        .andExpect(jsonPath("$.message", Matchers.is("La fecha de inicio no puede ser posterior a la fecha de fin.")));
+                        .andExpect(jsonPath("$.message", Matchers.is("La fecha final no puede ser menor a la inicial.")));
             }
 
             @Test
@@ -159,7 +168,9 @@ public class ContributionControllerTest {
             public void getAll_ShouldReturnOk() throws Exception {
                 ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
                         "Test1", "Test2", "1234",
-                        BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+                        BigDecimal.valueOf(10000.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                        LocalDateTime.of(2024, 10, 17, 18, 20),
+                        TransactionStatus.ACCEPTED);
 
                 when(contributionService.getAll()).thenReturn(List.of(responseContributionDto));
 
@@ -172,8 +183,8 @@ public class ContributionControllerTest {
                         .andExpect(jsonPath("$[0].borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
                         .andExpect(jsonPath("$[0].microcreditId", Matchers.is(responseContributionDto.microcreditId())))
                         .andExpect(jsonPath("$[0].amount", Matchers.is(responseContributionDto.amount().doubleValue())))
-                        .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
-                        .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                        .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                        .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                         .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
             }
 
@@ -193,7 +204,9 @@ public class ContributionControllerTest {
             public void getOneContribution_ShouldReturnOk() throws Exception {
                 ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
                         "Test1", "Test2", "1234",
-                        BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+                        BigDecimal.valueOf(10000.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                        LocalDateTime.of(2024, 10, 17, 18, 20),
+                        TransactionStatus.ACCEPTED);
 
                 when(contributionService.getOneContribution("1111")).thenReturn(responseContributionDto);
 
@@ -205,8 +218,8 @@ public class ContributionControllerTest {
                         .andExpect(jsonPath("$.borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
                         .andExpect(jsonPath("$.microcreditId", Matchers.is(responseContributionDto.microcreditId())))
                         .andExpect(jsonPath("$.amount", Matchers.is(responseContributionDto.amount().doubleValue())))
-                        .andExpect(jsonPath("$.createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
-                        .andExpect(jsonPath("$.expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                        .andExpect(jsonPath("$.createdDate", Matchers.is(responseContributionDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                        .andExpect(jsonPath("$.expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                         .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
             }
 
@@ -214,7 +227,9 @@ public class ContributionControllerTest {
             public void getOneContribution_ShouldNotReturnOk() throws Exception {
                 ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
                         "Test1", "Test2", "1234",
-                        BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+                        BigDecimal.valueOf(10000.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                        LocalDateTime.of(2024, 10, 17, 18, 20),
+                        TransactionStatus.ACCEPTED);
 
                 when(contributionService.getOneContribution(any())).thenThrow(new ResourceNotFoundException("Contribución no encontrada con id: "
                         + responseContributionDto.id()));
@@ -233,7 +248,9 @@ public class ContributionControllerTest {
             public void getContributionsByTransactionStatus_ShouldReturnOk() throws Exception {
                 ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
                         "Test1", "Test2", "1234",
-                        BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30), TransactionStatus.ACCEPTED);
+                        BigDecimal.valueOf(10000.00), LocalDateTime.of(2024, 9, 17, 18, 20),
+                        LocalDateTime.of(2024, 10, 17, 18, 20),
+                        TransactionStatus.ACCEPTED);
 
                 when(contributionService.getContributionsByTransactionStatus("ACCEPTED"))
                         .thenReturn(List.of(responseContributionDto));
@@ -247,8 +264,8 @@ public class ContributionControllerTest {
                         .andExpect(jsonPath("$[0].borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
                         .andExpect(jsonPath("$[0].microcreditId", Matchers.is(responseContributionDto.microcreditId())))
                         .andExpect(jsonPath("$[0].amount", Matchers.is(responseContributionDto.amount().doubleValue())))
-                        .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
-                        .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                        .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseContributionDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                        .andExpect(jsonPath("$[0].expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
                         .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
             }
 

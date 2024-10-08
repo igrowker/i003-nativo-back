@@ -4,6 +4,7 @@ import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Contribution;
 import com.igrowker.nativo.entities.Microcredit;
 import com.igrowker.nativo.entities.User;
+import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
@@ -291,7 +292,7 @@ public class ContributionIntegrationTest {
                     .body()
                     .assertThat()
                     .statusCode(400)
-                    .body("message", Matchers.comparesEqualTo("La fecha de inicio no puede ser posterior a la fecha de fin."));
+                    .body("message", Matchers.comparesEqualTo("La fecha final no puede ser menor a la inicial."));
         }
 
         @Test

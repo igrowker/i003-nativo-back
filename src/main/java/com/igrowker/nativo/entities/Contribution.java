@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -24,7 +24,7 @@ public class Contribution {
     @Column(length = 1000)
     private BigDecimal amount;
 
-    private LocalDate createdDate;
+    private LocalDateTime createdDate;
 
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
@@ -35,7 +35,7 @@ public class Contribution {
 
     @PrePersist
     protected void onCreate() {
-        this.createdDate = LocalDate.now();
+        this.createdDate = LocalDateTime.now();
         this.transactionStatus = TransactionStatus.ACCEPTED;
     }
 }

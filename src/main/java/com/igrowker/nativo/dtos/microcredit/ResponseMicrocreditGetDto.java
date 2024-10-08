@@ -4,7 +4,7 @@ import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.entities.TransactionStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record ResponseMicrocreditGetDto(
@@ -12,8 +12,8 @@ public record ResponseMicrocreditGetDto(
         String borrowerAccountId,
         BigDecimal amount,
         BigDecimal remainingAmount,
-        LocalDate createdDate,
-        LocalDate expirationDate,
+        LocalDateTime createdDate,
+        LocalDateTime expirationDate,
         String title,
         String description,
         TransactionStatus transactionStatus,
