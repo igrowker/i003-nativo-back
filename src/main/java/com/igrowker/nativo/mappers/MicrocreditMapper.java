@@ -4,7 +4,6 @@ import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
-import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditPaymentDto;
 import com.igrowker.nativo.entities.Microcredit;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

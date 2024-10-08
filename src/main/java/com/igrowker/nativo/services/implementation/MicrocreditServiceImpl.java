@@ -208,6 +208,32 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                 .collect(Collectors.toList());
     }
 
+
+    @Override
+    public List<ResponseMicrocreditGetDto> getMicrocreditsByDateAndStatus(String date, String transactionStatus) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+
+        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(date);
+        LocalDateTime startDate = elapsedDate.get(0);
+        LocalDateTime endDate = elapsedDate.get(1);
+
+        List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsByDateAndTransactionStatus(
+                accountAndUser.account.getId(), startDate, endDate, enumStatus);
+
+        if (microcreditList.isEmpty()) {
+            throw new ResourceNotFoundException("No posee microcréditos solicitados");
+        }
+
+        return microcreditList.stream()
+                .map(microcredit -> {
+                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
+
+                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
+                })
+                .collect(Collectors.toList());
+    }
+
     @Override
     @Transactional
     public List<ResponseMicrocreditGetDto> getAll() {

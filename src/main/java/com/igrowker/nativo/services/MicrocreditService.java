@@ -18,6 +18,8 @@ public interface MicrocreditService {
 
     List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate);
 
+    List<ResponseMicrocreditGetDto> getMicrocreditsByDateAndStatus(String date, String status);
+
     List<ResponseMicrocreditGetDto> getAll();
 
     ResponseMicrocreditGetDto getOne(String id);

@@ -133,6 +133,16 @@ public class MicrocreditController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/buscar-fecha-estado")
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsByDateAndStatus(@Parameter(description = "Fecha", required = true, example = "2023-03-21")
+                                                                                          @RequestParam String date,
+                                                                                          @RequestParam String status) {
+
+        List<ResponseMicrocreditGetDto> result = microcreditService.getMicrocreditsByDateAndStatus(date, status);
+
+        return ResponseEntity.ok(result);
+    }
+
     @Operation(summary = "Obtener todos los microcréditos",
             description = "Endpoint que permite obtener todos los microcréditos del sistema.")
     @ApiResponses(value = {
