@@ -6,7 +6,6 @@ public record ResponseSelfAccountDto(
         String id,
         Long accountNumber,
         BigDecimal amount,
-        BigDecimal reservedAmount,
         String userId
 ) {
 }
