@@ -51,7 +51,8 @@ public class AccountControllerTest {
         public void addAmountAccountShouldBeOk() throws Exception {
             var addAmountAccountDto = new AddAmountAccountDto("existingId", BigDecimal.valueOf(2.50));
 
-            var responseSelfAccountDto = new ResponseSelfAccountDto("existingId", 1234L, BigDecimal.valueOf(2.50), "existingUserId");
+            var responseSelfAccountDto = new ResponseSelfAccountDto("existingId", 1234L,
+                    BigDecimal.valueOf(2.50), BigDecimal.ZERO, "existingUserId");
 
             when(accountService.addAmount(any())).thenReturn(responseSelfAccountDto);
 
@@ -87,7 +88,8 @@ public class AccountControllerTest {
         @Test
         public void readSelfAccountShouldBeOk() throws Exception {
             var id = "randomId";
-            var responseSelfAccountDto = new ResponseSelfAccountDto("randomId", 1234L, BigDecimal.valueOf(2.50), "randomId2");
+            var responseSelfAccountDto = new ResponseSelfAccountDto("randomId", 1234L,
+                    BigDecimal.valueOf(2.50),  BigDecimal.ZERO, "randomId2");
             when(accountService.readSelfAccount(id)).thenReturn(responseSelfAccountDto);
 
             mockMvc.perform(get("/api/cuenta/consultar-saldo/{id}", id)
