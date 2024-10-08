@@ -26,5 +26,5 @@ public interface DonationMapper {
 
 
     //RECORD
-    List<ResponseDonationRecord> listDonationToListResponseDonationRecord(List<Donation> donationsList);
+    List<ResponseDonationRecord> listDonationToListResponseDonationRecord(List<ResponseDonationRecord> donationsList);
 }

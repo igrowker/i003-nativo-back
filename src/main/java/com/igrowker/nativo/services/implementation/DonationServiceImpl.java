@@ -1,10 +1,8 @@
 package com.igrowker.nativo.services.implementation;
 
+import com.igrowker.nativo.dtos.account.ResponseTransactionDto;
 import com.igrowker.nativo.dtos.donation.*;
-import com.igrowker.nativo.entities.Account;
-import com.igrowker.nativo.entities.Donation;
-import com.igrowker.nativo.entities.TransactionStatus;
-import com.igrowker.nativo.entities.User;
+import com.igrowker.nativo.entities.*;
 import com.igrowker.nativo.exceptions.InsufficientFundsException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceAlreadyExistsException;
@@ -22,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -85,9 +84,10 @@ public class DonationServiceImpl implements DonationService {
         if (validations.isUserAccountMismatch(requestDonationDto.accountIdDonor())) {
             throw new InvalidUserCredentialsException("La cuenta indicada no coincide con el usuario logueado en la aplicación");
         }
-
+        Account donorAccount = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new ResourceNotFoundException("El id de la cuenta donante no existe"));
         if (validations.validateTransactionUserFunds(requestDonationDto.amount())){
-            Account donorAccount = accountRepository.findById(requestDonationDto.accountIdDonor()).orElseThrow(() -> new ResourceNotFoundException("El id de la cuenta donante no existe"));
+            Account beneficiaryAccount = accountRepository.findById(requestDonationDto.accountIdBeneficiary()).orElseThrow(() -> new ResourceNotFoundException("El id de la cuenta beneficiario no existe"));
+
             donorAccount.setReservedAmount(donorAccount.getReservedAmount().add(requestDonationDto.amount()));
             accountRepository.save(donorAccount);
             return donationMapper.donationToResponseDtoFalse(donationRepository.save(donationMapper.requestDtoToDonation(requestDonationDto)));
@@ -137,15 +137,39 @@ public class DonationServiceImpl implements DonationService {
     @Override
     public List<ResponseDonationRecord> recordDonationDonor(String idDonorAccount) {
 
+        var donor = validations.getAuthenticatedUserAndAccount();
+
         Account account =  accountRepository.findById(idDonorAccount).orElseThrow(() -> new ResourceNotFoundException("La cuenta no existe"));
 
         List<Donation> donationList = donationRepository.findAllByAccountIdDonor(account.getId()).orElseThrow(() -> new ResourceNotFoundException("No hay donacion que tenga ese id de cuenta"));
 
+        List<ResponseDonationRecord> donationsb = new ArrayList<>();
+
+        for (Donation donation : donationList) {
+
+                Account accountBeneficiary = accountRepository.findById(donation.getAccountIdBeneficiary()).orElseThrow(() -> new ResourceNotFoundException("La cuenta no existe"));
+                User userBeneficiary = userRepository.findById(accountBeneficiary.getUserId()).orElseThrow(() -> new ResourceNotFoundException("La cuenta usuario no existe"));
+                ResponseDonationRecord dto = new ResponseDonationRecord(
+                        donation.getId(),
+                        donation.getAmount(),
+                        donation.getAnonymousDonation() ? "Anónimo" : donor.user.getName(),
+                        donation.getAnonymousDonation() ? "." : donor.user.getSurname(),
+                        donation.getAccountIdDonor(),
+                        userBeneficiary.getName(),
+                        userBeneficiary.getSurname(),
+                        donation.getAccountIdBeneficiary(),
+                        donation.getStatus(),
+                        donation.getCreatedAt(),
+                        donation.getUpdateAt()
+                );
+                donationsb.add(dto);
+            }
+
         if (donationList.isEmpty()){
             throw  new ResourceNotFoundException("No hay donaciones dadas");
         }else {
-            return donationMapper.listDonationToListResponseDonationRecord(donationList.stream()
-                    .sorted(Comparator.comparing(Donation::getCreatedAt).reversed())
+            return donationMapper.listDonationToListResponseDonationRecord(donationsb.stream()
+                    .sorted(Comparator.comparing(ResponseDonationRecord::createdAt).reversed())
                     .collect(Collectors.toList()));
         }
     }
@@ -154,15 +178,39 @@ public class DonationServiceImpl implements DonationService {
     @Override
     public List<ResponseDonationRecord> recordDonationBeneficiary(String idBeneficiaryAccount) {
 
+        var beneficiary = validations.getAuthenticatedUserAndAccount();
+
         Account account =  accountRepository.findById(idBeneficiaryAccount).orElseThrow(() -> new ResourceNotFoundException("La cuenta no existe"));
 
         List<Donation> donationList = donationRepository.findAllByAccountIdBeneficiary(account.getId()).orElseThrow(() -> new ResourceNotFoundException("No hay donacion que tenga ese id de cuenta"));
 
+        List<ResponseDonationRecord> donationsb = new ArrayList<>();
+
+        for (Donation donation : donationList) {
+
+            Account accountDonor = accountRepository.findById(donation.getAccountIdDonor()).orElseThrow(() -> new ResourceNotFoundException("La cuenta no existe"));
+            User userDonor = userRepository.findById(accountDonor.getUserId()).orElseThrow(() -> new ResourceNotFoundException("La cuenta usuario no existe"));
+            ResponseDonationRecord dto = new ResponseDonationRecord(
+                    donation.getId(),
+                    donation.getAmount(),
+                    donation.getAnonymousDonation() ? "Anónimo" : userDonor.getName(),
+                    donation.getAnonymousDonation() ? "." : userDonor.getSurname(),
+                    donation.getAccountIdDonor(),
+                    beneficiary.user.getName(),
+                    beneficiary.user.getSurname(),
+                    donation.getAccountIdBeneficiary(),
+                    donation.getStatus(),
+                    donation.getCreatedAt(),
+                    donation.getUpdateAt()
+            );
+            donationsb.add(dto);
+        }
+
         if (donationList.isEmpty()){
-            throw  new ResourceNotFoundException("No hay donaciones recibidas");
-        } else {
-            return donationMapper.listDonationToListResponseDonationRecord(donationList.stream()
-                    .sorted(Comparator.comparing(Donation::getCreatedAt).reversed())
+            throw  new ResourceNotFoundException("No hay donaciones dadas");
+        }else {
+            return donationMapper.listDonationToListResponseDonationRecord(donationsb.stream()
+                    .sorted(Comparator.comparing(ResponseDonationRecord::createdAt).reversed())
                     .collect(Collectors.toList()));
         }
     }
