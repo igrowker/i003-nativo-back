@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -31,9 +31,9 @@ public class Microcredit {
     @Column
     private BigDecimal amountFinal;
 
-    private BigDecimal pendingAmount = BigDecimal.ZERO;  // Monto pendiente de pago
+    private BigDecimal pendingAmount = BigDecimal.ZERO;
 
-    private BigDecimal frozenAmount = BigDecimal.ZERO; // Monto congelado (saldo acumulado)
+    private BigDecimal frozenAmount = BigDecimal.ZERO;
 
     @Column(length = 300)
     private String title;
@@ -41,15 +41,13 @@ public class Microcredit {
     @Column(length = 1000)
     private String description;
 
-    private LocalDate expirationDate;
+    private LocalDateTime expirationDate;
 
-    private LocalDate createdDate;
+    private LocalDateTime createdDate;
 
-    private Integer installmentCount; //cantidad de cuotas
+    private Integer installmentCount;
 
-    private BigDecimal interestRate = BigDecimal.valueOf(10); //tasa de interes
-
-    //private Integer remainingInstallments; //cuotas pendientes
+    private BigDecimal interestRate = BigDecimal.valueOf(10);
 
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
@@ -59,8 +57,8 @@ public class Microcredit {
 
     @PrePersist
     protected void onCreate() {
-        this.createdDate = LocalDate.now();
-        this.expirationDate = LocalDate.now().plusDays(30);
+        this.createdDate = LocalDateTime.now();
+        this.expirationDate = LocalDateTime.now().plusDays(30);
         this.transactionStatus = TransactionStatus.PENDING;
         this.installmentCount = 1;
         this.remainingAmount = this.amount;

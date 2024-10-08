@@ -3,7 +3,7 @@ package com.igrowker.nativo.dtos.contribution;
 import com.igrowker.nativo.entities.TransactionStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record ResponseContributionDto(
         String id,
@@ -12,8 +12,8 @@ public record ResponseContributionDto(
         String borrowerFullname,
         String microcreditId,
         BigDecimal amount,
-        LocalDate createdDate,
-        LocalDate expiredDateMicrocredit,
+        LocalDateTime createdDate,
+        LocalDateTime expiredDateMicrocredit,
         TransactionStatus transactionStatus
 ) {
 }

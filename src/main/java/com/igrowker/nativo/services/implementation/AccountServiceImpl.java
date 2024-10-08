@@ -124,7 +124,7 @@ public class AccountServiceImpl implements AccountService {
                     borrower.getName(),
                     borrower.getSurname(),
                     contribution.getMicrocredit().getBorrowerAccountId(),
-                    contribution.getCreatedDate().atStartOfDay(),
+                    contribution.getCreatedDate(),
                     null, // Si no tienes un campo de endDate
                     contribution.getTransactionStatus().toString()
             );
@@ -195,7 +195,7 @@ public class AccountServiceImpl implements AccountService {
                     borrower.getName(),
                     borrower.getSurname(),
                     contribution.getMicrocredit().getBorrowerAccountId(),
-                    contribution.getCreatedDate().atStartOfDay(),
+                    contribution.getCreatedDate(),
                     null, // Si no tienes un campo de endDate
                     contribution.getTransactionStatus().toString()
             );
@@ -212,7 +212,7 @@ public class AccountServiceImpl implements AccountService {
         List<LocalDateTime> dates = dateFormatter.getDateFromString(fromDate, toDate);
         List<Payment> payments = paymentRepository.findPaymentsBetweenDates(userAndAccount.user.getAccountId(), dates.get(0), dates.get(1));
         List<Donation> donations = donationRepository.findDonationsByDateRange(userAndAccount.user.getAccountId(), dates.get(0), dates.get(1));
-        List<Contribution> contributions = contributionRepository.findContributionsByDateRange(userAndAccount.user.getAccountId(), dates.get(0).toLocalDate(), dates.get(1).toLocalDate());
+        List<Contribution> contributions = contributionRepository.findContributionsByDateRange(userAndAccount.user.getAccountId(), dates.get(0), dates.get(1));
         List<ResponseTransactionDto> transactions = new ArrayList<>();
 
         for (Payment payment : payments) {
@@ -266,7 +266,7 @@ public class AccountServiceImpl implements AccountService {
                     borrower.getName(),
                     borrower.getSurname(),
                     contribution.getMicrocredit().getBorrowerAccountId(),
-                    contribution.getCreatedDate().atStartOfDay(),
+                    contribution.getCreatedDate(),
                     null, // Si no tienes un campo de endDate
                     contribution.getTransactionStatus().toString()
             );

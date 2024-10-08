@@ -13,16 +13,12 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface MicrocreditMapper {
-    //Crear
     Microcredit requestDtoToMicrocredit(RequestMicrocreditDto requestMicrocreditDto);
 
     ResponseMicrocreditDto responseDtoToMicrocredit(Microcredit microcredit);
 
-    //Get
     @Mapping(target = "contributions", source = "contributions")
     ResponseMicrocreditGetDto responseMicrocreditGet(Microcredit microcredit, List<ResponseContributionDto> contributions);
-
-    ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto(Microcredit microcredit);
 
     @Mapping(source = "contribution.microcredit.id", target = "microcreditId")
     @Mapping(source = "contribution.microcredit.expirationDate", target = "expiredDateMicrocredit")
