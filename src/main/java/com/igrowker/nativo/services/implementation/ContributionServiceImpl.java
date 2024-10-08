@@ -49,6 +49,10 @@ public class ContributionServiceImpl implements ContributionService {
         Microcredit microcredit = microcreditRepository.findById(requestContributionDto.microcreditId())
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado"));
 
+        if (microcredit.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("El monto de la contribución debe ser mayor a $ 0.00");
+        }
+
         if (microcredit.getTransactionStatus() == TransactionStatus.ACCEPTED) {
             throw new ResourceAlreadyExistsException("El microcrédito ya tiene la totalidad del monto solicitado.");
         }
@@ -100,7 +104,7 @@ public class ContributionServiceImpl implements ContributionService {
         return mapContributionsToDto(contributions);
     }
 
-    /*@Override
+    @Override
     public List<ResponseContributionDto> getAllContributionsByUserByStatus(String transactionStatus) {
         Validations.UserAccountPair userBorrower = validations.getAuthenticatedUserAndAccount();
         TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
@@ -116,7 +120,7 @@ public class ContributionServiceImpl implements ContributionService {
 
         return mapContributionsToDto(contributions);
     }
-*/
+
     @Override
     public List<ResponseContributionDto> getContributionsBetweenDates(String fromDate, String toDate) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();

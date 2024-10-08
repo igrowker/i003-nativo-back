@@ -10,6 +10,7 @@ import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditPaymentDto;
 import com.igrowker.nativo.entities.TransactionStatus;
+import com.igrowker.nativo.exceptions.InsufficientFundsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.security.JwtService;
@@ -17,6 +18,7 @@ import com.igrowker.nativo.services.ContributionService;
 import com.igrowker.nativo.services.MicrocreditService;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Nested;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -28,7 +30,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -53,212 +55,418 @@ public class MicrocreditControllerTest {
 
     ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @Test
-    public void createMicrocredit_ShouldReturnOk() throws Exception {
-        RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
-                BigDecimal.valueOf(100000.00));
+    @Nested
+    class CreateTest {
+        @Test
+        public void createMicrocredit_ShouldReturnOk() throws Exception {
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
+                    BigDecimal.valueOf(100000.00));
 
-        ResponseMicrocreditDto responseMicrocreditDto = new ResponseMicrocreditDto("1234",
-                BigDecimal.valueOf(100000.00), BigDecimal.valueOf(1100000.00), BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
-                LocalDate.now().plusDays(30),
-                "Test title", "Test Description", 1, BigDecimal.valueOf(10.0), TransactionStatus.PENDING);
+            ResponseMicrocreditDto responseMicrocreditDto = new ResponseMicrocreditDto("1234",
+                    BigDecimal.valueOf(100000.00), BigDecimal.valueOf(1100000.00), BigDecimal.valueOf(0.00), LocalDate.of(2024, 9, 17),
+                    LocalDate.now().plusDays(30),
+                    "Test title", "Test Description", 1, BigDecimal.valueOf(10.0), TransactionStatus.PENDING);
 
-        when(microcreditService.createMicrocredit(requestMicrocreditDto)).thenReturn(responseMicrocreditDto);
+            when(microcreditService.createMicrocredit(requestMicrocreditDto)).thenReturn(responseMicrocreditDto);
 
-        mockMvc.perform(post("/api/microcreditos/solicitar")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestMicrocreditDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditDto.id())))
-                .andExpect(jsonPath("$.amount", Matchers.is(responseMicrocreditDto.amount().doubleValue())))
-                .andExpect(jsonPath("$.remainingAmount", Matchers.is(responseMicrocreditDto.remainingAmount().doubleValue())))
-                .andExpect(jsonPath("$.createdDate", Matchers.is(responseMicrocreditDto.createdDate().toString())))
-                .andExpect(jsonPath("$.expirationDate", Matchers.is(responseMicrocreditDto.expirationDate().toString())))
-                .andExpect(jsonPath("$.title", Matchers.is(responseMicrocreditDto.title())))
-                .andExpect(jsonPath("$.description", Matchers.is(responseMicrocreditDto.description())))
-                .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseMicrocreditDto.transactionStatus().toString())));
+            mockMvc.perform(post("/api/microcreditos/solicitar")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestMicrocreditDto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditDto.id())))
+                    .andExpect(jsonPath("$.amount", Matchers.is(responseMicrocreditDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$.remainingAmount", Matchers.is(responseMicrocreditDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseMicrocreditDto.createdDate().toString())))
+                    .andExpect(jsonPath("$.expirationDate", Matchers.is(responseMicrocreditDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$.title", Matchers.is(responseMicrocreditDto.title())))
+                    .andExpect(jsonPath("$.description", Matchers.is(responseMicrocreditDto.description())))
+                    .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseMicrocreditDto.transactionStatus().toString())));
+        }
+
+        @Test
+        public void createMicrocredit_ShouldNotReturnOk() throws Exception {
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test amount exception ", "Monto mayor al permitido",
+                    BigDecimal.valueOf(100000.00));
+
+            when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ 500000"));
+
+            mockMvc.perform(post("/api/microcreditos/solicitar")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestMicrocreditDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("El monto del microcrédito tiene que ser igual o menor a: $ 500000")));
+        }
+
+        @Test
+        public void createMicrocredit_ShouldReturnBadRequest() throws Exception {
+            RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test amount exception ", "Monto mayor al permitido",
+                    BigDecimal.valueOf(-100000.00));
+
+            when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito debe ser mayor a $ 0.00"));
+
+            mockMvc.perform(post("/api/microcreditos/solicitar")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestMicrocreditDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("El monto del microcrédito debe ser mayor a $ 0.00")));
+        }
     }
 
-    @Test
-    public void createMicrocredit_ShouldNotReturnOk() throws Exception {
-        RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test amount exception ", "Monto mayor al permitido",
-                BigDecimal.valueOf(100000.00));
+    @Nested
+    class PayMicrocredit {
+        @Test
+        public void payMicrocredit_ShouldReturnOk() throws Exception {
+            ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
+                    BigDecimal.valueOf(1000.00));
 
-        when(microcreditService.createMicrocredit(any())).thenThrow(new ValidationException("El monto del microcrédito tiene que ser igual o menor a: $ 500000"));
+            when(microcreditService.payMicrocredit("1234")).thenReturn(responseMicrocreditPaymentDto);
 
-        mockMvc.perform(post("/api/microcreditos/solicitar")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestMicrocreditDto)))
-                .andExpect(status().isBadRequest());
+            mockMvc.perform(post("/api/microcreditos/pagar/1234")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(responseMicrocreditPaymentDto))
+                    )
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditPaymentDto.id())))
+                    .andExpect(jsonPath("$.totalPaidAmount", Matchers.is(responseMicrocreditPaymentDto.totalPaidAmount().doubleValue())));
+        }
+
+        @Test
+        public void payMicrocredit_ShouldReturnNotOk() throws Exception {
+            ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
+                    BigDecimal.valueOf(1000.00));
+
+            when(microcreditService.getOne(any())).
+                    thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditPaymentDto.id()));
+
+            mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditPaymentDto.id()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
+
+        }
+
+        @Test
+        public void payMicrocredit_ShouldReturnBadRequest() throws Exception {
+            ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
+                    BigDecimal.valueOf(1000.00));
+
+            when(microcreditService.getOne(any())).
+                    thenThrow(new InsufficientFundsException("Fondos insuficientes"));
+
+            mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditPaymentDto.id()))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("Fondos insuficientes")));
+
+        }
     }
 
-    @Test
-    public void getOne_ShouldReturnOk() throws Exception {
-        ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
-                "Test getOne ok", "Test Description", TransactionStatus.PENDING, List.of());
+    @Nested
+    class GetAllMicrocreditsByUser {
+        @Test
+        public void getAllMicrocreditsByUser_ShouldReturnOk() throws Exception {
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
 
-        when(microcreditService.getOne("1234")).thenReturn(responseMicrocreditGetDto);
+            when(microcreditService.getAllMicrocreditsByUser()).thenReturn(List.of(responseMicrocreditGetDto));
 
-        mockMvc.perform(get("/api/microcreditos/1234"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditGetDto.id())))
-                .andExpect(jsonPath("$.borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
-                .andExpect(jsonPath("$.amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
-                .andExpect(jsonPath("$.remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                .andExpect(jsonPath("$.createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                .andExpect(jsonPath("$.expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
-                .andExpect(jsonPath("$.title", Matchers.is(responseMicrocreditGetDto.title())))
-                .andExpect(jsonPath("$.description", Matchers.is(responseMicrocreditGetDto.description())))
-                .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
-                .andExpect(jsonPath("$.contributions", Matchers.hasSize(0)));
+            mockMvc.perform(get("/api/microcreditos/usuario-logueado"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
+                    .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
+                    .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
+                    .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
+                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
+        }
+
+        @Test
+        public void getAllMicrocreditsByUser_ShouldReturnNotFound() throws Exception {
+            when(microcreditService.getAllMicrocreditsByUser()).thenThrow(new ResourceNotFoundException("No se encontraron microcréditos."));
+
+            mockMvc.perform(get("/api/microcreditos/usuario-logueado"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron microcréditos.")));
+        }
     }
 
-    @Test
-    public void getOne_ShouldNotReturnOk() throws Exception {
-        ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
-                "Test getOne NOT ok", "Test Description", TransactionStatus.PENDING, List.of());
+    @Nested
+    class GetAllMicrocreditsByUserByStatus {
+        @Test
+        public void getAllMicrocreditsByUserByStatus_ShouldReturnOk() throws Exception {
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
 
-        when(microcreditService.getOne(any())).
-                thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditGetDto.id()));
-        mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditGetDto.id()))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
+            when(microcreditService.getAllMicrocreditsByUserByStatus("COMPLETED")).thenReturn(List.of(responseMicrocreditGetDto));
+
+            mockMvc.perform(get("/api/microcreditos/estado/COMPLETED"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
+                    .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
+                    .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
+                    .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
+                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
+        }
+
+        @Test
+        public void getAllMicrocreditsByUserByStatus_ShouldReturnNotFound() throws Exception {
+            when(microcreditService.getAllMicrocreditsByUserByStatus("ACCEPTED"))
+                    .thenThrow(new ResourceNotFoundException("No se encontraron microcréditos para el usuario con el estado especificado."));
+
+            mockMvc.perform(get("/api/microcreditos/estado/ACCEPTED"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron microcréditos para " +
+                            "el usuario con el estado especificado.")));
+        }
     }
 
-    @Test
-    public void getAll_ShouldReturnOk() throws Exception {
-        ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("microcredits",
-                "borrower1",
-                BigDecimal.valueOf(10000.00),
-                BigDecimal.valueOf(10000.00),
-                LocalDate.of(2024, 9, 17),
-                LocalDate.of(2024, 10, 17),
-                "Auxilio",
-                "Test exitoso",
-                TransactionStatus.ACCEPTED, List.of());
+    @Nested
+    class GetAllMicrocreditsBetweenDates {
+        @Test
+        public void getMicrocreditsBetweenDates_ShouldReturnOk() throws Exception {
+            String fromDate = LocalDate.now().toString();
+            String toDate = "2023-12-31";
 
-        when(microcreditService.getAll()).thenReturn(List.of(responseMicrocreditGetDto));
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
 
-        mockMvc.perform(get("/api/microcreditos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", Matchers.hasSize(1)))
-                .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
-                .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
-                .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
-                .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
-                .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
-                .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
-                .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
-                .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0))); // Ajusta el tamaño según las contribuciones esperadas
+            when(microcreditService.getMicrocreditsBetweenDates(fromDate, toDate)).thenReturn(List.of(responseMicrocreditGetDto));
+
+            mockMvc.perform(get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
+                    .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
+                    .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
+                    .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
+                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
+        }
+
+        @Test
+        public void getMicrocreditsBetweenDates_ShouldReturnBadRequest() throws Exception {
+            String fromDate = "2023-12-31";
+            String toDate = LocalDate.now().toString();
+
+            when(microcreditService.getMicrocreditsBetweenDates(fromDate, toDate))
+                    .thenThrow(new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin."));
+
+            mockMvc.perform(get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("La fecha de inicio no puede ser " +
+                            "posterior a la fecha de fin.")));
+        }
+
+        @Test
+        public void getMicrocreditsBetweenDates_ShouldReturnNotFound() throws Exception {
+            String fromDate = LocalDate.now().toString();
+            String toDate = "2023-12-31";
+
+            when(microcreditService.getMicrocreditsBetweenDates(fromDate, toDate))
+                    .thenThrow(new ResourceNotFoundException("No posee microcréditos solicitados"));
+
+            mockMvc.perform(get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No posee microcréditos solicitados")));
+        }
     }
 
-    @Test
-    public void getMicrocreditsByTransactionStatus_ShouldReturnOk() throws Exception {
-        ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
-                "Test title", "Test Description", TransactionStatus.ACCEPTED, List.of());
+    @Nested
+    class GetAllMicrocredits {
+        @Test
+        public void getAll_ShouldReturnOk() throws Exception {
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("microcredits",
+                    "borrower1",
+                    BigDecimal.valueOf(10000.00),
+                    BigDecimal.valueOf(10000.00),
+                    LocalDate.of(2024, 9, 17),
+                    LocalDate.of(2024, 10, 17),
+                    "Auxilio",
+                    "Test exitoso",
+                    TransactionStatus.ACCEPTED, List.of());
 
-        when(microcreditService.getMicrocreditsByTransactionStatus("ACCEPTED")).thenReturn(List.of(responseMicrocreditGetDto));
+            when(microcreditService.getAll()).thenReturn(List.of(responseMicrocreditGetDto));
 
-        mockMvc.perform(get("/api/microcreditos/historial-estados/ACCEPTED"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", Matchers.hasSize(1)))
-                .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
-                .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
-                .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
-                .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
-                .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
-                .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
-                .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
-                .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
+            mockMvc.perform(get("/api/microcreditos"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
+                    .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
+                    .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
+                    .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
+                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0))); // Ajusta el tamaño según las contribuciones esperadas
+        }
+
+        @Test
+        public void getAll_ShouldReturnNotFound() throws Exception {
+            when(microcreditService.getAll()).thenThrow(new ResourceNotFoundException("No se encontraron microcréditos."));
+
+            mockMvc.perform(get("/api/microcreditos"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron microcréditos.")));
+        }
     }
 
-    @Test
-    public void createContribution_ShouldReturnOk() throws Exception {
-        RequestContributionDto requestContributionDto = new RequestContributionDto("1234",
-                BigDecimal.valueOf(10000.00));
+    @Nested
+    class GetOneMicrocredit {
+        @Test
+        public void getOne_ShouldReturnOk() throws Exception {
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "Test getOne ok", "Test Description", TransactionStatus.PENDING, List.of());
 
-        ResponseContributionDto responseContributionDto = new ResponseContributionDto("5678", "lenderAccountId_Test",
-                "Tester1", "Tester2", "1234",
+            when(microcreditService.getOne("1234")).thenReturn(responseMicrocreditGetDto);
 
-                BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30),
-                TransactionStatus.ACCEPTED);
+            mockMvc.perform(get("/api/microcreditos/1234"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditGetDto.id())))
+                    .andExpect(jsonPath("$.borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
+                    .andExpect(jsonPath("$.amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$.remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
+                    .andExpect(jsonPath("$.expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$.title", Matchers.is(responseMicrocreditGetDto.title())))
+                    .andExpect(jsonPath("$.description", Matchers.is(responseMicrocreditGetDto.description())))
+                    .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
+                    .andExpect(jsonPath("$.contributions", Matchers.hasSize(0)));
+        }
 
-        when(contributionService.createContribution(requestContributionDto)).thenReturn(responseContributionDto);
+        @Test
+        public void getOne_ShouldNotReturnOk() throws Exception {
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "Test getOne NOT ok", "Test Description", TransactionStatus.PENDING, List.of());
 
-        mockMvc.perform(post("/api/microcreditos/contribuir")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestContributionDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", Matchers.is(responseContributionDto.id())))
-                .andExpect(jsonPath("$.lenderAccountId", Matchers.is(responseContributionDto.lenderAccountId())))
-                .andExpect(jsonPath("$.lenderFullname", Matchers.is(responseContributionDto.lenderFullname())))
-                .andExpect(jsonPath("$.borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
-                .andExpect(jsonPath("$.microcreditId", Matchers.is(responseContributionDto.microcreditId())))
-                .andExpect(jsonPath("$.amount", Matchers.is(responseContributionDto.amount().doubleValue())))
-                .andExpect(jsonPath("$.createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
-                .andExpect(jsonPath("$.expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
-                .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
+            when(microcreditService.getOne(any())).
+                    thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditGetDto.id()));
+
+            mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditGetDto.id()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
+        }
     }
 
-    @Test
-    public void getBy_ShouldReturnOk() throws Exception {
-        ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
-                "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
+    @Nested
+    class GetAllMicrocreditsByTransactionStatus {
+        @Test
+        public void getMicrocreditsByTransactionStatus_ShouldReturnOk() throws Exception {
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    "Test title", "Test Description", TransactionStatus.ACCEPTED, List.of());
 
-        when(microcreditService.getAllMicrocreditsByUserByStatus("COMPLETED")).thenReturn(List.of(responseMicrocreditGetDto));
+            when(microcreditService.getMicrocreditsByTransactionStatus("ACCEPTED")).thenReturn(List.of(responseMicrocreditGetDto));
 
-        mockMvc.perform(get("/api/microcreditos/estado/COMPLETED"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", Matchers.hasSize(1)))
-                .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
-                .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
-                .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
-                .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
-                .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
-                .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
-                .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
-                .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
-                .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
-                .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
+            mockMvc.perform(get("/api/microcreditos/historial-estados/ACCEPTED"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
+                    .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().toString())))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().toString())))
+                    .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
+                    .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
+                    .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
+                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
+        }
+
+        @Test
+        public void getMicrocreditsByTransactionStatus_ShouldReturnNotFound() throws Exception {
+            when(microcreditService.getMicrocreditsByTransactionStatus("ACCEPTED")).thenThrow(new ResourceNotFoundException("No se encontraron microcréditos con el estado especificado."));
+
+            mockMvc.perform(get("/api/microcreditos/historial-estados/ACCEPTED"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No se encontraron microcréditos con el estado especificado.")));
+        }
     }
 
-    @Test
-    public void payMicrocredit_ShouldReturnOk() throws Exception {
-        ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
-                BigDecimal.valueOf(1000.00));
+    @Nested
+    class CreateContribution {
+        @Test
+        public void createContribution_ShouldReturnOk() throws Exception {
+            RequestContributionDto requestContributionDto = new RequestContributionDto("1234",
+                    BigDecimal.valueOf(10000.00));
 
-        when(microcreditService.payMicrocredit("1234")).thenReturn(responseMicrocreditPaymentDto);
+            ResponseContributionDto responseContributionDto = new ResponseContributionDto("5678", "lenderAccountId_Test",
+                    "Tester1", "Tester2", "1234",
 
-        mockMvc.perform(post("/api/microcreditos/pagar/1234")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(responseMicrocreditPaymentDto))
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", Matchers.is(responseMicrocreditPaymentDto.id())))
-                .andExpect(jsonPath("$.totalPaidAmount", Matchers.is(responseMicrocreditPaymentDto.totalPaidAmount().doubleValue())));
-    }
+                    BigDecimal.valueOf(10000.00), LocalDate.now(), LocalDate.now().plusDays(30),
+                    TransactionStatus.ACCEPTED);
 
-    @Test
-    public void payMicrocredit_ShouldReturnNotOk() throws Exception {
-        ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
-                BigDecimal.valueOf(1000.00));
-        when(microcreditService.getOne(any())).
-                thenThrow(new ResourceNotFoundException("Microcrédito no encontrado con id: " + responseMicrocreditPaymentDto.id()));
-        mockMvc.perform(get("/api/microcreditos/" + responseMicrocreditPaymentDto.id()))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", Matchers.is("Microcrédito no encontrado con id: 1234")));
+            when(contributionService.createContribution(requestContributionDto)).thenReturn(responseContributionDto);
 
+            mockMvc.perform(post("/api/microcreditos/contribuir")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestContributionDto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id", Matchers.is(responseContributionDto.id())))
+                    .andExpect(jsonPath("$.lenderAccountId", Matchers.is(responseContributionDto.lenderAccountId())))
+                    .andExpect(jsonPath("$.lenderFullname", Matchers.is(responseContributionDto.lenderFullname())))
+                    .andExpect(jsonPath("$.borrowerFullname", Matchers.is(responseContributionDto.borrowerFullname())))
+                    .andExpect(jsonPath("$.microcreditId", Matchers.is(responseContributionDto.microcreditId())))
+                    .andExpect(jsonPath("$.amount", Matchers.is(responseContributionDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$.createdDate", Matchers.is(responseContributionDto.createdDate().toString())))
+                    .andExpect(jsonPath("$.expiredDateMicrocredit", Matchers.is(responseContributionDto.expiredDateMicrocredit().toString())))
+                    .andExpect(jsonPath("$.transactionStatus", Matchers.is(responseContributionDto.transactionStatus().toString())));
+        }
+
+        @Test
+        public void createContribution_ShouldReturnBadRequest() throws Exception {
+            RequestContributionDto requestContributionDto = new RequestContributionDto("1234",
+                    BigDecimal.valueOf(-10000.00));
+
+            when(contributionService.createContribution(requestContributionDto))
+                    .thenThrow(new ValidationException("El monto de la contribución debe ser mayor a $ 0.00"));
+
+            mockMvc.perform(post("/api/microcreditos/contribuir")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestContributionDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("El monto de la contribución debe ser mayor a $ 0.00")));
+        }
+
+        @Test
+        public void createContribution_ShouldReturn_insufficient_fund() throws Exception {
+            RequestContributionDto requestContributionDto = new RequestContributionDto("1234",
+                    BigDecimal.valueOf(10000.00));
+
+            when(contributionService.createContribution(requestContributionDto))
+                    .thenThrow(new ValidationException("Fondos insuficientes"));
+
+            mockMvc.perform(post("/api/microcreditos/contribuir")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(requestContributionDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", Matchers.is("Fondos insuficientes")));
+        }
     }
 }
