@@ -145,6 +145,25 @@ public class ContributionServiceImpl implements ContributionService {
     }
 
     @Override
+    public List<ResponseContributionDto> getContributionsByDateAndStatus(String date, String transactionStatus) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+
+        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(date);
+        LocalDateTime startDate = elapsedDate.get(0);
+        LocalDateTime endDate = elapsedDate.get(1);
+
+        List<Contribution> contributionList = contributionRepository.findContributionsByDateAndTransactionStatus(
+                accountAndUser.account.getId(), startDate, endDate, enumStatus);
+
+        if (contributionList.isEmpty()) {
+            throw new ResourceNotFoundException("No posee contribuciones.");
+        }
+
+        return mapContributionsToDto(contributionList);
+    }
+
+    @Override
     public List<ResponseContributionDto> getAll() {
         List<Contribution> contributions = contributionRepository.findAll();
 

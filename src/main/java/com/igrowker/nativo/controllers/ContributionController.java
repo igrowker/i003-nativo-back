@@ -73,6 +73,16 @@ public class ContributionController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/buscar-fecha-estado")
+    public ResponseEntity<List<ResponseContributionDto>> getContributionsByDateAndStatus(@Parameter(description = "Fecha", required = true, example = "2023-03-21")
+                                                                                         @RequestParam String date,
+                                                                                         @RequestParam String status) {
+
+        List<ResponseContributionDto> result = contributionService.getContributionsByDateAndStatus(date, status);
+
+        return ResponseEntity.ok(result);
+    }
+
     @Operation(summary = "Obtener todas las contribuciones",
             description = "Endpoint que permite obtener todas las contribuciones del sistema.")
     @ApiResponses(value = {
