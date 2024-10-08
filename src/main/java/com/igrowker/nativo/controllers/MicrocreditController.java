@@ -49,7 +49,7 @@ public class MicrocreditController {
             description = "Endpoint que permite realizar una contribución a un microcrédito existente.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Contribución realizada con éxito",
-                    content = @Content(schema = @Schema(implementation = ResponseContributionDto.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseContributionDto.class))),
             @ApiResponse(responseCode = "400", content = @Content),
             @ApiResponse(responseCode = "401", content = @Content),
             @ApiResponse(responseCode = "403", content = @Content),
@@ -67,7 +67,7 @@ public class MicrocreditController {
             description = "Endpoint que permite pagar un microcrédito existente.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Microcrédito pagado con éxito",
-                    content = @Content(schema = @Schema(implementation = ResponseMicrocreditPaymentDto.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseMicrocreditPaymentDto.class))),
             @ApiResponse(responseCode = "400", content = @Content),
             @ApiResponse(responseCode = "401", content = @Content),
             @ApiResponse(responseCode = "403", content = @Content),
@@ -85,7 +85,7 @@ public class MicrocreditController {
             description = "Endpoint que permite obtener todos los microcréditos del usuario autenticado.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Historial de microcréditos obtenidos con éxito",
-                    content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
             @ApiResponse(responseCode = "403", content = @Content),
             @ApiResponse(responseCode = "404", content = @Content),
     })
@@ -100,7 +100,7 @@ public class MicrocreditController {
             description = "Endpoint que permite obtener todos los microcréditos del usuario autenticado filtrados por estado.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Historial de microcréditos por estado obtenidos con éxito",
-                    content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
             @ApiResponse(responseCode = "403", content = @Content),
             @ApiResponse(responseCode = "404", content = @Content),
     })
@@ -117,7 +117,7 @@ public class MicrocreditController {
             description = "Endpoint que permite obtener todos los microcréditos del usuario autenticado dentro de un rango de fechas.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Historial de microcréditos, filtrado por fechas, obtenidos con éxito",
-                    content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
             @ApiResponse(responseCode = "400", content = @Content),
             @ApiResponse(responseCode = "403", content = @Content),
             @ApiResponse(responseCode = "404", content = @Content),
@@ -137,7 +137,7 @@ public class MicrocreditController {
             description = "Endpoint que permite obtener todos los microcréditos del sistema.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de todos los microcréditos obtenidos con éxito",
-                    content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
             @ApiResponse(responseCode = "404", content = @Content)
     })
     @GetMapping()
@@ -165,7 +165,7 @@ public class MicrocreditController {
             description = "Endpoint que permite obtener todos los microcréditos con un estado de transacción específico.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de microcréditos obtenidos con éxito",
-                    content = @Content(schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
             @ApiResponse(responseCode = "403", content = @Content),
             @ApiResponse(responseCode = "404", content = @Content)
     })
