@@ -14,7 +14,9 @@ public record ResponseDonationDtoTrue(
         String donorLastName,
 
         String accountIdBeneficiary,
+
         String beneficiaryName,
+
         String beneficiaryLastName,
 
         LocalDateTime createdAt,
