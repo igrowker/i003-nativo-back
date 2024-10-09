@@ -12,9 +12,11 @@ import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.DonationRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.DonationService;
+import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.validations.Validations;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cglib.core.Local;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +38,7 @@ public class DonationServiceImpl implements DonationService {
 
     private final GeneralTransactions generalTransactions;
     private final Validations validations;
+    private final DateFormatter dateFormatter;
 
     @Override
     public ResponseDonationDtoTrue createDonationTrue(RequestDonationDto requestDonationDto) {
@@ -125,7 +128,6 @@ public class DonationServiceImpl implements DonationService {
 
 
         }
-
         throw new ResourceAlreadyExistsException("Esta donacion ya fue finalizada");
     }
 
@@ -215,6 +217,30 @@ public class DonationServiceImpl implements DonationService {
         }
     }
 
+    // Implementando Servicio donde se filtren por fecha (Update)
+    @Override
+    public List<ResponseDonationRecord> getRecordDonationBetweenDates(String fromDate, String toDate) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        List<LocalDateTime> dateTimes = dateFormatter.getDateFromString(fromDate,toDate);
+        LocalDateTime startDate = dateTimes.get(0);
+        LocalDateTime endDate = dateTimes.get(1);
+
+        return donationMapper.listDonationToListResponseDonationRecordTwo(
+                donationRepository.findDonationsByDateRange(accountAndUser.account.getId(),startDate,endDate)
+        );
+    }
+
+    // Implemetando servicio donde se filtren por status
+    @Override
+    public List<ResponseDonationRecord> getDonationsByStatus(String status) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        TransactionStatus transactionStatus = validations.statusConvert(status);
+
+        return donationMapper.listDonationToListResponseDonationRecordTwo(
+                donationRepository.findDonationsByStatus(accountAndUser.account.getId(),transactionStatus)
+        );
+    }
 
     public void returnAmount(String id, BigDecimal amount){
         Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
