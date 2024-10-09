@@ -2,14 +2,14 @@ package com.igrowker.nativo.unit.services.implementations;
 
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
-import com.igrowker.nativo.entities.Account;
-import com.igrowker.nativo.entities.Microcredit;
-import com.igrowker.nativo.entities.TransactionStatus;
-import com.igrowker.nativo.entities.User;
+import com.igrowker.nativo.entities.*;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
+import com.igrowker.nativo.mappers.ContributionMapper;
 import com.igrowker.nativo.mappers.MicrocreditMapper;
 import com.igrowker.nativo.repositories.AccountRepository;
+import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
+import com.igrowker.nativo.services.implementation.ContributionServiceImpl;
 import com.igrowker.nativo.services.implementation.MicrocreditServiceImpl;
 import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.NotificationService;
@@ -31,22 +31,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-
 @ExtendWith(MockitoExtension.class)
 public class MicrocreditServiceImplTest {
 
     @Mock
     private MicrocreditRepository microcreditRepository;
     @Mock
+    private ContributionRepository contributionRepository;
+    @Mock
     private AccountRepository accountRepository;
     @Mock
     private MicrocreditMapper microcreditMapper;
+    @Mock
+    private ContributionMapper contributionMapper;
     @Mock
     private Validations validations;
     @Mock
     private DateFormatter dateFormatter;
     @InjectMocks
     private MicrocreditServiceImpl microcreditServiceImpl;
+    @InjectMocks
+    private ContributionServiceImpl contributionServiceImpl;
     @Mock
     private NotificationService notificationService;
 
