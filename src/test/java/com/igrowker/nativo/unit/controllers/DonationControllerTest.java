@@ -33,7 +33,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+/*
 @WebMvcTest(value = DonationController.class)
 @WithMockUser // Simula que un usuario autenticado realiza operaciones
 public class DonationControllerTest {
@@ -251,5 +251,12 @@ public class DonationControllerTest {
 
 
     }
+<<<<<<< HEAD
 */
 }
+=======
+
+}
+
+ */
+>>>>>>> 85225a26e56a3e1e1564da1f721861cf74cf0e74

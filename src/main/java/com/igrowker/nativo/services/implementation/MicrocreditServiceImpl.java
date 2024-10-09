@@ -11,6 +11,7 @@ import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.MicrocreditService;
+import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.utils.NotificationService;
 import com.igrowker.nativo.validations.Validations;
@@ -20,8 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -39,6 +39,7 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     private final ContributionRepository contributionRepository;
     private final NotificationService notificationService;
     private final BigDecimal microcreditLimit = new BigDecimal(500000);
+    private final DateFormatter dateFormatter;
 
     @Override
     public ResponseMicrocreditDto createMicrocredit(RequestMicrocreditDto requestMicrocreditDto) throws MessagingException {
@@ -183,16 +184,42 @@ public class MicrocreditServiceImpl implements MicrocreditService {
     public List<ResponseMicrocreditGetDto> getMicrocreditsBetweenDates(String fromDate, String toDate) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate startDate = LocalDate.parse(fromDate, formatter);
-        LocalDate endDate = LocalDate.parse(toDate, formatter).plusDays(1);
+        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(fromDate, toDate);
+        LocalDateTime startDate = elapsedDate.get(0);
+        LocalDateTime endDate = elapsedDate.get(1);
 
         if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
+            throw new ValidationException("La fecha final no puede ser menor a la inicial.");
         }
 
         List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsBetweenDates(
                 accountAndUser.account.getId(), startDate, endDate);
+
+        if (microcreditList.isEmpty()) {
+            throw new ResourceNotFoundException("No posee microcréditos solicitados");
+        }
+
+        return microcreditList.stream()
+                .map(microcredit -> {
+                    List<ResponseContributionDto> contributionsDto = mapContributionsToDto(microcredit.getContributions());
+
+                    return microcreditMapper.responseMicrocreditGet(microcredit, contributionsDto);
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
+    public List<ResponseMicrocreditGetDto> getMicrocreditsByDateAndStatus(String date, String transactionStatus) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+
+        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(date);
+        LocalDateTime startDate = elapsedDate.get(0);
+        LocalDateTime endDate = elapsedDate.get(1);
+
+        List<Microcredit> microcreditList = microcreditRepository.findMicrocreditsByDateAndTransactionStatus(
+                accountAndUser.account.getId(), startDate, endDate, enumStatus);
 
         if (microcreditList.isEmpty()) {
             throw new ResourceNotFoundException("No posee microcréditos solicitados");

@@ -8,6 +8,7 @@ import com.igrowker.nativo.mappers.ContributionMapper;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
 import com.igrowker.nativo.services.ContributionService;
+import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.utils.NotificationService;
 import com.igrowker.nativo.validations.Validations;
@@ -17,8 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,6 +33,7 @@ public class ContributionServiceImpl implements ContributionService {
     private final Validations validations;
     private final GeneralTransactions generalTransactions;
     private final NotificationService notificationService;
+    private final DateFormatter dateFormatter;
 
     @Override
     @Transactional
@@ -125,10 +126,9 @@ public class ContributionServiceImpl implements ContributionService {
     public List<ResponseContributionDto> getContributionsBetweenDates(String fromDate, String toDate) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-        LocalDate startDate = LocalDate.parse(fromDate, formatter);
-        LocalDate endDate = LocalDate.parse(toDate, formatter).plusDays(1);
+        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(fromDate, toDate);
+        LocalDateTime startDate = elapsedDate.get(0);
+        LocalDateTime endDate = elapsedDate.get(1);
 
         if (startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
@@ -139,6 +139,25 @@ public class ContributionServiceImpl implements ContributionService {
 
         if (contributionList.isEmpty()) {
             throw new ResourceNotFoundException("No se encontraron contribuciones en el rango de fechas proporcionado.");
+        }
+
+        return mapContributionsToDto(contributionList);
+    }
+
+    @Override
+    public List<ResponseContributionDto> getContributionsByDateAndStatus(String date, String transactionStatus) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+        TransactionStatus enumStatus = validations.statusConvert(transactionStatus);
+
+        List<LocalDateTime> elapsedDate = dateFormatter.getDateFromString(date);
+        LocalDateTime startDate = elapsedDate.get(0);
+        LocalDateTime endDate = elapsedDate.get(1);
+
+        List<Contribution> contributionList = contributionRepository.findContributionsByDateAndTransactionStatus(
+                accountAndUser.account.getId(), startDate, endDate, enumStatus);
+
+        if (contributionList.isEmpty()) {
+            throw new ResourceNotFoundException("No posee contribuciones.");
         }
 
         return mapContributionsToDto(contributionList);

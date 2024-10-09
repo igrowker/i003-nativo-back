@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-
+/*
 @ExtendWith(MockitoExtension.class)
 public class DonationServiceImplTest {
 /*
@@ -390,5 +390,12 @@ public class DonationServiceImplTest {
 
 
         }
+<<<<<<< HEAD
     }*/
 }
+=======
+    }
+}
+
+ */
+>>>>>>> 85225a26e56a3e1e1564da1f721861cf74cf0e74
