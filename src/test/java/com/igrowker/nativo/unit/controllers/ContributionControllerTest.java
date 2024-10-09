@@ -45,7 +45,7 @@ public class ContributionControllerTest {
     ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Nested
-    class GetAllContributionContributionByUser {
+    class GetAllContributionsByUserTests {
         @Test
         public void getAllContributionByUser_ShouldReturnOk() throws Exception {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
@@ -81,7 +81,7 @@ public class ContributionControllerTest {
     }
 
     @Nested
-    class GetAllContributionContributionByUserByStatus {
+    class GetAllContributionsByUserByStatusTests {
         @Test
         public void getAllContributionByUserByStatus_ShouldReturnOk() throws Exception {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
@@ -119,7 +119,7 @@ public class ContributionControllerTest {
     }
 
     @Nested
-    class GetContributionContributionsBetweenDates {
+    class GetContributionsBetweenDatesTests {
         @Test
         public void getAllContributionsBetweenDates_ShouldReturnOk() throws Exception {
             String fromDate = "2024-09-01";
@@ -175,7 +175,7 @@ public class ContributionControllerTest {
     }
 
     @Nested
-    class GetContributionsByDateAndStatus {
+    class GetContributionsByDateAndStatusTests {
         @Test
         public void getContributionsByDateAndStatus_ShouldReturnOk() throws Exception {
             String date = "2024-09-17";
@@ -217,7 +217,7 @@ public class ContributionControllerTest {
     }
 
     @Nested
-    class GetAllContributions {
+    class GetAllContributionsTests {
         @Test
         public void getAll_ShouldReturnOk() throws Exception {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
@@ -253,7 +253,7 @@ public class ContributionControllerTest {
     }
 
     @Nested
-    class GetOneContribution {
+    class GetOneContributionTests {
         @Test
         public void getOneContribution_ShouldReturnOk() throws Exception {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",
@@ -297,7 +297,7 @@ public class ContributionControllerTest {
     }
 
     @Nested
-    class GetContributionByTransactionStatus {
+    class GetContributionsByTransactionStatusTests {
         @Test
         public void getContributionsByTransactionStatus_ShouldReturnOk() throws Exception {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("1111", "5678",

@@ -58,7 +58,7 @@ public class MicrocreditControllerTest {
     ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Nested
-    class CreateTest {
+    class CreateMicrocreditsTests {
         @Test
         public void createMicrocredit_ShouldReturnOk() throws Exception {
             RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
@@ -119,7 +119,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class PayMicrocredit {
+    class PayMicrocreditsTests {
         @Test
         public void payMicrocredit_ShouldReturnOk() throws Exception {
             ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
@@ -167,7 +167,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocreditsByUser {
+    class GetAllMicrocreditsByUserTests {
         @Test
         public void getAllMicrocreditsByUser_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
@@ -203,7 +203,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocreditsByUserByStatus {
+    class GetAllMicrocreditsByUserByStatusTests {
         @Test
         public void getAllMicrocreditsByUserByStatus_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
@@ -241,7 +241,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocreditsBetweenDates {
+    class GetAllMicrocreditsBetweenDatesTests {
         @Test
         public void getMicrocreditsBetweenDates_ShouldReturnOk() throws Exception {
             String fromDate = "2024-09-01";
@@ -297,7 +297,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetMicrocreditsByDateAndStatus {
+    class GetMicrocreditsByDateAndStatusTests {
         @Test
         public void getMicrocreditsByDateAndStatus_ShouldReturnOk() throws Exception {
             String date = "2024-09-20";
@@ -338,7 +338,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocredits {
+    class GetAllMicrocreditsTests {
         @Test
         public void getAll_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("microcredits",
@@ -379,7 +379,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetOneMicrocredit {
+    class GetOneMicrocreditTests {
         @Test
         public void getOne_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
@@ -420,7 +420,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocreditsByTransactionStatus {
+    class GetAllMicrocreditsByTransactionStatusTests {
         @Test
         public void getMicrocreditsByTransactionStatus_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
@@ -456,7 +456,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class CreateContribution {
+    class CreateContributionsTests {
         @Test
         public void createContribution_ShouldReturnOk() throws Exception {
             RequestContributionDto requestContributionDto = new RequestContributionDto("1234",
