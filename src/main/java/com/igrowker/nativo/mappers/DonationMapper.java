@@ -4,6 +4,7 @@ import com.igrowker.nativo.dtos.donation.*;
 import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.User;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 
@@ -11,14 +12,14 @@ import java.util.List;
 public interface DonationMapper {
 
 
-    User user= new User();
-
     //CREATE
     Donation requestDtoToDonation(RequestDonationDto requestDonationDto);
 
     ResponseDonationDtoTrue donationToResponseDtoTrue(Donation donation);
 
-    ResponseDonationDtoFalse donationToResponseDtoFalse(Donation donation);
+    @Mapping(source = "nameBenficiary", target = "beneficiaryName")
+    @Mapping(source = "nameLastBenficiary", target = "beneficiaryLastName")
+    ResponseDonationDtoFalse donationToResponseDtoFalse(Donation donation, String nameBenficiary, String nameLastBenficiary);
 
     //CONFIRMATION
     Donation requestConfirmationDtoToDonation(RequestDonationConfirmationDto requestDonationDto);

@@ -20,4 +20,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     @Modifying
     @Query("UPDATE Account a SET a.amount = a.amount - :amount WHERE a.id = :accountId")
     void deductBalance(@Param("accountId") String accountId, @Param("amount") BigDecimal amount);
+
+   @Query("SELECT a FROM Account a WHERE a.accountNumber = :accountNumber")
+    Optional<Account> findAccountByNumberAccount(@Param("accountNumber") Long accountNumber);
 }

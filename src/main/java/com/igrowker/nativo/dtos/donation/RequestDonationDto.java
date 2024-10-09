@@ -11,11 +11,8 @@ public record RequestDonationDto(
         @DecimalMin(value = "100.00", message = "El monto tiene que tener un mínimo de $100")
         BigDecimal amount,
 
-        @NotNull(message = "La cuenta del donante de la donacion es nulo.")
-        String accountIdDonor,
-
         @NotNull(message = "La cuenta del beneficiario de la donacion es nulo.")
-        String accountIdBeneficiary,
+        Long numberAccountBeneficiary,
 
         @NotNull(message = "El estado de la opcion de anonimato es nulo")
         Boolean anonymousDonation

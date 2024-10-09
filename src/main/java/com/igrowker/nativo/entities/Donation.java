@@ -43,8 +43,8 @@ public class Donation {
 
     protected void onCreate() {
         this.createdAt =  LocalDateTime.now();
+        this.updateAt =  LocalDateTime.now();
     }
-
 
     protected void onStatus() {
         this.status =  TransactionStatus.PENDING;
