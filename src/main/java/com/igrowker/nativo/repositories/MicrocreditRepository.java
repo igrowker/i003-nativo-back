@@ -24,6 +24,11 @@ public interface MicrocreditRepository extends JpaRepository<Microcredit, String
                                                    @Param("startDate") LocalDateTime startDate,
                                                    @Param("endDate") LocalDateTime endDate);
 
+    @Query("SELECT m FROM Microcredit m WHERE (m.borrowerAccountId = :borrowerAccountId) " +
+            "AND m.createdDate >= :startDate AND m.createdDate < :endDate AND m.transactionStatus = :status")
+    List<Microcredit> findMicrocreditsByDateAndTransactionStatus(String borrowerAccountId, LocalDateTime startDate,
+                                                                 LocalDateTime endDate, TransactionStatus status);
+
     List<Microcredit> findByTransactionStatus(TransactionStatus transactionStatus);
 
     Optional<Microcredit> findByBorrowerAccountIdAndTransactionStatus(String borrowerAccountId, TransactionStatus transactionStatus);

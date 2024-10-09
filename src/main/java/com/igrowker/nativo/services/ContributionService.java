@@ -15,6 +15,8 @@ public interface ContributionService {
 
     List<ResponseContributionDto> getContributionsBetweenDates(String fromDate, String toDate);
 
+    List<ResponseContributionDto> getContributionsByDateAndStatus(String date, String transactionStatus);
+
     List<ResponseContributionDto> getAll();
 
     ResponseContributionDto getOneContribution(String id);
