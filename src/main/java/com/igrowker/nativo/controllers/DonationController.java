@@ -57,25 +57,12 @@ public class DonationController {
                             @ApiResponse(responseCode = "403", content = @Content),
                             @ApiResponse(responseCode = "404", content = @Content)
     })
-    @GetMapping("/historial-donaciones/{status}")
-    public ResponseEntity<List<ResponseDonationRecord>> getDonationsByStatus(@Parameter(description = "Seleccionar el estado de la donacion a buscar",
-            required = true, schema = @Schema(allowableValues = {"ACCEPTED", "DENIED", "PENDING", "EXPIRED", "COMPLETED"})) @PathVariable String status){
-        return ResponseEntity.ok(donationService.getDonationsByStatus(status));
-    }
 
-
-    // ENDPOINT QUE BUSQUE POR FECHAS
-    @Operation(summary = "Obtener donaciones por fecha de inicio y fin")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de donacones con éxito",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDonationRecord.class))),
-                    @ApiResponse(responseCode = "403", content = @Content),
-                    @ApiResponse(responseCode = "404", content = @Content)
-
-    })
-    @GetMapping("/historial-donaciones/entrefechas")
-    public ResponseEntity<List<ResponseDonationRecord>> getDonationsBetweenDates(@RequestParam String fromDate, @RequestParam String toDate){
-        return ResponseEntity.ok(donationService.getRecordDonationBetweenDates(fromDate,toDate));
+    @GetMapping("/historial-donaciones")
+    public ResponseEntity<List<ResponseDonationRecord>> getDonationsBetweenDatesOrStatus(@RequestParam(required = false) String fromDate,
+                                                                                         @RequestParam(required = false) String toDate,
+                                                                                         @RequestParam(required = false) String status){
+        return ResponseEntity.ok(donationService.getDonationBtBetweenDatesOrStatus(fromDate,toDate,status));
     }
 
 }

@@ -217,30 +217,31 @@ public class DonationServiceImpl implements DonationService {
         }
     }
 
-    // Implementando Servicio donde se filtren por fecha (Update)
     @Override
-    public List<ResponseDonationRecord> getRecordDonationBetweenDates(String fromDate, String toDate) {
+    public List<ResponseDonationRecord> getDonationBtBetweenDatesOrStatus(String fromDate, String toDate, String status) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
 
-        List<LocalDateTime> dateTimes = dateFormatter.getDateFromString(fromDate,toDate);
-        LocalDateTime startDate = dateTimes.get(0);
-        LocalDateTime endDate = dateTimes.get(1);
+        if (status == null && (fromDate == null || toDate == null)) {
+            throw new ResourceNotFoundException("Se debe de ingresar las fechas de inicio y fin o un status");
+        }
 
-        return donationMapper.listDonationToListResponseDonationRecordTwo(
-                donationRepository.findDonationsByDateRange(accountAndUser.account.getId(),startDate,endDate)
-        );
+        List<Donation> donations;
+
+        if (fromDate == null || toDate == null) {
+            TransactionStatus transactionStatus = validations.statusConvert(status);
+            donations = donationRepository.findDonationsByStatus(accountAndUser.account.getId(), transactionStatus);
+        } else {
+            List<LocalDateTime> dateTimes = dateFormatter.getDateFromString(fromDate, toDate);
+            LocalDateTime startDate = dateTimes.get(0);
+            LocalDateTime endDate = dateTimes.get(1);
+            donations = donationRepository.findDonationsByDateRange(accountAndUser.account.getId(), startDate, endDate);
+        }
+
+        donations.sort(Comparator.comparing(Donation::getUpdateAt).reversed());
+
+        return donationMapper.listDonationToListResponseDonationRecordTwo(donations);
     }
 
-    // Implemetando servicio donde se filtren por status
-    @Override
-    public List<ResponseDonationRecord> getDonationsByStatus(String status) {
-        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
-        TransactionStatus transactionStatus = validations.statusConvert(status);
-
-        return donationMapper.listDonationToListResponseDonationRecordTwo(
-                donationRepository.findDonationsByStatus(accountAndUser.account.getId(),transactionStatus)
-        );
-    }
 
     public void returnAmount(String id, BigDecimal amount){
         Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
