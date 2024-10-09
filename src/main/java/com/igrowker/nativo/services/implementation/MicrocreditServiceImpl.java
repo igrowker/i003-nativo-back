@@ -208,7 +208,6 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     public List<ResponseMicrocreditGetDto> getMicrocreditsByDateAndStatus(String date, String transactionStatus) {
         Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();

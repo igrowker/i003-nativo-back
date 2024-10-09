@@ -1,6 +1,7 @@
 package com.igrowker.nativo.controllers;
 
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
+import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
 import com.igrowker.nativo.services.ContributionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -73,9 +74,21 @@ public class ContributionController {
         return ResponseEntity.ok(result);
     }
 
+    @Operation(summary = "Obtener contribuciones en una fecha y en un estado determinado del usuario autenticado",
+            description = "Endpoint que permite obtener todas las contribuciones del usuario autenticado dentro de " +
+                    "una fecha y un estado determinado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Historial de contribuciones, filtrado por fecha y el estado " +
+                    "de la transacción, obtenidos con éxito",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "404", content = @Content),
+    })
     @GetMapping("/buscar-fecha-estado")
     public ResponseEntity<List<ResponseContributionDto>> getContributionsByDateAndStatus(@Parameter(description = "Fecha", required = true, example = "2023-03-21")
                                                                                          @RequestParam String date,
+                                                                                         @Parameter(description = "Seleccionar el estado de la contribución a buscar", required = true,
+                                                                                                 schema = @Schema(allowableValues = {"ACCEPTED", "COMPLETED", "DENIED", "FAILED"}))
                                                                                          @RequestParam String status) {
 
         List<ResponseContributionDto> result = contributionService.getContributionsByDateAndStatus(date, status);

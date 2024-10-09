@@ -133,9 +133,25 @@ public class MicrocreditController {
         return ResponseEntity.ok(result);
     }
 
+    @Operation(summary = "Obtener microcréditos en una fecha y en un estado determinado del usuario autenticado",
+            description = "Endpoint que permite obtener todos los microcréditos del usuario autenticado dentro de " +
+                    "una fecha y un estado determinado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Historial de microcréditos, filtrado por fecha y el estado " +
+                    "de la transacción, obtenidos con éxito",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseMicrocreditGetDto.class))),
+            @ApiResponse(responseCode = "403", content = @Content),
+            @ApiResponse(responseCode = "404", content = @Content),
+    })
     @GetMapping("/buscar-fecha-estado")
-    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsByDateAndStatus(@Parameter(description = "Fecha", required = true, example = "2023-03-21")
+    public ResponseEntity<List<ResponseMicrocreditGetDto>> getMicrocreditsByDateAndStatus(@Parameter(description = "Fecha",
+            required = true, example = "2023-03-21")
                                                                                           @RequestParam String date,
+                                                                                          @Parameter(description = "Seleccionar " +
+                                                                                                  "el estado del microcrédito a buscar",
+                                                                                                  required = true,
+                                                                                                  schema = @Schema(allowableValues =
+                                                                                                          {"ACCEPTED", "DENIED", "PENDING", "EXPIRED", "COMPLETED"}))
                                                                                           @RequestParam String status) {
 
         List<ResponseMicrocreditGetDto> result = microcreditService.getMicrocreditsByDateAndStatus(date, status);
