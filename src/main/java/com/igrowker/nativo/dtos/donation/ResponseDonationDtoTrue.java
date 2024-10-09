@@ -9,11 +9,8 @@ public record ResponseDonationDtoTrue(
 
         BigDecimal amount,
 
-        String accountIdDonor,
         String donorName,
         String donorLastName,
-
-        String accountIdBeneficiary,
 
         String beneficiaryName,
 

@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithMockUser // Simula que un usuario autenticado realiza operaciones
 public class DonationControllerTest {
 
-
+/*
     @MockBean
     private JwtService jwtService;
 
@@ -251,7 +251,12 @@ public class DonationControllerTest {
 
 
     }
+<<<<<<< HEAD
+*/
+}
+=======
 
 }
 
  */
+>>>>>>> 85225a26e56a3e1e1564da1f721861cf74cf0e74
