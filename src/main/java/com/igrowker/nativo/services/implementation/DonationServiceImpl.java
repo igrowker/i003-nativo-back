@@ -59,6 +59,7 @@ public class DonationServiceImpl implements DonationService {
                     donation.getAmount(),
                     donor.user.getName(),
                     donor.user.getSurname(),
+                    accountBeneficiary.getAccountNumber(),
                     beneficiary.getName(),
                     beneficiary.getSurname(),
                     donation.getCreatedAt(),
@@ -84,7 +85,7 @@ public class DonationServiceImpl implements DonationService {
             accountRepository.save(donor.account);
             Donation donation = returnDonation(donor.account.getId(), accountBeneficiary.getId(), requestDonationDto);;
 
-            return donationMapper.donationToResponseDtoFalse(donation, beneficiaryAccount.getName(), beneficiaryAccount.getSurname());
+            return donationMapper.donationToResponseDtoFalse(donation, beneficiaryAccount.getName(), beneficiaryAccount.getSurname(), accountBeneficiary.getAccountNumber());
         }else{
             throw new InsufficientFundsException("Tu cuenta no tiene suficientes fondos.");
         }

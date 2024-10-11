@@ -59,14 +59,12 @@ public class DonationControllerTest {
 
             // Arrange: Preparar las clases de Input y Output
             // se puede hacer fuera del test si son clases compartidas
-            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),123456l,
+            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),345347343L,
                     true);
 
-            var ResponseDonationDtoTrue = new ResponseDonationDtoTrue("e17efc6c-6d57-4542-8ac1-637251e7662b",
-                    BigDecimal.valueOf(100.0),
-                    "Mario","Grande",
-                    "Ulises", "Gonzales",
-                    LocalDateTime.now(), "PENDENT");
+            var ResponseDonationDtoTrue = new ResponseDonationDtoTrue("c12e32e4-0e27-438d-8861-cb1aaa619f56",
+                    BigDecimal.valueOf(100.0), "Ulises", "Gadea", 345347343L,
+                    "Mario", "Grande", LocalDateTime.now(), "PENDING");
 
             when(donationService.createDonationTrue(RequestDonationDto)).thenReturn(ResponseDonationDtoTrue);
 
@@ -82,6 +80,7 @@ public class DonationControllerTest {
                     .andExpect(jsonPath("$.amount", Matchers.is(ResponseDonationDtoTrue.amount().doubleValue())))
                     .andExpect(jsonPath("$.donorName", Matchers.is(ResponseDonationDtoTrue.donorName())))
                     .andExpect(jsonPath("$.donorLastName", Matchers.is(ResponseDonationDtoTrue.donorLastName())))
+                    .andExpect(jsonPath("$.beneficiaryAccountNumber", Matchers.is(ResponseDonationDtoTrue.beneficiaryAccountNumber())))
                     .andExpect(jsonPath("$.beneficiaryName", Matchers.is(ResponseDonationDtoTrue.beneficiaryName())))
                     .andExpect(jsonPath("$.beneficiaryLastName", Matchers.is(ResponseDonationDtoTrue.beneficiaryLastName())))
                     .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoTrue.createdAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")))))
@@ -93,14 +92,12 @@ public class DonationControllerTest {
 
             // Arrange: Preparar las clases de Input y Output
             // se puede hacer fuera del test si son clases compartidas
-            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),
-                    123456l, false);
+            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),345347343L,
+                    false);
 
-            var ResponseDonationDtoFalse = new ResponseDonationDtoFalse("e17efc6c-6d57-4542-8ac1-637251e7662b",
-                    BigDecimal.valueOf(100.0),"348ad942-10aa-42b8-8173-a763c8d9b7e3",
-                    "Pedro", "Pascal",
-                    LocalDateTime.now(),
-                    "PENDENT");
+            var ResponseDonationDtoFalse = new ResponseDonationDtoFalse("c12e32e4-0e27-438d-8861-cb1aaa619f56",
+                    BigDecimal.valueOf(100.0), 345347343L, "Mario",
+                    "Grande", LocalDateTime.now(), "PENDING");
 
             when(donationService.createDonationFalse(RequestDonationDto)).thenReturn(ResponseDonationDtoFalse);
 
@@ -114,7 +111,7 @@ public class DonationControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id", Matchers.is(ResponseDonationDtoFalse.id())))
                     .andExpect(jsonPath("$.amount", Matchers.is(ResponseDonationDtoFalse.amount().doubleValue())))
-                    .andExpect(jsonPath("$.accountIdBeneficiary", Matchers.is(ResponseDonationDtoFalse.accountIdBeneficiary())))
+                    .andExpect(jsonPath("$.beneficiaryAccountNumber", Matchers.is(ResponseDonationDtoFalse.beneficiaryAccountNumber())))
                     .andExpect(jsonPath("$.beneficiaryName", Matchers.is(ResponseDonationDtoFalse.beneficiaryName())))
                     .andExpect(jsonPath("$.beneficiaryLastName", Matchers.is(ResponseDonationDtoFalse.beneficiaryLastName())))
                     .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoFalse.createdAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")))))

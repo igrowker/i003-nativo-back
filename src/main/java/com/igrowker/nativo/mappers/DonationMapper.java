@@ -17,9 +17,10 @@ public interface DonationMapper {
 
     ResponseDonationDtoTrue donationToResponseDtoTrue(Donation donation);
 
-    @Mapping(source = "nameBenficiary", target = "beneficiaryName")
-    @Mapping(source = "nameLastBenficiary", target = "beneficiaryLastName")
-    ResponseDonationDtoFalse donationToResponseDtoFalse(Donation donation, String nameBenficiary, String nameLastBenficiary);
+    @Mapping(source = "nameBeneficiary", target = "beneficiaryName")
+    @Mapping(source = "nameLastBeneficiary", target = "beneficiaryLastName")
+    @Mapping(source = "numberAccountBeneficiary", target = "beneficiaryAccountNumber")
+    ResponseDonationDtoFalse donationToResponseDtoFalse(Donation donation, String nameBeneficiary, String nameLastBeneficiary, Long numberAccountBeneficiary);
 
     //CONFIRMATION
     Donation requestConfirmationDtoToDonation(RequestDonationConfirmationDto requestDonationDto);
