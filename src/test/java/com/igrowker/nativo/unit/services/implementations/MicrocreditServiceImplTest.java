@@ -1,5 +1,6 @@
 package com.igrowker.nativo.unit.services.implementations;
 
+import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditDto;
 import com.igrowker.nativo.dtos.microcredit.ResponseMicrocreditGetDto;
@@ -19,6 +20,7 @@ import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.utils.NotificationService;
 import com.igrowker.nativo.validations.Validations;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,6 +68,52 @@ public class MicrocreditServiceImplTest {
     @Mock
     private GeneralTransactions generalTransactions;
 
+    private Microcredit microcredit;
+    private Contribution contribution;
+    private ResponseMicrocreditGetDto responseMicrocreditGetDto;
+    private User borrowerUser;
+    private User lenderUser;
+    private Account borrowerAccount;
+    private Account lenderAccount;
+
+    @BeforeEach
+    public void setUp() {
+        borrowerUser = new User();
+        borrowerUser.setEmail("borrower@example.com");
+        borrowerUser.setName("John");
+        borrowerUser.setSurname("Doe");
+
+        borrowerAccount = new Account();
+        borrowerAccount.setId("borrowerAccountId");
+        borrowerAccount.setAccountNumber(1234567L);
+
+        lenderUser = new User();
+        lenderUser.setEmail("lender@example.com");
+        lenderUser.setName("Jane");
+        lenderUser.setSurname("Doe");
+
+        lenderAccount = new Account();
+        lenderAccount.setId("lenderAccountId");
+
+        microcredit = new Microcredit("microcreditId", borrowerAccount.getId(),
+                BigDecimal.valueOf(100000.00), BigDecimal.valueOf(100000.00),
+                BigDecimal.valueOf(110000.00), BigDecimal.ZERO, BigDecimal.ZERO,
+                "Test title", "Test Description",
+                LocalDateTime.of(2024, 10, 17, 18, 20),
+                LocalDateTime.of(2024, 9, 17, 18, 20), 1,
+                BigDecimal.valueOf(10.00), TransactionStatus.PENDING, List.of());
+
+        responseMicrocreditGetDto = new ResponseMicrocreditGetDto(microcredit.getId(),
+                microcredit.getBorrowerAccountId(), microcredit.getAmount(), microcredit.getRemainingAmount(),
+                microcredit.getCreatedDate(), microcredit.getExpirationDate(), microcredit.getTitle(),
+                microcredit.getDescription(), microcredit.getTransactionStatus(), List.of());
+
+        contribution = new Contribution();
+        contribution.setAmount(BigDecimal.valueOf(50000.00));
+        contribution.setLenderAccountId(lenderAccount.getId());
+        contribution.setTransactionStatus(TransactionStatus.PENDING);
+    }
+
     @Nested
     class CreateMicrocreditsTests {
         @Test
@@ -73,29 +121,14 @@ public class MicrocreditServiceImplTest {
             RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
                     BigDecimal.valueOf(100000.00));
 
-            Microcredit microcredit = new Microcredit("microcreditId", "borrowerAccountId", requestMicrocreditDto.amount(),
-                    requestMicrocreditDto.amount(), BigDecimal.valueOf(110000.00), BigDecimal.ZERO, BigDecimal.ZERO,
-                    requestMicrocreditDto.title(), requestMicrocreditDto.description(),
-                    LocalDateTime.of(2024, 10, 17, 18, 20),
-                    LocalDateTime.of(2024, 9, 17, 18, 20), 1,
-                    BigDecimal.valueOf(10.00), TransactionStatus.PENDING, List.of());
-
             ResponseMicrocreditDto responseMicrocreditDto = new ResponseMicrocreditDto("1234",
                     microcredit.getAmount(), microcredit.getAmountFinal(), microcredit.getRemainingAmount(),
                     microcredit.getCreatedDate(), microcredit.getExpirationDate(), microcredit.getTitle(),
                     microcredit.getDescription(), microcredit.getInstallmentCount(), microcredit.getInterestRate(),
                     microcredit.getTransactionStatus());
 
-            Account account = new Account();
-            account.setAccountNumber(1234567L);
-
-            User user = new User();
-            user.setEmail("test@example.com");
-            user.setName("John");
-            user.setSurname("Doe");
-
             when(microcreditMapper.requestDtoToMicrocredit(any())).thenReturn(microcredit);
-            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(user, account));
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
             when(microcreditRepository.save(any())).thenReturn(microcredit);
             when(microcreditMapper.responseDtoToMicrocredit(microcredit)).thenReturn(responseMicrocreditDto);
 
@@ -120,8 +153,8 @@ public class MicrocreditServiceImplTest {
             verify(microcreditMapper, times(1)).responseDtoToMicrocredit(microcredit);
 
             verify(notificationService, times(1)).sendPaymentNotification(
-                    eq(user.getEmail()),
-                    eq(user.getName() + " " + user.getSurname()),
+                    eq(borrowerUser.getEmail()),
+                    eq(borrowerUser.getName() + " " + borrowerUser.getSurname()),
                     eq(microcredit.getAmount()),
                     eq("Microcrédito Creado"),
                     contains("tu microcrédito con ID: " + microcredit.getId() + " ha sido creado exitosamente."),
@@ -149,48 +182,18 @@ public class MicrocreditServiceImplTest {
     class PayMicrocreditsTests {
         @Test
         public void payMicrocredit_ShouldReturnOk() throws Exception {
-            String microcreditId = "microcreditId";
-            BigDecimal amount = BigDecimal.valueOf(100000.00);
-            BigDecimal interestRate = BigDecimal.valueOf(10.00);
-            BigDecimal contributionAmount = BigDecimal.valueOf(50000.00);
-            BigDecimal interest = contributionAmount.multiply(interestRate).divide(BigDecimal.valueOf(100));
-            BigDecimal totalContributionAmountWithInterest = contributionAmount.add(interest);
-
-            // Usuario autenticado (Prestatario)
-            Account borrowerAccount = new Account();
-            borrowerAccount.setId("borrowerAccountId");
-
-            User borrowerUser = new User();
-            borrowerUser.setEmail("borrower@example.com");
-            borrowerUser.setName("John");
-            borrowerUser.setSurname("Doe");
+            BigDecimal interest = contribution.getAmount().multiply(microcredit.getInterestRate()).divide(BigDecimal.valueOf(100));
+            BigDecimal totalContributionAmountWithInterest = contribution.getAmount().add(interest);
 
             Validations.UserAccountPair userBorrower = new Validations.UserAccountPair(borrowerUser, borrowerAccount);
 
-            Contribution contribution = new Contribution();
-            contribution.setAmount(contributionAmount);
-            contribution.setLenderAccountId("lenderAccountId");
-            contribution.setTransactionStatus(TransactionStatus.PENDING);
-
-            Microcredit microcredit = new Microcredit();
-            microcredit.setId(microcreditId);
-            microcredit.setBorrowerAccountId(borrowerAccount.getId());
-            microcredit.setAmount(amount);
-            microcredit.setInterestRate(interestRate);
+            microcredit.setAmount(microcredit.getAmount());
+            microcredit.setInterestRate(microcredit.getInterestRate());
             microcredit.setContributions(List.of(contribution));
             microcredit.setTransactionStatus(TransactionStatus.PENDING);
 
-            // Usuario prestamista (Contribuyente)
-            Account lenderAccount = new Account();
-            lenderAccount.setId("lenderAccountId");
-
-            User lenderUser = new User();
-            lenderUser.setEmail("lender@example.com");
-            lenderUser.setName("Jane");
-            lenderUser.setSurname("Doe");
-
             when(validations.getAuthenticatedUserAndAccount()).thenReturn(userBorrower);
-            when(microcreditRepository.findById(microcreditId)).thenReturn(Optional.of(microcredit));
+            when(microcreditRepository.findById(microcredit.getId())).thenReturn(Optional.of(microcredit));
             when(validations.isUserAccountMismatch(borrowerAccount.getId())).thenReturn(false);
             when(validations.validateTransactionUserFunds(any())).thenReturn(true);
             when(accountRepository.findById("lenderAccountId")).thenReturn(Optional.of(lenderAccount));
@@ -204,23 +207,23 @@ public class MicrocreditServiceImplTest {
 
             when(microcreditRepository.save(any(Microcredit.class))).thenAnswer(invocation -> {
                 Microcredit savedMicrocredit = invocation.getArgument(0); // Obtenemos el microcrédito que se intenta guardar
-                savedMicrocredit.setId(microcreditId); // Aseguramos que tenga un ID no nulo
+                savedMicrocredit.setId(microcredit.getId()); // Aseguramos que tenga un ID no nulo
                 return savedMicrocredit; // Lo devolvemos como el microcrédito guardado
             });
 
-            ResponseMicrocreditPaymentDto response = microcreditServiceImpl.payMicrocredit(microcreditId);
+            ResponseMicrocreditPaymentDto response = microcreditServiceImpl.payMicrocredit(microcredit.getId());
 
             assertThat(response).isNotNull();
-            assertThat(response.id()).isEqualTo(microcreditId);
+            assertThat(response.id()).isEqualTo(microcredit.getId());
             assertThat(response.totalPaidAmount()).isEqualTo(totalContributionAmountWithInterest);
 
             verify(microcreditRepository, times(1)).save(microcredit);
             verify(notificationService, times(1)).sendPaymentNotification(
                     eq(lenderUser.getEmail()),
                     eq(lenderUser.getName() + " " + lenderUser.getSurname()),
-                    eq(contributionAmount),
+                    eq(contribution.getAmount()),
                     eq("Devolución cuota microcrédito"),
-                    contains("tu contribución al microcrédito con ID: " + microcreditId),
+                    contains("tu contribución al microcrédito con ID: " + microcredit.getId()),
                     contains("Gracias por tu participación")
             );
             verify(notificationService, times(1)).sendPaymentNotification(
@@ -228,60 +231,30 @@ public class MicrocreditServiceImplTest {
                     eq(borrowerUser.getName() + " " + borrowerUser.getSurname()),
                     eq(totalContributionAmountWithInterest),
                     eq("Descuento cuota del microcrédito"),
-                    contains("el descuento por el microcrédito con ID: " + microcreditId),
+                    contains("el descuento por el microcrédito con ID: " + microcredit.getId()),
                     contains("se deducirá automáticamente en tu próximo ingreso")
             );
         }
 
         @Test
         public void payMicrocredit_ShouldThrowException_WhenInsufficientFunds() throws Exception {
-            String microcreditId = "microcreditId";
-            BigDecimal amount = BigDecimal.valueOf(100000.00);
-            BigDecimal interestRate = BigDecimal.valueOf(10.00);
-            BigDecimal contributionAmount = BigDecimal.valueOf(50000.00);
-            BigDecimal interest = contributionAmount.multiply(interestRate).divide(BigDecimal.valueOf(100));
-            BigDecimal totalContributionAmountWithInterest = contributionAmount.add(interest);
-
-            // Usuario autenticado (Prestatario)
-            Account borrowerAccount = new Account();
-            borrowerAccount.setId("borrowerAccountId");
-
-            User borrowerUser = new User();
-            borrowerUser.setEmail("borrower@example.com");
-            borrowerUser.setName("John");
-            borrowerUser.setSurname("Doe");
+            BigDecimal interest = contribution.getAmount().multiply(microcredit.getInterestRate()).divide(BigDecimal.valueOf(100));
+            BigDecimal totalContributionAmountWithInterest = contribution.getAmount().add(interest);
 
             Validations.UserAccountPair userBorrower = new Validations.UserAccountPair(borrowerUser, borrowerAccount);
 
-            Contribution contribution = new Contribution();
-            contribution.setAmount(contributionAmount);
-            contribution.setLenderAccountId("lenderAccountId");
-            contribution.setTransactionStatus(TransactionStatus.PENDING);
-
-            Microcredit microcredit = new Microcredit();
-            microcredit.setId(microcreditId);
-            microcredit.setBorrowerAccountId(borrowerAccount.getId());
-            microcredit.setAmount(amount);
-            microcredit.setInterestRate(interestRate);
+            microcredit.setAmount(microcredit.getAmount());
+            microcredit.setInterestRate(microcredit.getInterestRate());
             microcredit.setContributions(List.of(contribution));
             microcredit.setTransactionStatus(TransactionStatus.PENDING);
 
-            // Usuario prestamista (Contribuyente)
-            Account lenderAccount = new Account();
-            lenderAccount.setId("lenderAccountId");
-
-            User lenderUser = new User();
-            lenderUser.setEmail("lender@example.com");
-            lenderUser.setName("Jane");
-            lenderUser.setSurname("Doe");
-
             when(validations.getAuthenticatedUserAndAccount()).thenReturn(userBorrower);
-            when(microcreditRepository.findById(microcreditId)).thenReturn(Optional.of(microcredit));
+            when(microcreditRepository.findById(microcredit.getId())).thenReturn(Optional.of(microcredit));
             when(validations.isUserAccountMismatch(borrowerAccount.getId())).thenReturn(false);
             when(validations.validateTransactionUserFunds(any())).thenReturn(false);
 
             Exception exception = assertThrows(InsufficientFundsException.class, () -> {
-                microcreditServiceImpl.payMicrocredit(microcreditId);
+                microcreditServiceImpl.payMicrocredit(microcredit.getId());
             });
 
             assertThat(exception.getMessage()).isEqualTo("Fondos insuficientes");
@@ -309,30 +282,9 @@ public class MicrocreditServiceImplTest {
     class GetAllMicrocreditsByUserTests {
         @Test
         public void getAllMicrocreditsByUser_ShouldReturnOk() throws Exception {
-            Microcredit microcredit = new Microcredit("microcreditId", "borrowerAccountId",
-                    BigDecimal.valueOf(100000.00), BigDecimal.valueOf(100000.00),
-                    BigDecimal.valueOf(110000.00), BigDecimal.ZERO, BigDecimal.ZERO,
-                    "Test title", "Test Description",
-                    LocalDateTime.of(2024, 10, 17, 18, 20),
-                    LocalDateTime.of(2024, 9, 17, 18, 20), 1,
-                    BigDecimal.valueOf(10.00), TransactionStatus.PENDING, List.of());
-
             List<Microcredit> microcreditList = List.of(microcredit);
 
-            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto(microcredit.getId(),
-                    microcredit.getBorrowerAccountId(), microcredit.getAmount(), microcredit.getRemainingAmount(),
-                    microcredit.getCreatedDate(), microcredit.getExpirationDate(), microcredit.getTitle(),
-                    microcredit.getDescription(), microcredit.getTransactionStatus(), List.of());
-
-            Account account = new Account();
-            account.setId(microcredit.getBorrowerAccountId());
-
-            User user = new User();
-            user.setEmail("test@example.com");
-            user.setName("John");
-            user.setSurname("Doe");
-
-            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(user, account));
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
             when(microcreditRepository.findAllByBorrowerAccountId(microcredit.getBorrowerAccountId())).thenReturn(microcreditList);
             when(microcreditMapper.responseMicrocreditGet(any(Microcredit.class), anyList())).thenReturn(responseMicrocreditGetDto);
 
@@ -349,26 +301,289 @@ public class MicrocreditServiceImplTest {
 
         @Test
         public void getAllMicrocreditsByUser_ShouldReturnNotFound() throws Exception {
-            String borrowerAccountId = "borrowerAccountId";
-            Account account = new Account();
-            account.setId(borrowerAccountId);
-
-            User user = new User();
-            user.setEmail("test@example.com");
-            user.setName("John");
-            user.setSurname("Doe");
-
-            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(user, account));
-            when(microcreditRepository.findAllByBorrowerAccountId(borrowerAccountId)).thenReturn(List.of());
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
+            when(microcreditRepository.findAllByBorrowerAccountId(borrowerAccount.getId())).thenReturn(List.of());
 
             assertThatThrownBy(() -> microcreditServiceImpl.getAllMicrocreditsByUser())
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("No se encontraron microcréditos.");
 
             verify(validations, times(1)).getAuthenticatedUserAndAccount();
-            verify(microcreditRepository, times(1)).findAllByBorrowerAccountId(borrowerAccountId);
+            verify(microcreditRepository, times(1)).findAllByBorrowerAccountId(borrowerAccount.getId());
+        }
+    }
+
+    @Nested
+    class GetAllMicrocreditsByUserByStatusTests {
+        @Test
+        public void getAllMicrocreditsByUserByStatus_ShouldReturnOk_WhenMicrocreditsFound() throws Exception {
+            String transactionStatus = TransactionStatus.PENDING.name();
+            List<Microcredit> microcreditList = List.of(microcredit);
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
+            when(validations.statusConvert(transactionStatus)).thenReturn(TransactionStatus.PENDING);
+            when(microcreditRepository.findByTransactionStatusAndBorrowerAccountId(TransactionStatus.PENDING, borrowerAccount.getId())).thenReturn(microcreditList);
+            when(microcreditMapper.responseMicrocreditGet(any(Microcredit.class), anyList())).thenReturn(responseMicrocreditGetDto);
+
+            List<ResponseMicrocreditGetDto> actualResponse = microcreditServiceImpl.getAllMicrocreditsByUserByStatus(transactionStatus);
+
+            assertThat(actualResponse).isNotNull();
+            assertThat(actualResponse).hasSize(1);
+            assertThat(actualResponse.get(0)).usingRecursiveComparison().isEqualTo(responseMicrocreditGetDto);
+
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(validations, times(1)).statusConvert(transactionStatus);
+            verify(microcreditRepository, times(1)).findByTransactionStatusAndBorrowerAccountId(TransactionStatus.PENDING, borrowerAccount.getId());
+            verify(microcreditMapper, times(1)).responseMicrocreditGet(any(Microcredit.class), anyList());
+        }
+
+        @Test
+        public void getAllMicrocreditsByUserByStatus_ShouldThrowResourceNotFoundException_WhenNoMicrocreditsFound() throws Exception {
+            String transactionStatus = TransactionStatus.PENDING.name();
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
+            when(validations.statusConvert(transactionStatus)).thenReturn(TransactionStatus.PENDING);
+            when(microcreditRepository.findByTransactionStatusAndBorrowerAccountId(TransactionStatus.PENDING, borrowerAccount.getId())).thenReturn(List.of()); // Lista vacía
+
+            assertThatThrownBy(() -> microcreditServiceImpl.getAllMicrocreditsByUserByStatus(transactionStatus))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("No se encontraron microcréditos para el usuario con el estado especificado.");
+
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(validations, times(1)).statusConvert(transactionStatus);
+            verify(microcreditRepository, times(1)).findByTransactionStatusAndBorrowerAccountId(TransactionStatus.PENDING, borrowerAccount.getId());
+        }
+    }
+
+    @Nested
+    class GetMicrocreditsBetweenDatesTests {
+        @Test
+        public void getMicrocreditsBetweenDates_ShouldReturnOk_WhenMicrocreditsFound() throws Exception {
+            String fromDate = "2024-10-01T00:00:00";
+            String toDate = "2024-10-10T23:59:59";
+
+            List<LocalDateTime> dateList = List.of(
+                    LocalDateTime.of(2024, 10, 1, 0, 0),
+                    LocalDateTime.of(2024, 10, 10, 23, 59, 59)
+            );
+
+            List<Microcredit> microcreditList = List.of(microcredit);
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
+            when(dateFormatter.getDateFromString(fromDate, toDate)).thenReturn(dateList);
+            when(microcreditRepository.findMicrocreditsBetweenDates(borrowerAccount.getId(), dateList.get(0), dateList.get(1))).thenReturn(microcreditList);
+            when(microcreditMapper.responseMicrocreditGet(any(Microcredit.class), anyList())).thenReturn(responseMicrocreditGetDto);
+
+            List<ResponseMicrocreditGetDto> actualResponse = microcreditServiceImpl.getMicrocreditsBetweenDates(fromDate, toDate);
+
+            assertThat(actualResponse).isNotNull();
+            assertThat(actualResponse).hasSize(1);
+            assertThat(actualResponse.get(0)).usingRecursiveComparison().isEqualTo(responseMicrocreditGetDto);
+
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(dateFormatter, times(1)).getDateFromString(fromDate, toDate);
+            verify(microcreditRepository, times(1)).findMicrocreditsBetweenDates(borrowerAccount.getId(), dateList.get(0), dateList.get(1));
+            verify(microcreditMapper, times(1)).responseMicrocreditGet(any(Microcredit.class), anyList());
+        }
+
+        @Test
+        public void getMicrocreditsBetweenDates_ShouldThrowResourceNotFoundException_WhenNoMicrocreditsFound() throws Exception {
+            String fromDate = "2024-10-01T00:00:00";
+            String toDate = "2024-10-10T23:59:59";
+
+            List<LocalDateTime> dateList = List.of(
+                    LocalDateTime.of(2024, 10, 1, 0, 0),
+                    LocalDateTime.of(2024, 10, 10, 23, 59, 59)
+            );
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
+            when(dateFormatter.getDateFromString(fromDate, toDate)).thenReturn(dateList);
+            when(microcreditRepository.findMicrocreditsBetweenDates(borrowerAccount.getId(), dateList.get(0), dateList.get(1))).thenReturn(List.of()); // Lista vacía
+
+            assertThatThrownBy(() -> microcreditServiceImpl.getMicrocreditsBetweenDates(fromDate, toDate))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("No posee microcréditos solicitados");
+
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(dateFormatter, times(1)).getDateFromString(fromDate, toDate);
+            verify(microcreditRepository, times(1)).findMicrocreditsBetweenDates(borrowerAccount.getId(), dateList.get(0), dateList.get(1));
+        }
+    }
+
+    @Nested
+    class GetMicrocreditsByDateAndStatusTests {
+        @Test
+        public void getMicrocreditsByDateAndStatus_ShouldReturnMicrocredits_WhenFound() throws Exception {
+            String date = "2024-10-10T00:00:00";
+            String transactionStatus = "PENDING";
+
+            List<Microcredit> microcreditList = List.of(microcredit);
+            ResponseContributionDto contributionDto = new ResponseContributionDto(contribution.getId(),
+                    lenderAccount.getId(), "LenderFullName", "BorrowerFullName", microcredit.getId(),
+                    contribution.getAmount(), contribution.getCreatedDate(), microcredit.getExpirationDate(), contribution.getTransactionStatus());
+            List<ResponseContributionDto> contributionsDto = List.of(contributionDto);
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
+            when(validations.statusConvert(transactionStatus)).thenReturn(TransactionStatus.PENDING);
+            when(dateFormatter.getDateFromString(date)).thenReturn(List.of(
+                    LocalDateTime.of(2024, 10, 10, 0, 0),
+                    LocalDateTime.of(2024, 10, 10, 23, 59)
+            ));
+            when(microcreditRepository.findMicrocreditsByDateAndTransactionStatus(
+                    borrowerAccount.getId(),
+                    LocalDateTime.of(2024, 10, 10, 0, 0),
+                    LocalDateTime.of(2024, 10, 10, 23, 59),
+                    TransactionStatus.PENDING)).thenReturn(microcreditList);
+            when(microcreditMapper.responseMicrocreditGet(any(Microcredit.class), anyList())).thenReturn(responseMicrocreditGetDto);
+
+            List<ResponseMicrocreditGetDto> actualResponse = microcreditServiceImpl.getMicrocreditsByDateAndStatus(date, transactionStatus);
+
+            assertThat(actualResponse).isNotNull();
+            assertThat(actualResponse).hasSize(1);
+            assertThat(actualResponse.get(0)).usingRecursiveComparison().isEqualTo(responseMicrocreditGetDto);
+
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(validations, times(1)).statusConvert(transactionStatus);
+            verify(dateFormatter, times(1)).getDateFromString(date);
+            verify(microcreditRepository, times(1)).findMicrocreditsByDateAndTransactionStatus(
+                    borrowerAccount.getId(),
+                    LocalDateTime.of(2024, 10, 10, 0, 0),
+                    LocalDateTime.of(2024, 10, 10, 23, 59),
+                    TransactionStatus.PENDING);
+            verify(microcreditMapper, times(1)).responseMicrocreditGet(any(Microcredit.class), anyList());
+        }
+
+        @Test
+        public void getMicrocreditsByDateAndStatus_ShouldThrowResourceNotFoundException_WhenNoMicrocreditsFound() throws Exception {
+            String date = "2024-10-10T00:00:00";
+            String transactionStatus = "PENDING";
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(borrowerUser, borrowerAccount));
+            when(validations.statusConvert(transactionStatus)).thenReturn(TransactionStatus.PENDING);
+            when(dateFormatter.getDateFromString(date)).thenReturn(List.of(
+                    LocalDateTime.of(2024, 10, 10, 0, 0),
+                    LocalDateTime.of(2024, 10, 10, 23, 59)
+            ));
+            when(microcreditRepository.findMicrocreditsByDateAndTransactionStatus(
+                    borrowerAccount.getId(),
+                    LocalDateTime.of(2024, 10, 10, 0, 0),
+                    LocalDateTime.of(2024, 10, 10, 23, 59),
+                    TransactionStatus.PENDING)).thenReturn(List.of());
+
+            assertThatThrownBy(() -> microcreditServiceImpl.getMicrocreditsByDateAndStatus(date, transactionStatus))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("No posee microcréditos solicitados");
+
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(validations, times(1)).statusConvert(transactionStatus);
+            verify(dateFormatter, times(1)).getDateFromString(date);
+            verify(microcreditRepository, times(1)).findMicrocreditsByDateAndTransactionStatus(
+                    borrowerAccount.getId(),
+                    LocalDateTime.of(2024, 10, 10, 0, 0),
+                    LocalDateTime.of(2024, 10, 10, 23, 59),
+                    TransactionStatus.PENDING);
+        }
+    }
+
+    @Nested
+    class GetAllMicrocreditsTests {
+        @Test
+        public void getAll_ShouldReturnMicrocredits_WhenFound() throws Exception {
+            List<Microcredit> microcredits = List.of(microcredit);
+
+            when(microcreditRepository.findAll()).thenReturn(microcredits);
+            when(microcreditMapper.responseMicrocreditGet(any(Microcredit.class), anyList())).thenReturn(responseMicrocreditGetDto);
+
+            List<ResponseMicrocreditGetDto> actualResponse = microcreditServiceImpl.getAll();
+
+            assertThat(actualResponse).isNotNull();
+            assertThat(actualResponse).hasSize(1);
+            assertThat(actualResponse.get(0)).usingRecursiveComparison().isEqualTo(responseMicrocreditGetDto);
+
+            verify(microcreditRepository, times(1)).findAll();
+            verify(microcreditMapper, times(1)).responseMicrocreditGet(any(Microcredit.class), anyList());
+        }
+
+        @Test
+        public void getAll_ShouldThrowResourceNotFoundException_WhenNoMicrocreditsFound() throws Exception {
+            when(microcreditRepository.findAll()).thenReturn(List.of());
+
+            assertThatThrownBy(() -> microcreditServiceImpl.getAll())
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("No se encontraron microcréditos.");
+
+            verify(microcreditRepository, times(1)).findAll();
+            verify(microcreditMapper, never()).responseMicrocreditGet(any(Microcredit.class), anyList());
+        }
+    }
+
+    @Nested
+    class GetOneMicrocreditTests {
+        @Test
+        public void getOne_ShouldReturnMicrocredit_WhenFound() throws Exception {
+            when(microcreditRepository.findById(microcredit.getId())).thenReturn(Optional.of(microcredit));
+            when(microcreditMapper.responseMicrocreditGet(eq(microcredit), anyList())).thenReturn(responseMicrocreditGetDto);
+
+            ResponseMicrocreditGetDto actualResponse = microcreditServiceImpl.getOne(microcredit.getId());
+
+            assertThat(actualResponse).isNotNull();
+            assertThat(actualResponse).usingRecursiveComparison().isEqualTo(responseMicrocreditGetDto);
+
+            verify(microcreditRepository, times(1)).findById(microcredit.getId());
+            verify(microcreditMapper, times(1)).responseMicrocreditGet(eq(microcredit), anyList());
+        }
+
+        @Test
+        public void getOne_ShouldThrowResourceNotFoundException_WhenNotFound() throws Exception {
+            String microcreditId = "nonExistentId";
+            when(microcreditRepository.findById(microcreditId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> microcreditServiceImpl.getOne(microcreditId))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Microcrédito no encontrado con id: " + microcreditId);
+
+            verify(microcreditRepository, times(1)).findById(microcreditId);
+            verify(microcreditMapper, never()).responseMicrocreditGet(any(Microcredit.class), anyList());
+        }
+    }
+
+    @Nested
+    class GetAllMicrocreditsByTransactionStatusTests {
+        @Test
+        public void getMicrocreditsByTransactionStatus_ShouldReturnMicrocredits_WhenFound() throws Exception {
+            String transactionStatus = "PENDING";
+            TransactionStatus enumStatus = TransactionStatus.PENDING;
+            List<Microcredit> microcreditList = List.of(microcredit);
+
+            when(validations.statusConvert(transactionStatus)).thenReturn(enumStatus);
+            when(microcreditRepository.findByTransactionStatus(enumStatus)).thenReturn(microcreditList);
+            when(microcreditMapper.responseMicrocreditGet(any(Microcredit.class), anyList())).thenReturn(responseMicrocreditGetDto);
+
+            List<ResponseMicrocreditGetDto> actualResponse = microcreditServiceImpl.getMicrocreditsByTransactionStatus(transactionStatus);
+
+            assertThat(actualResponse).isNotNull();
+            assertThat(actualResponse).hasSize(1);
+            assertThat(actualResponse.get(0)).usingRecursiveComparison().isEqualTo(responseMicrocreditGetDto);
+
+            verify(validations, times(1)).statusConvert(transactionStatus);
+            verify(microcreditRepository, times(1)).findByTransactionStatus(enumStatus);
+            verify(microcreditMapper, times(1)).responseMicrocreditGet(any(Microcredit.class), anyList());
+        }
+
+        @Test
+        public void getMicrocreditsByTransactionStatus_ShouldThrowResourceNotFoundException_WhenNotFound() throws Exception {
+            String transactionStatus = "COMPLETED";
+            TransactionStatus enumStatus = TransactionStatus.COMPLETED;
+
+            when(validations.statusConvert(transactionStatus)).thenReturn(enumStatus);
+            when(microcreditRepository.findByTransactionStatus(enumStatus)).thenReturn(List.of());
+
+            assertThatThrownBy(() -> microcreditServiceImpl.getMicrocreditsByTransactionStatus(transactionStatus))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("No se encontraron microcréditos con el estado especificado.");
+
+            verify(validations, times(1)).statusConvert(transactionStatus);
+            verify(microcreditRepository, times(1)).findByTransactionStatus(enumStatus);
         }
     }
 }
-
-
