@@ -1,6 +1,5 @@
 package com.igrowker.nativo.integration;
 
-
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
@@ -66,7 +65,7 @@ public class MicrocreditIntegrationTest {
     }
 
     @AfterAll
-    public static void teardown() { //Cuando termine, se cierra. :D
+    public static void teardown() {
         postgreSQLContainer.stop();
     }
 
@@ -567,5 +566,4 @@ public class MicrocreditIntegrationTest {
                     .body("message", Matchers.equalTo("El estado de la transacción no existe: COMPLETEED"));
         }
     }
-
 }

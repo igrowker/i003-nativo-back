@@ -4,7 +4,6 @@ import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Contribution;
 import com.igrowker.nativo.entities.Microcredit;
 import com.igrowker.nativo.entities.User;
-import com.igrowker.nativo.exceptions.ValidationException;
 import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.ContributionRepository;
 import com.igrowker.nativo.repositories.MicrocreditRepository;
@@ -67,7 +66,7 @@ public class ContributionIntegrationTest {
     }
 
     @AfterAll
-    public static void teardown() { //Cuando termine, se cierra. :D
+    public static void teardown() {
         postgreSQLContainer.stop();
     }
 
@@ -314,4 +313,3 @@ public class ContributionIntegrationTest {
         }
     }
 }
-

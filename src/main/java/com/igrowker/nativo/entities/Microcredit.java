@@ -62,6 +62,5 @@ public class Microcredit {
         this.transactionStatus = TransactionStatus.PENDING;
         this.installmentCount = 1;
         this.remainingAmount = this.amount;
-        //this.remainingInstallments = this.installmentCount;
     }
 }

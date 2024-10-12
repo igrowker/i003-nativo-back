@@ -21,13 +21,11 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final EmailService emailService;
 
-    //PAGO DE MICROCRÉDITO
     public void sendPaymentNotification(String email, String fullname, BigDecimal amount, String subject, String transaction, String pd) throws MessagingException {
         String htmlMessage = buildHtmlMessage(fullname, amount, subject, transaction, pd);
         emailService.sendVerificationEmail(email, subject, htmlMessage);
     }
 
-    // NOTIFICACIÓN AL SOLICITANTE AL REALIZARSE UNA CONTRIBUCIÓN
     public void sendContributionNotificationToBorrower(Microcredit microcredit, String lenderFullname, BigDecimal amount) throws MessagingException {
         Account borrowerAccount = accountRepository.findById(microcredit.getBorrowerAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("Borrower account not found"));
@@ -38,7 +36,6 @@ public class NotificationService {
         String borrowerEmail = borrowerUser.getEmail();
         String borrowerFullname = borrowerUser.getName() + " " + borrowerUser.getSurname();
 
-        // Preparar el mensaje del correo
         String subject = "Nueva contribución a tu microcrédito: " + microcredit.getId();
         String transaction = "Se ha recibido una contribución de " + lenderFullname + " a tu microcrédito.";
         String pd = "El dinero ya se encuentra acreditado en tu cuenta.";

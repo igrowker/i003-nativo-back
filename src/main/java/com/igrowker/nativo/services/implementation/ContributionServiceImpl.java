@@ -232,9 +232,3 @@ public class ContributionServiceImpl implements ContributionService {
                 .collect(Collectors.toList());
     }
 }
-      /*
-    ACCEPTED -- CUANDO SE CREE LA CONTRIBUCIÓN
-    DENIED -- FONDOS INSUFICIENTES
-    FAILED -- ALGUN PROBLEMA DE SISTEMA
-    COMPLETED -- SE DEVUELVE EL DINERO CONTRIBUIDO
-      */
