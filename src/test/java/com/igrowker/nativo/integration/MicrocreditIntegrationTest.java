@@ -1,6 +1,5 @@
 package com.igrowker.nativo.integration;
 
-
 import com.igrowker.nativo.dtos.contribution.RequestContributionDto;
 import com.igrowker.nativo.dtos.contribution.ResponseContributionDto;
 import com.igrowker.nativo.dtos.microcredit.RequestMicrocreditDto;
@@ -66,7 +65,7 @@ public class MicrocreditIntegrationTest {
     }
 
     @AfterAll
-    public static void teardown() { //Cuando termine, se cierra. :D
+    public static void teardown() {
         postgreSQLContainer.stop();
     }
 
@@ -374,6 +373,197 @@ public class MicrocreditIntegrationTest {
                     .statusCode(400)
                     .body("message", Matchers.comparesEqualTo("No puede contribuir. Presenta un microcrédito vencido. " +
                             "Debe regularizar su deuda."));
+        }
+    }
+
+    @Nested
+    class GetAllMicrocreditsByUser {
+        @Test
+        public void getAllMicrocreditsByUser_return_200() throws Exception {
+            microcredit = microcreditRepository.save(microcredit);
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/microcreditos/usuario-logueado")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1))
+                    .body("[0].id", Matchers.is(microcredit.getId()));
+        }
+
+        @Test
+        public void getAllMicrocreditsByUser_noMicrocredits_return_404() throws Exception {
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/microcreditos/usuario-logueado")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.equalTo("No se encontraron microcréditos."));
+        }
+    }
+
+    @Nested
+    class GetAllMicrocreditsByUserByStatus {
+        @Test
+        public void getAllMicrocreditsByUserByStatus_return_200() throws Exception {
+            microcredit = microcreditRepository.save(microcredit);
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get(String.format("/api/microcreditos/estado/%s", "PENDING"))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1))
+                    .body("[0].id", Matchers.is(microcredit.getId()));
+        }
+
+        @Test
+        public void getAllMicrocreditsByUserByStatus_noMicrocredits_return_404() throws Exception {
+            microcredit = microcreditRepository.save(microcredit);
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get(String.format("/api/microcreditos/estado/%s", "COMPLETED"))
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.equalTo("No se encontraron microcréditos para el usuario con el estado especificado."));
+        }
+    }
+
+    @Nested
+    class GetMicrocreditsBetweenDates {
+        @Test
+        public void getMicrocreditsBetweenDates_return_200() throws Exception {
+            microcredit = microcreditRepository.save(microcredit);
+
+            String fromDate = "2024-01-01";
+            String toDate = "2024-12-12";
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate)
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1))
+                    .body("[0].id", Matchers.is(microcredit.getId()));
+        }
+
+        @Test
+        public void getMicrocreditsBetweenDates_noMicrocredits_return_404() throws Exception {
+            String fromDate = "2024-01-01";
+            String toDate = "2024-09-29";
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate)
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.equalTo("No posee microcréditos solicitados"));
+        }
+
+        @Test
+        public void getMicrocreditsBetweenDates_invalidDates_return_400() throws Exception {
+            String fromDate = "2024-12-31";
+            String toDate = "2024-01-01";
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/microcreditos/entrefechas?fromDate=" + fromDate + "&toDate=" + toDate)
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.equalTo("La fecha final no puede ser menor a la inicial."));
+        }
+    }
+
+    @Nested
+    class GetMicrocreditsByDateAndStatus {
+        @Test
+        public void getMicrocreditsByDateAndStatus_return_200() throws Exception {
+            microcredit = microcreditRepository.save(microcredit);
+
+            String date = LocalDate.now().toString();
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/microcreditos/buscar-fecha-estado?date=" + date + "&status=PENDING")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("$", Matchers.hasSize(1))
+                    .body("[0].id", Matchers.is(microcredit.getId()));
+        }
+
+        @Test
+        public void getMicrocreditsByDateAndStatus_noMicrocredits_return_404() throws Exception {
+            String date = "2024-01-01";
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/microcreditos/buscar-fecha-estado?date=" + date + "&status=COMPLETED")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.equalTo("No posee microcréditos solicitados"));
+        }
+
+        @Test
+        public void getMicrocreditsByDateAndStatus_invalidStatus_return_400() throws Exception {
+            String date = "2024-01-01";
+
+            given()
+                    .baseUri(baseURL)
+                    .header("Authorization", borrowerToken)
+                    .when()
+                    .get("/api/microcreditos/buscar-fecha-estado?date=" + date + "&status=COMPLETEED")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.equalTo("El estado de la transacción no existe: COMPLETEED"));
         }
     }
 }

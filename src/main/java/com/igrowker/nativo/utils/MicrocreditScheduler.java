@@ -33,7 +33,7 @@ public class MicrocreditScheduler {
     private final NotificationService notificationService;
 
     @Transactional
-    @Scheduled(cron = "0 0 0 * * ?", zone = "America/Argentina/Buenos_Aires") // Ejecuta todos los días a la medianoche
+    @Scheduled(cron = "0 0 0 * * ?", zone = "America/Argentina/Buenos_Aires")
     public void checkAndExpireMicrocredits() throws MessagingException {
         LocalDateTime today = LocalDateTime.now();
 
@@ -89,7 +89,6 @@ public class MicrocreditScheduler {
 
     @Transactional
     @Scheduled(cron = "0 0 17 * * MON-FRI", zone = "America/Argentina/Buenos_Aires")
-    // Ejecuta a las 17:00 horas. Todos los días y todos los meses. Solo de lunes a viernes.
     public void processPayAutomaticMicrocredits() {
         LocalDateTime today = LocalDateTime.now();
         processMicrocreditPayments(today, TransactionStatus.PENDING);
@@ -133,7 +132,7 @@ public class MicrocreditScheduler {
                         "No tienes saldo suficiente para pagar el microcrédito con ID: " + microcredit.getId(),
                         "Te recomendamos que deposites fondos en tu cuenta para procesar el pago en el futuro."
                 );
-                return; // Si no tiene fondos suficientes, sale del método.
+                return;
             }
         }
 
@@ -201,7 +200,6 @@ public class MicrocreditScheduler {
 
     @Transactional
     @Scheduled(cron = "0 0 18 * * MON-FRI", zone = "America/Argentina/Buenos_Aires")
-    // Ejecuta a las 18:00 horas. Todos los días y todos los meses. Solo de lunes a viernes.
     public void processExpiredMicrocreditPayments() {
         LocalDateTime today = LocalDateTime.now();
 

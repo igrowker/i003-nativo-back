@@ -83,7 +83,6 @@ public class MicrocreditServiceImpl implements MicrocreditService {
         Microcredit microcredit = microcreditRepository.findById(microcreditId)
                 .orElseThrow(() -> new ResourceNotFoundException("Microcrédito no encontrado para el usuario"));
 
-        //Chequear que funcione
         if (validations.isUserAccountMismatch(userBorrower.account.getId())) {
             throw new InvalidUserCredentialsException("El usuario no tiene permiso para pagar este microcrédito.");
         }
@@ -347,12 +346,3 @@ public class MicrocreditServiceImpl implements MicrocreditService {
                 .collect(Collectors.toList());
     }
 }
-    /*
-    Listar todos los microcreditos, comparar la fecha de vencimiento con la actual.
-    ACCEPTED -- SE COMPLETA EL MONTO TOTAL
-    DENIED -- NO CUMPLE CON VENCIMIENTO O PENDIENTES,
-    FAILED -- ALGUN PROBLEMA DE SISTEMA
-    PENDENT -- AL CREARSE EL MICROCREDITO
-    EXPIRED -- SUPERA LA FECHA DE VENCIMIENTO Y NO TIENE FONDOS ENTRA EN DEUDA.
-    COMPLETED -- AL CUMPLIRSE CON EL PAGO DEL MICRO EN TERMINO
-     */
