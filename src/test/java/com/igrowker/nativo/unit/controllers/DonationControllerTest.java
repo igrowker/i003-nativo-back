@@ -59,11 +59,11 @@ public class DonationControllerTest {
 
             // Arrange: Preparar las clases de Input y Output
             // se puede hacer fuera del test si son clases compartidas
-            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),345347343L,
+            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),345347333L,
                     true);
 
             var ResponseDonationDtoTrue = new ResponseDonationDtoTrue("c12e32e4-0e27-438d-8861-cb1aaa619f56",
-                    BigDecimal.valueOf(100.0), "Ulises", "Gadea", 345347343L,
+                    BigDecimal.valueOf(100.0), "Ulises", "Gadea", 345347333L,
                     "Mario", "Grande", LocalDateTime.now(), "PENDING");
 
             when(donationService.createDonationTrue(RequestDonationDto)).thenReturn(ResponseDonationDtoTrue);
@@ -92,11 +92,11 @@ public class DonationControllerTest {
 
             // Arrange: Preparar las clases de Input y Output
             // se puede hacer fuera del test si son clases compartidas
-            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),345347343L,
+            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),345347333L,
                     false);
 
             var ResponseDonationDtoFalse = new ResponseDonationDtoFalse("c12e32e4-0e27-438d-8861-cb1aaa619f56",
-                    BigDecimal.valueOf(100.0), 345347343L, "Mario",
+                    BigDecimal.valueOf(100.0), 345347333L, "Mario",
                     "Grande", LocalDateTime.now(), "PENDING");
 
             when(donationService.createDonationFalse(RequestDonationDto)).thenReturn(ResponseDonationDtoFalse);

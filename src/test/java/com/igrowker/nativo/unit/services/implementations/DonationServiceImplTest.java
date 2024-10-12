@@ -320,28 +320,47 @@ public class DonationServiceImplTest {
     class ConfirmationDonationTest {
 
         @Test
-        public void confirmation_donation_should_be_Ok() throws Exception {
-            var requestDonationConfirmationDto = new RequestDonationConfirmationDto("b600b795-6420-412f-b1a5-e2d6501adc2a",
-                    "348ad942-10aa-42b8-8173-a763c8d9b7e3",
-                    "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",
+        public void confirmation_ACCEPTED_donation_should_be_Ok() throws Exception {
+            var requestDonationConfirmationDto = new RequestDonationConfirmationDto(
+                    "c12e32e4-0e27-438d-8861-cb1aaa619f56",
                     TransactionStatus.ACCEPTED);
-            var responseDonationConfirmationDto = new ResponseDonationConfirmationDto("b600b795-6420-412f-b1a5-e2d6501adc2a",
-                    BigDecimal.valueOf(100.0), "348ad942-10aa-42b8-8173-a763c8d9b7e3",
-                    "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c", TransactionStatus.ACCEPTED);
 
-            // Mockeando el comportamiento de los repositorios y validaciones
-            when(donationRepository.findById(donation.getId())).thenReturn(Optional.of(donation));
-            when(validations.isUserAccountMismatch(any())).thenReturn(false);
-            when(donationMapper.requestConfirmationDtoToDonation(any(RequestDonationConfirmationDto.class))).thenReturn(donation);
-            when(accountRepository.findById("348ad942-10aa-42b8-8173-a763c8d9b7e3")).thenReturn(Optional.of(accountDonor));
+            var responseDonationConfirmationDto = new ResponseDonationConfirmationDto(
+                    "c12e32e4-0e27-438d-8861-cb1aaa619f56",
+                    BigDecimal.valueOf(100.0),
+                    "f89de776-3e64-42c0-b880-8d9e1f5697c8",
+                    "a63a054d-fbc4-44f4-beaa-084b2c0e0192",
+                    TransactionStatus.ACCEPTED);
+            var donation = new Donation("c12e32e4-0e27-438d-8861-cb1aaa619f56",
+                    BigDecimal.valueOf(100.0), TransactionStatus.ACCEPTED, "f89de776-3e64-42c0-b880-8d9e1f5697c8",
+                    "a63a054d-fbc4-44f4-beaa-084b2c0e0192", true, LocalDateTime.now(), LocalDateTime.now());
+
+
+            // Mockeando el comportamiento de los repositorios y servicios
+            when(donationRepository.findById(requestDonationConfirmationDto.id())).thenReturn(Optional.of(donation));
+            when(validations.isUserAccountMismatch(donation.getAccountIdBeneficiary())).thenReturn(false);
+            when(donationMapper.requestConfirmationDtoToDonation(requestDonationConfirmationDto)).thenReturn(donation);
+            when(accountRepository.findById("f89de776-3e64-42c0-b880-8d9e1f5697c8")).thenReturn(Optional.of(accountDonor));
+
+            // Mock para returnAmount
             doNothing().when(donationServiceImplTest).returnAmount(donation.getAccountIdDonor(), donation.getAmount());
-            doNothing().when(generalTransactions).updateBalances(donation.getAccountIdDonor(), donation.getAccountIdBeneficiary(), donation.getAmount());
-            when(donationRepository.save(any(Donation.class))).thenReturn(donation);
-            when(donationMapper.donationToResponseConfirmationDto(any(Donation.class))).thenReturn(responseDonationConfirmationDto);
 
+            // Simulación de updateBalances
+            doNothing().when(generalTransactions).updateBalances(
+                    donation.getAccountIdDonor(),
+                    donation.getAccountIdBeneficiary(),
+                    donation.getAmount());
+
+            // Mock para save
+            when(donationRepository.save(any(Donation.class))).thenReturn(donation);
+
+            // Mock para mapper
+            when(donationMapper.donationToResponseConfirmationDto(any(Donation.class))).thenReturn(responseDonationConfirmationDto);
 
             // Ejecutando el servicio
             ResponseDonationConfirmationDto res = donationServiceImpl.confirmationDonation(requestDonationConfirmationDto);
+
+            // Aserciones
             assertThat(res).isNotNull();
             assertThat(res.id()).isEqualTo(responseDonationConfirmationDto.id());
             assertThat(res.amount()).isEqualTo(responseDonationConfirmationDto.amount());
@@ -349,20 +368,19 @@ public class DonationServiceImplTest {
             assertThat(res.accountIdBeneficiary()).isEqualTo(responseDonationConfirmationDto.accountIdBeneficiary());
             assertThat(res.status()).isEqualTo(responseDonationConfirmationDto.status());
 
-            // Verificando que se llama a los métodos correctos
-            verify(donationRepository, times(1)).findById(donation.getId());
-            verify(validations, times(1)).isUserAccountMismatch(donation.getAccountIdBeneficiary()); // resolver arriba
-            verify(accountRepository, times(1)).findById("348ad942-10aa-42b8-8173-a763c8d9b7e3");
-            verify(donationMapper, times(1)).requestConfirmationDtoToDonation(any(RequestDonationConfirmationDto.class));
-            verify(generalTransactions).updateBalances(
+            // Verificando las interacciones
+            verify(donationRepository, times(1)).findById(requestDonationConfirmationDto.id());
+            verify(validations, times(1)).isUserAccountMismatch(donation.getAccountIdBeneficiary());
+            verify(donationMapper, times(1)).requestConfirmationDtoToDonation(requestDonationConfirmationDto);
+            verify(donationServiceImplTest, times(1)).returnAmount(donation.getAccountIdDonor(), donation.getAmount());
+            verify(generalTransactions, times(1)).updateBalances(
                     donation.getAccountIdDonor(),
                     donation.getAccountIdBeneficiary(),
                     donation.getAmount());
-            verify(donationRepository).save(any(Donation.class));
-            verify(donationMapper).donationToResponseConfirmationDto(any(Donation.class));
-
-
+            verify(donationRepository, times(1)).save(any(Donation.class));
+            verify(donationMapper, times(1)).donationToResponseConfirmationDto(donation);
         }
+
     }
 
 }
