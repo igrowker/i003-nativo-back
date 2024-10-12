@@ -12,9 +12,11 @@ import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.DonationRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.DonationService;
+import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.validations.Validations;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cglib.core.Local;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +38,7 @@ public class DonationServiceImpl implements DonationService {
 
     private final GeneralTransactions generalTransactions;
     private final Validations validations;
+    private final DateFormatter dateFormatter;
 
     @Override
     public ResponseDonationDtoTrue createDonationTrue(RequestDonationDto requestDonationDto) {
@@ -135,7 +138,6 @@ public class DonationServiceImpl implements DonationService {
 
 
         }
-
         throw new ResourceAlreadyExistsException("Esta donacion ya fue finalizada");
     }
 
@@ -223,6 +225,31 @@ public class DonationServiceImpl implements DonationService {
                     .sorted(Comparator.comparing(ResponseDonationRecord::updateAt).reversed())
                     .collect(Collectors.toList()));
         }
+    }
+
+    @Override
+    public List<ResponseDonationRecord> getDonationBtBetweenDatesOrStatus(String fromDate, String toDate, String status) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        if (status == null && (fromDate == null || toDate == null)) {
+            throw new ResourceNotFoundException("Se debe de ingresar las fechas de inicio y fin o un status");
+        }
+
+        List<Donation> donations;
+
+        if (fromDate == null || toDate == null) {
+            TransactionStatus transactionStatus = validations.statusConvert(status);
+            donations = donationRepository.findDonationsByStatus(accountAndUser.account.getId(), transactionStatus);
+        } else {
+            List<LocalDateTime> dateTimes = dateFormatter.getDateFromString(fromDate, toDate);
+            LocalDateTime startDate = dateTimes.get(0);
+            LocalDateTime endDate = dateTimes.get(1);
+            donations = donationRepository.findDonationsByDateRange(accountAndUser.account.getId(), startDate, endDate);
+        }
+
+        donations.sort(Comparator.comparing(Donation::getUpdateAt).reversed());
+
+        return donationMapper.listDonationToListResponseDonationRecordTwo(donations);
     }
 
 

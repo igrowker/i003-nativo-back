@@ -14,4 +14,6 @@ public interface DonationService {
     List<ResponseDonationRecord> recordDonationDonor(String idAccount);
 
     List<ResponseDonationRecord> recordDonationBeneficiary(String idAccount);
+
+    List<ResponseDonationRecord> getDonationBtBetweenDatesOrStatus(String fromDate, String toDate, String status);
 }

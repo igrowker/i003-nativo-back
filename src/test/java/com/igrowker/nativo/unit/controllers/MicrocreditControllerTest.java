@@ -58,7 +58,7 @@ public class MicrocreditControllerTest {
     ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Nested
-    class CreateTest {
+    class CreateMicrocreditsTests {
         @Test
         public void createMicrocredit_ShouldReturnOk() throws Exception {
             RequestMicrocreditDto requestMicrocreditDto = new RequestMicrocreditDto("Test title", "Test Description",
@@ -119,7 +119,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class PayMicrocredit {
+    class PayMicrocreditsTests {
         @Test
         public void payMicrocredit_ShouldReturnOk() throws Exception {
             ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
@@ -138,7 +138,7 @@ public class MicrocreditControllerTest {
         }
 
         @Test
-        public void payMicrocredit_ShouldReturnNotOk() throws Exception {
+        public void payMicrocredit_ShouldReturnNotFound() throws Exception {
             ResponseMicrocreditPaymentDto responseMicrocreditPaymentDto = new ResponseMicrocreditPaymentDto("1234",
                     BigDecimal.valueOf(1000.00));
 
@@ -167,7 +167,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocreditsByUser {
+    class GetAllMicrocreditsByUserTests {
         @Test
         public void getAllMicrocreditsByUser_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
@@ -203,7 +203,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocreditsByUserByStatus {
+    class GetAllMicrocreditsByUserByStatusTests {
         @Test
         public void getAllMicrocreditsByUserByStatus_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
@@ -241,11 +241,11 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocreditsBetweenDates {
+    class GetAllMicrocreditsBetweenDatesTests {
         @Test
         public void getMicrocreditsBetweenDates_ShouldReturnOk() throws Exception {
-            String fromDate = LocalDate.now().toString();
-            String toDate = "2023-12-31";
+            String fromDate = "2024-09-01";
+            String toDate = "2024-10-01";
 
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
                     BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.of(2024, 9, 20, 12, 05),
@@ -297,7 +297,48 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocredits {
+    class GetMicrocreditsByDateAndStatusTests {
+        @Test
+        public void getMicrocreditsByDateAndStatus_ShouldReturnOk() throws Exception {
+            String date = "2024-09-20";
+
+            ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.of(2024, 9, 20, 12, 05),
+                    LocalDateTime.of(2024, 10, 17, 18, 20),
+                    "Test title", "Test Description", TransactionStatus.COMPLETED, List.of());
+
+            when(microcreditService.getMicrocreditsByDateAndStatus(date, "COMPLETED")).thenReturn(List.of(responseMicrocreditGetDto));
+
+            mockMvc.perform(get("/api/microcreditos//buscar-fecha-estado?date=" + date + "&status=" + "COMPLETED"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseMicrocreditGetDto.id())))
+                    .andExpect(jsonPath("$[0].borrowerAccountId", Matchers.is(responseMicrocreditGetDto.borrowerAccountId())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseMicrocreditGetDto.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].remainingAmount", Matchers.is(responseMicrocreditGetDto.remainingAmount().doubleValue())))
+                    .andExpect(jsonPath("$[0].createdDate", Matchers.is(responseMicrocreditGetDto.createdDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].expirationDate", Matchers.is(responseMicrocreditGetDto.expirationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$[0].title", Matchers.is(responseMicrocreditGetDto.title())))
+                    .andExpect(jsonPath("$[0].description", Matchers.is(responseMicrocreditGetDto.description())))
+                    .andExpect(jsonPath("$[0].transactionStatus", Matchers.is(responseMicrocreditGetDto.transactionStatus().toString())))
+                    .andExpect(jsonPath("$[0].contributions", Matchers.hasSize(0)));
+        }
+
+        @Test
+        public void getMicrocreditsByDateAndStatus_ShouldReturnNotFound() throws Exception {
+            String date = LocalDate.now().toString();
+
+            when(microcreditService.getMicrocreditsByDateAndStatus(date, "COMPLETED"))
+                    .thenThrow(new ResourceNotFoundException("No posee microcréditos solicitados"));
+
+            mockMvc.perform(get("/api/microcreditos//buscar-fecha-estado?date=" + date + "&status=" + "COMPLETED"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("No posee microcréditos solicitados")));
+        }
+    }
+
+    @Nested
+    class GetAllMicrocreditsTests {
         @Test
         public void getAll_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("microcredits",
@@ -338,7 +379,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetOneMicrocredit {
+    class GetOneMicrocreditTests {
         @Test
         public void getOne_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
@@ -363,7 +404,7 @@ public class MicrocreditControllerTest {
         }
 
         @Test
-        public void getOne_ShouldNotReturnOk() throws Exception {
+        public void getOne_ShouldReturnNotFound() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
                     BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.now(),
                     LocalDateTime.of(2024, 10, 17, 18, 20),
@@ -379,11 +420,11 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class GetAllMicrocreditsByTransactionStatus {
+    class GetAllMicrocreditsByTransactionStatusTests {
         @Test
         public void getMicrocreditsByTransactionStatus_ShouldReturnOk() throws Exception {
             ResponseMicrocreditGetDto responseMicrocreditGetDto = new ResponseMicrocreditGetDto("1234", "5678",
-                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00),LocalDateTime.of(2024, 9, 17, 18, 20),
+                    BigDecimal.valueOf(10000.00), BigDecimal.valueOf(100.00), LocalDateTime.of(2024, 9, 17, 18, 20),
                     LocalDateTime.of(2024, 10, 17, 18, 20),
                     "Test title", "Test Description", TransactionStatus.ACCEPTED, List.of());
 
@@ -415,7 +456,7 @@ public class MicrocreditControllerTest {
     }
 
     @Nested
-    class CreateContribution {
+    class CreateContributionsTests {
         @Test
         public void createContribution_ShouldReturnOk() throws Exception {
             RequestContributionDto requestContributionDto = new RequestContributionDto("1234",
@@ -424,7 +465,7 @@ public class MicrocreditControllerTest {
             ResponseContributionDto responseContributionDto = new ResponseContributionDto("5678", "lenderAccountId_Test",
                     "Tester1", "Tester2", "1234",
 
-                    BigDecimal.valueOf(10000.00),  LocalDateTime.of(2024, 9, 17, 18, 20),
+                    BigDecimal.valueOf(10000.00), LocalDateTime.of(2024, 9, 17, 18, 20),
                     LocalDateTime.of(2024, 9, 17, 18, 20),
                     TransactionStatus.ACCEPTED);
 
