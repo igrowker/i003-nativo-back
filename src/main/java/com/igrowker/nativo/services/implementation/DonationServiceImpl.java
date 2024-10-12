@@ -46,6 +46,10 @@ public class DonationServiceImpl implements DonationService {
 
         if (validations.validateTransactionUserFunds(requestDonationDto.amount())) {
             Account accountBeneficiary = accountRepository.findAccountByNumberAccount(requestDonationDto.numberAccountBeneficiary()).orElseThrow(() -> new ResourceNotFoundException("El numero de cuenta beneficiario no existe"));
+            // IMPORTANTE AGREGUE ESTO
+            if (donor.account.getId().equals(accountBeneficiary.getId())){
+                throw new IllegalArgumentException("No puedes donarte a ti mismo");
+            }
 
             User beneficiary = userRepository.findById(accountBeneficiary.getUserId()).orElseThrow(() -> new ResourceNotFoundException("El id del usuario beneficiario no existe"));
 
@@ -80,6 +84,11 @@ public class DonationServiceImpl implements DonationService {
 
         if (validations.validateTransactionUserFunds(requestDonationDto.amount())){
             Account accountBeneficiary = accountRepository.findAccountByNumberAccount(requestDonationDto.numberAccountBeneficiary()).orElseThrow(() -> new ResourceNotFoundException("El numero de cuenta beneficiario no existe"));
+            // IMPORTANTE AGREGUE ESTO
+            if (donor.account.getId().equals(accountBeneficiary.getId())){
+                throw new IllegalArgumentException("No puedes donarte a ti mismo");
+            }
+
             User beneficiaryAccount = userRepository.findById(accountBeneficiary.getUserId()).orElseThrow(() -> new ResourceNotFoundException("El id de usuario beneficiario no existe"));
             donor.account.setReservedAmount(donor.account.getReservedAmount().add(requestDonationDto.amount()));
             accountRepository.save(donor.account);
@@ -218,7 +227,7 @@ public class DonationServiceImpl implements DonationService {
 
 
     public void returnAmount(String id, BigDecimal amount){
-        Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+        Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("La cuenta del donador no existe"));
         donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(amount));
         accountRepository.save(donorAccount);
     }
