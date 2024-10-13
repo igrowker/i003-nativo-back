@@ -7,6 +7,7 @@ import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.TransactionStatus;
 import com.igrowker.nativo.entities.User;
 import com.igrowker.nativo.exceptions.InsufficientFundsException;
+import com.igrowker.nativo.exceptions.InvalidDataException;
 import com.igrowker.nativo.exceptions.InvalidUserCredentialsException;
 import com.igrowker.nativo.exceptions.ResourceNotFoundException;
 import com.igrowker.nativo.mappers.DonationMapper;
@@ -535,6 +536,7 @@ public class DonationServiceImplTest {
         }
     }
 
+
     @Nested
     class GetDonationBtBetweenDatesOrStatus {
 
@@ -587,18 +589,6 @@ public class DonationServiceImplTest {
             verify(validations, times(1)).statusConvert(anyString());
             verify(donationRepository, times(1)).findDonationsByStatus(any(), any());
             verify(donationMapper, times(1)).listDonationToListResponseDonationRecordTwo(any());
-        }
-
-        @Test
-        public void get_donations_by_status_ResourceNotFoundException_second() throws Exception {
-
-            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(userDonor, accountDonor));
-            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
-                donationServiceImpl.getDonationBtBetweenDatesOrStatus(null, null, null);
-            });
-            String expectedMessage = "Se debe de ingresar las fechas de inicio y fin o un status";
-            String actualMessage = exception.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
         }
 
 
@@ -676,6 +666,19 @@ public class DonationServiceImplTest {
         }
 
         @Test
+        public void get_donations_by_status_ResourceNotFoundException_second() throws Exception {
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(userDonor, accountDonor));
+            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
+                donationServiceImpl.getDonationBtBetweenDatesOrStatus(null, null, null);
+            });
+            String expectedMessage = "Se debe de ingresar las fechas de inicio y fin o un status";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
+
+
+        @Test
         public void get_donations_ResourceNotFoundException_one() throws Exception {
 
             when(validations.getAuthenticatedUserAndAccount()).thenThrow(new ResourceNotFoundException("La cuenta indicada no coincide con el usuario logueado en la aplicación"));
@@ -699,6 +702,8 @@ public class DonationServiceImplTest {
             String actualMessage = exception.getMessage();
             assertTrue(actualMessage.contains(expectedMessage));
         }
+
+
 
     }
 }

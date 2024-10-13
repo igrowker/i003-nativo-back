@@ -150,7 +150,6 @@ public class DonationServiceImpl implements DonationService {
         }
 
         var donor = validations.getAuthenticatedUserAndAccount();
-
         List<Donation> donationList = donationRepository.findAllByAccountIdDonor(donor.account.getId()).orElseThrow(() -> new ResourceNotFoundException("No hay donacion que tenga ese id de cuenta"));
 
         List<ResponseDonationRecord> donationsb = new ArrayList<>();
