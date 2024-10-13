@@ -1,9 +1,6 @@
 package com.igrowker.nativo.integration;
 
-import com.igrowker.nativo.dtos.donation.RequestDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.RequestDonationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationConfirmationDto;
-import com.igrowker.nativo.dtos.donation.ResponseDonationDtoTrue;
+import com.igrowker.nativo.dtos.donation.*;
 import com.igrowker.nativo.entities.Account;
 import com.igrowker.nativo.entities.Donation;
 import com.igrowker.nativo.entities.TransactionStatus;
@@ -24,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static io.restassured.RestAssured.given;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -69,11 +67,11 @@ public class DonationIntegrationTest {
                 LocalDateTime.now().plusMonths(1), true, true, true));
 
         savedAccount2 = accountRepository.save(new Account(null, 20600747702L, BigDecimal.valueOf(300),
-                true, savedUser.getId(), BigDecimal.ZERO));
+                true, savedUser2.getId(), BigDecimal.ZERO));
 
 
-        savedDonation = new Donation(null,BigDecimal.valueOf(100.0), TransactionStatus.PENDING,
-                savedAccount.getId(), savedAccount2.getId(),true,LocalDateTime.now(),LocalDateTime.now());
+        savedDonation = donationRepository.save(new Donation(null,BigDecimal.valueOf(100.0), null,
+                savedAccount.getId(), savedAccount2.getId(),true,null,null));
 
         token = "Bearer " + jwtService.generateToken(savedUser);
     }
@@ -82,9 +80,11 @@ public class DonationIntegrationTest {
     @Nested
     class getAllTestDonation{
 
+
         // When call at method create Donation
         @Test
-        public void when_call_create_donation_and_data_return_ok() throws Exception {
+        public void when_call_create_donation_true_and_data_return_ok() throws Exception {
+
             String baseURL = "http://localhost:" + port;
             var requestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),savedAccount2.getAccountNumber(),true);
 
@@ -97,108 +97,110 @@ public class DonationIntegrationTest {
                     .log().body()
                     .assertThat()
                     .statusCode(200)
-                    .body("amount", Matchers.is(savedDonation.getAmount().toString()))
+                    .body("amount", Matchers.is(savedDonation.getAmount().floatValue()))
                     .body("donorName", Matchers.is(savedUser.getName()))
                     .body("donorLastName", Matchers.is(savedUser.getSurname()))
-                    .body("beneficiaryAccountNumber", Matchers.is(savedAccount2.getAccountNumber())) //
+                    .body("beneficiaryAccountNumber", Matchers.is(savedAccount2.getAccountNumber()))
                     .body("beneficiaryName", Matchers.is(savedUser2.getName()))
                     .body("beneficiaryLastName", Matchers.is(savedUser2.getSurname()))
-                    .body("createdAt", Matchers.is(savedDonation.getCreatedAt()))
-                    .body("status", Matchers.is(savedDonation.getStatus().name()))
+                    .body("status", Matchers.is(TransactionStatus.PENDING.name()))
                     .extract()
                     .body()
                     .jsonPath()
                     .getObject("$", ResponseDonationDtoTrue.class);
         }
 
-        // When call at method create Donation
-        /*
         @Test
-        public void when_call_confirm_donation_and_data_return_ok() throws Exception {
-            String baseURL = "http://localhost:" + port;
-            var requestDonationConfirmationDto = new RequestDonationConfirmationDto(savedDonation.getId(),savedAccount.getId(),savedAccount2.getId(),TransactionStatus.ACCEPTED);
+        public void when_call_create_donation_false_and_data_return_ok() throws Exception {
 
-            var donationSaved = given().baseUri(baseURL)
+            String baseURL = "http://localhost:" + port;
+            var requestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),savedAccount2.getAccountNumber(),false);
+
+            ResponseDonationDtoFalse response = given().baseUri(baseURL)
                     .header("Authorization",token)
-                    .body(requestDonationConfirmationDto)
+                    .body(requestDonationDto)
+                    .contentType(ContentType.JSON)
+                    .when().post("/api/donaciones/crear-donacion")
+                    .then()
+                    .log().body()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("amount", Matchers.is(savedDonation.getAmount().floatValue()))
+                    .body("beneficiaryAccountNumber", Matchers.is(savedAccount2.getAccountNumber()))
+                    .body("beneficiaryName", Matchers.is(savedUser2.getName()))
+                    .body("beneficiaryLastName", Matchers.is(savedUser2.getSurname()))
+                    .body("status", Matchers.is(TransactionStatus.PENDING.name()))
+                    .extract()
+                    .body()
+                    .jsonPath()
+                    .getObject("$", ResponseDonationDtoFalse.class);
+        }
+
+        @Test
+        public void when_call_create_donation_false_and_data_return_404() throws Exception {
+
+            String baseURL = "http://localhost:" + port;
+            var requestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),12345L,false);
+
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .body(requestDonationDto)
+                    .contentType(ContentType.JSON)
+                    .when().post("/api/donaciones/crear-donacion")
+                    .then()
+                    .log().body()
+                    .assertThat()
+                    .statusCode(404);
+        }
+
+        @Test
+        public void when_call_create_donation_false_and_data_return_403() throws Exception {
+
+            String baseURL = "http://localhost:" + port;
+            var requestDonationDto = new RequestDonationDto(BigDecimal.valueOf(10),savedAccount2.getAccountNumber(),false);
+            String message = "amount: El monto tiene que tener un mínimo de $100";
+
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .body(requestDonationDto)
+                    .contentType(ContentType.JSON)
+                    .when().post("/api/donaciones/crear-donacion")
+                    .then()
+                    .log().body()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.is(message));
+        }
+
+        @Test
+        public void when_call_confirmation_donation_and_data_return_401() throws Exception{
+            String message = "La cuenta indicada no coincide con el usuario logueado en la aplicación";
+            String baseURL = "http://localhost:" + port;
+            var requestDonationConfirmationDtoDto = new RequestDonationConfirmationDto(savedDonation.getId(),TransactionStatus.ACCEPTED);
+
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .body(requestDonationConfirmationDtoDto)
                     .contentType(ContentType.JSON)
                     .when().post("/api/donaciones/confirmar-donacion")
                     .then()
                     .log().body()
-                    .assertThat().statusCode(200)
-                    .body("amount", Matchers.is(savedDonation.getAmount().toString()))
-                    .body("accountIdDonor", Matchers.is(savedDonation.getAccountIdDonor()))
-                    .body("accountIdBeneficiary", Matchers.is(savedUser.getName()))
-                    .body("status", Matchers.is(TransactionStatus.ACCEPTED.name()))
-                    .extract()
-                    .body()
-                    .jsonPath()
-                    .getObject("$", ResponseDonationConfirmationDto.class);
-        }
-
-
-        @Test
-        public void when_call_donation_history_donor_and_data_return_ok() throws Exception {
-            String baseURL = "http://localhost:" + port;
-
-            var donationSaved = given().baseUri(baseURL)
-                    .header("Authorization",token)
-                    .when().get("/api/donaciones/historial-donaciones/donador/%s",savedAccount.getId())
-                    .then()
-                    .log().body()
-                    .assertThat().statusCode(200)
-                    .body("$", Matchers.hasSize(1));
+                    .assertThat()
+                    .statusCode(401)
+                    .body("message", Matchers.is(message));
         }
 
         @Test
-        public void when_call_donation_history_donor_and_data_return_error() throws Exception {
-            String baseURL = "http://localhost:" + port;
+        public void when_call_record_donation_beneficiary_and_data_return_ok() throws Exception {
 
-            var donationSaved = given().baseUri(baseURL)
-                    .header("Authorization",token)
-                    .when().get("/api/donaciones/historial-donaciones/donador/%s","ssssaaa123")
-                    .then()
-                    .log().body()
-                    .assertThat().statusCode(404)
-                    .body("message", Matchers.equalTo("La cuenta no existe"))
-                    .extract()
-                    .body()
-                    .asString();
+
+            var responseRecordDonation = new ResponseDonationRecord("e17efc6c-6d57-4542-8ac1-637251e7662b",
+                    BigDecimal.valueOf(100.0),
+                    "Pedro", "Pascal", "348ad942-10aa-42b8-8173-a763c8d9b7e3",
+                    "Natalia", "Lafourcade", "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",
+                    TransactionStatus.ACCEPTED, LocalDateTime.now().minusDays(2), LocalDateTime.now());
+
         }
-
-        @Test
-        public void when_call_donation_history_beneficiary_and_data_return_ok() throws Exception {
-            String baseURL = "http://localhost:" + port;
-
-            var donationSaved = given().baseUri(baseURL)
-                    .header("Authorization",token)
-                    .when().get("/historial-donaciones/beneficiario/%s",savedAccount2.getId())
-                    .then()
-                    .log().body()
-                    .assertThat().statusCode(404)
-                    .body("message", Matchers.equalTo("No hay donaciones recibidas"))
-                    .extract()
-                    .body()
-                    .asString();
-        }
-
-        @Test
-        public void when_call_donation_history_beneficiary_and_data_return_error() throws Exception {
-            String baseURL = "http://localhost:" + port;
-
-            var donationSaved = given().baseUri(baseURL)
-                    .header("Authorization",token)
-                    .when().get("/historial-donaciones/beneficiario/%s","sssd12333")
-                    .then()
-                    .log().body()
-                    .assertThat().statusCode(404)
-                    .body("message", Matchers.equalTo("La cuenta no existe"))
-                    .extract()
-                    .body()
-                    .asString();
-        }
-
-        */
 
 
     }

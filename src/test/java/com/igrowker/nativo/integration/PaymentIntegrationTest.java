@@ -579,7 +579,6 @@ public class PaymentIntegrationTest {
                     .body()
                     .jsonPath()
                     .getObject("$", ResponsePaymentDto.class);
-
         }
 
         @Test
