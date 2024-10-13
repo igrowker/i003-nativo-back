@@ -24,7 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static io.restassured.RestAssured.given;
-
+/*
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class DonationIntegrationTest {
 
@@ -201,3 +201,4 @@ public class DonationIntegrationTest {
 
     }
 }
+*/

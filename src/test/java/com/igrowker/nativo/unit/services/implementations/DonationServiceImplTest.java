@@ -14,6 +14,7 @@ import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.DonationRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.implementation.DonationServiceImpl;
+import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.validations.Validations;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +29,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -53,8 +54,7 @@ public class DonationServiceImplTest {
     @Mock
     private GeneralTransactions generalTransactions;
     @Mock
-    private DonationServiceImpl donationServiceImplTest;
-
+    private DateFormatter dateFormatter;
     @InjectMocks
     private DonationServiceImpl donationServiceImpl;
 
@@ -64,8 +64,6 @@ public class DonationServiceImplTest {
     private RequestDonationDto requestDonationDtoFalse;
     private RequestDonationConfirmationDto requestDonationConfirmationDtoAccepted;
     private RequestDonationConfirmationDto requestDonationConfirmationDtoDenied;
-    private RequestDonationDto requestDonationDtoResourceNotFoundException;
-    private ResponseDonationDtoTrue responseDonationDtoTrue;
     private ResponseDonationDtoFalse responseDonationDtoFalse;
     private User userDonor;
     private User userBeneficiary;
@@ -86,9 +84,6 @@ public class DonationServiceImplTest {
         donation = new Donation("c12e32e4-0e27-438d-8861-cb1aaa619f56",
                 BigDecimal.valueOf(100.0), TransactionStatus.PENDING, "f89de776-3e64-42c0-b880-8d9e1f5697c8",
                 "a63a054d-fbc4-44f4-beaa-084b2c0e0192", true, LocalDateTime.now(), LocalDateTime.now());
-        responseDonationDtoTrue = new ResponseDonationDtoTrue("c12e32e4-0e27-438d-8861-cb1aaa619f56",
-                BigDecimal.valueOf(100.0), "Ulises", "Gadea", 345347333L,
-                "Mario", "Grande", LocalDateTime.now(), "PENDING");
         responseDonationDtoFalse = new ResponseDonationDtoFalse("c12e32e4-0e27-438d-8861-cb1aaa619f56",
                 BigDecimal.valueOf(100.0), 345347333L, "Mario",
                 "Grande", LocalDateTime.now(), "PENDING");
@@ -98,10 +93,6 @@ public class DonationServiceImplTest {
         userDonor = new User("donorUserId", 345347343L, "Ulises", "Gadea", "ulises@gmail.com", "password123", "987654321", "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c", LocalDate.of(1995, 3, 22), LocalDateTime.now(), true, null, null, true, true, true);
         userBeneficiary = new User("beneficiaryUserId", 345347333L, "Mario", "Grande", "mario@gmail.com", "password123", "123456789", "348ad942-10aa-42b8-8173-a763c8d9b7e3", LocalDate.of(1990, 5, 15), LocalDateTime.now(), true, null, null, true, true, true);
 
-     /*   requestDonationDtoResourceNotFoundException = new RequestDonationDto(BigDecimal.valueOf(100.0),
-                "invalid-donor-account-id",
-                "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",
-                true);*/
     }
 
 
@@ -332,7 +323,7 @@ public class DonationServiceImplTest {
                     .thenReturn(Optional.of(accountDonor));  // Beneficiario y donador son la misma cuenta
 
             Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-                donationServiceImpl.createDonationTrue(requestDonationDtoFalse);
+                donationServiceImpl.createDonationFalse(requestDonationDtoFalse);
             });
 
             String expectedMessage = "No puedes donarte a ti mismo";
@@ -363,7 +354,7 @@ public class DonationServiceImplTest {
     }
 
     @Nested
-    class ConfirmationDonationTest {
+    class ConfirmationAcceptedDonationTest {
 
         @Test
         public void confirmation_ACCEPTED_donation_should_be_Ok() throws Exception {
@@ -424,7 +415,41 @@ public class DonationServiceImplTest {
             verify(donationMapper, times(1)).donationToResponseConfirmationDto(donation1);
         }
 
-      /*  @Test
+        @Test
+        public void confirmation_donation_ACCEPTED_ResourceNotFoundException_idDonation() throws Exception {
+            // POR QUE FUNCIONA
+            var requestDonationConfirmationDtoAccepted = new RequestDonationConfirmationDto(
+                    "invalid-donation-id",
+                    TransactionStatus.ACCEPTED);
+            when(donationRepository.findById(requestDonationConfirmationDtoAccepted.id()))
+                    .thenReturn(Optional.empty());
+            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
+                donationServiceImpl.confirmationDonation(requestDonationConfirmationDtoAccepted);
+            });
+            String expectedMessage = "El id de la donacion no existe";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
+
+        @Test
+        public void confirmation_donation_ACCEPTED_InvalidUserCredentialsException() {
+
+            when(donationRepository.findById(requestDonationConfirmationDtoAccepted.id())).thenReturn(Optional.of(donation));
+            when(validations.isUserAccountMismatch(any())).thenReturn(true);
+            Exception exception = assertThrows(InvalidUserCredentialsException.class, () -> {
+                donationServiceImpl.confirmationDonation(requestDonationConfirmationDtoAccepted);
+            });
+
+            String expectedMessage = "La cuenta indicada no coincide con el usuario logueado en la aplicación";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
+
+    }
+
+    @Nested
+    class ConfirmationDeniedDonationTest {
+        @Test
         public void confirmation_DENIED_donation_should_be_Ok() throws Exception {
             // Datos de prueba
             var requestDonationConfirmationDto = new RequestDonationConfirmationDto(
@@ -477,23 +502,205 @@ public class DonationServiceImplTest {
             verify(donationMapper, times(1)).requestConfirmationDtoToDonation(requestDonationConfirmationDto);
             verify(donationRepository, times(1)).save(any(Donation.class));
             verify(donationMapper, times(1)).donationToResponseConfirmationDto(donation1);
-        }*/
+        }
 
         @Test
-        public void confirmation_donation_ResourceNotFoundException_idDonation() throws Exception {
+        public void confirmation_donation_DENIED_ResourceNotFoundException_idDonation() throws Exception {
             // POR QUE FUNCIONA
-            when(donationRepository.findById(donation.getId()))
+            var requestDonationConfirmationDtoDenied = new RequestDonationConfirmationDto(
+                    "invalid-donation-id",
+                    TransactionStatus.DENIED);
+            when(donationRepository.findById(requestDonationConfirmationDtoDenied.id()))
                     .thenReturn(Optional.empty());
             Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
-                donationServiceImpl.confirmationDonation(requestDonationConfirmationDtoAccepted);
+                donationServiceImpl.confirmationDonation(requestDonationConfirmationDtoDenied);
             });
             String expectedMessage = "El id de la donacion no existe";
             String actualMessage = exception.getMessage();
             assertTrue(actualMessage.contains(expectedMessage));
         }
 
+        @Test
+        public void confirmation_donation_DENIED_InvalidUserCredentialsException() {
+
+            when(donationRepository.findById(requestDonationConfirmationDtoDenied.id())).thenReturn(Optional.of(donation));
+            when(validations.isUserAccountMismatch(any())).thenReturn(true);
+            Exception exception = assertThrows(InvalidUserCredentialsException.class, () -> {
+                donationServiceImpl.confirmationDonation(requestDonationConfirmationDtoDenied);
+            });
+
+            String expectedMessage = "La cuenta indicada no coincide con el usuario logueado en la aplicación";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
     }
 
+    @Nested
+    class GetDonationBtBetweenDatesOrStatus {
+
+        @Test
+        public void get_donations_by_status_should_be_Ok() throws Exception {
+
+            // Crear una donación de prueba
+            Donation donation = new Donation("c12e32e4-0e27-438d-8861-cb1aaa619f56",
+                    BigDecimal.valueOf(100.0), TransactionStatus.ACCEPTED, "f89de776-3e64-42c0-b880-8d9e1f5697c8",
+                    "a63a054d-fbc4-44f4-beaa-084b2c0e0192", true, LocalDateTime.now(), LocalDateTime.now());
+
+            List<Donation> donationList = new ArrayList<>();
+            donationList.add(donation);
+
+            // Crear una respuesta de prueba para la donación
+            var responseDonationRecord = new ResponseDonationRecord(donation.getId(), BigDecimal.valueOf(100.0), userDonor.getName(),
+                    userDonor.getUsername(),accountDonor.getId(),userBeneficiary.getName(),userBeneficiary.getSurname(),
+                    accountBeneficiary.getId(),TransactionStatus.ACCEPTED,donation.getCreatedAt(),
+                    donation.getUpdateAt());
+
+            List<ResponseDonationRecord> responseList = new ArrayList<>();
+            responseList.add(responseDonationRecord);
+
+            // Simular el comportamiento de los métodos utilizados en el servicio
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(userDonor, accountDonor));
+            when(validations.statusConvert(anyString())).thenReturn(TransactionStatus.ACCEPTED);
+            when(donationRepository.findDonationsByStatus(any(), any())).thenReturn(donationList);
+            when(donationMapper.listDonationToListResponseDonationRecordTwo(donationList)).thenReturn(responseList);
+
+            // Ejecutar el metodo a probar
+            var result = donationServiceImpl.getDonationBtBetweenDatesOrStatus(null, null, TransactionStatus.ACCEPTED.toString());
+
+            // Verificar el resultado
+            assertThat(result).isNotNull();
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).id()).isEqualTo(responseDonationRecord.id());
+            assertThat(result.get(0).amount()).isEqualTo(responseDonationRecord.amount());
+            assertThat(result.get(0).donorName()).isEqualTo(responseDonationRecord.donorName());
+            assertThat(result.get(0).donorLastName()).isEqualTo(responseDonationRecord.donorLastName());
+            assertThat(result.get(0).accountIdDonor()).isEqualTo(responseDonationRecord.accountIdDonor());
+            assertThat(result.get(0).beneficiaryName()).isEqualTo(responseDonationRecord.beneficiaryName());
+            assertThat(result.get(0).beneficiaryLastName()).isEqualTo(responseDonationRecord.beneficiaryLastName());
+            assertThat(result.get(0).accountIdBeneficiary()).isEqualTo(responseDonationRecord.accountIdBeneficiary());
+            assertThat(result.get(0).status()).isEqualTo(responseDonationRecord.status());
+            assertThat(result.get(0).createdAt()).isEqualTo(responseDonationRecord.createdAt());
+            assertThat(result.get(0).updateAt()).isEqualTo(responseDonationRecord.updateAt());
+
+            // Verificar que se llamaron los métodos correspondientes
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(validations, times(1)).statusConvert(anyString());
+            verify(donationRepository, times(1)).findDonationsByStatus(any(), any());
+            verify(donationMapper, times(1)).listDonationToListResponseDonationRecordTwo(any());
+        }
+
+        @Test
+        public void get_donations_by_status_ResourceNotFoundException_second() throws Exception {
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(userDonor, accountDonor));
+            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
+                donationServiceImpl.getDonationBtBetweenDatesOrStatus(null, null, null);
+            });
+            String expectedMessage = "Se debe de ingresar las fechas de inicio y fin o un status";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
+
+
+        @Test
+        public void get_donations_by_date_range_should_be_Ok() throws Exception {
+
+            // Crear una donación de prueba
+            Donation donation = new Donation(
+                    "c12e32e4-0e27-438d-8861-cb1aaa619f56",
+                    BigDecimal.valueOf(100.0),
+                    TransactionStatus.ACCEPTED,
+                    "f89de776-3e64-42c0-b880-8d9e1f5697c8",
+                    "a63a054d-fbc4-44f4-beaa-084b2c0e0192",
+                    true,
+                    LocalDateTime.now(),
+                    LocalDateTime.now()
+            );
+
+            List<Donation> donationList = new ArrayList<>();
+            donationList.add(donation);
+
+            // Crear una respuesta de prueba para la donación
+            ResponseDonationRecord responseDonationRecord = new ResponseDonationRecord(
+                    donation.getId(),
+                    BigDecimal.valueOf(100.0),
+                    userDonor.getName(),
+                    userDonor.getUsername(),
+                    accountDonor.getId(),
+                    userBeneficiary.getName(),
+                    userBeneficiary.getSurname(),
+                    accountBeneficiary.getId(),
+                    TransactionStatus.ACCEPTED,
+                    donation.getCreatedAt(),
+                    donation.getUpdateAt()
+            );
+
+            List<ResponseDonationRecord> responseList = new ArrayList<>();
+            responseList.add(responseDonationRecord);
+
+            // Simular el retorno de la lista de fechas
+            List<LocalDateTime> dateTimes = Arrays.asList(
+                    LocalDateTime.of(2023, 4, 12, 0, 0),
+                    LocalDateTime.of(2023, 4, 12, 23, 59)
+            );
+
+            // Simular el comportamiento de los métodos utilizados en el servicio
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(userDonor, accountDonor));
+            when(dateFormatter.getDateFromString("2023-04-12", "2023-04-12")).thenReturn(dateTimes);
+            when(donationRepository.findDonationsByDateRange(any(), any(), any())).thenReturn(donationList);
+            when(donationMapper.listDonationToListResponseDonationRecordTwo(donationList)).thenReturn(responseList);
+
+            // Ejecutar el método a probar
+            var result = donationServiceImpl.getDonationBtBetweenDatesOrStatus("2023-04-12", "2023-04-12", null);
+
+            // Verificar el resultado
+            assertThat(result).isNotNull();
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).id()).isEqualTo(responseDonationRecord.id());
+            assertThat(result.get(0).amount()).isEqualTo(responseDonationRecord.amount());
+            assertThat(result.get(0).donorName()).isEqualTo(responseDonationRecord.donorName());
+            assertThat(result.get(0).donorLastName()).isEqualTo(responseDonationRecord.donorLastName());
+            assertThat(result.get(0).accountIdDonor()).isEqualTo(responseDonationRecord.accountIdDonor());
+            assertThat(result.get(0).beneficiaryName()).isEqualTo(responseDonationRecord.beneficiaryName());
+            assertThat(result.get(0).beneficiaryLastName()).isEqualTo(responseDonationRecord.beneficiaryLastName());
+            assertThat(result.get(0).accountIdBeneficiary()).isEqualTo(responseDonationRecord.accountIdBeneficiary());
+            assertThat(result.get(0).status()).isEqualTo(responseDonationRecord.status());
+            assertThat(result.get(0).createdAt()).isEqualTo(responseDonationRecord.createdAt());
+            assertThat(result.get(0).updateAt()).isEqualTo(responseDonationRecord.updateAt());
+
+            // Verificar que se llamaron los métodos correspondientes
+            verify(validations, times(1)).getAuthenticatedUserAndAccount();
+            verify(dateFormatter, times(1)).getDateFromString(anyString(), anyString());
+            verify(donationRepository, times(1)).findDonationsByDateRange(any(), any(), any());
+            verify(donationMapper, times(1)).listDonationToListResponseDonationRecordTwo(any());
+        }
+
+        @Test
+        public void get_donations_ResourceNotFoundException_one() throws Exception {
+
+            when(validations.getAuthenticatedUserAndAccount()).thenThrow(new ResourceNotFoundException("La cuenta indicada no coincide con el usuario logueado en la aplicación"));
+            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
+                donationServiceImpl.getDonationBtBetweenDatesOrStatus("2023-04-12", "2023-04-12", null);
+            });
+            String expectedMessage = "La cuenta indicada no coincide con el usuario logueado en la aplicación";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
+
+
+        @Test
+        public void get_donations_ResourceNotFoundException_second() throws Exception {
+
+            when(validations.getAuthenticatedUserAndAccount()).thenReturn(new Validations.UserAccountPair(userDonor, accountDonor));
+            Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
+                donationServiceImpl.getDonationBtBetweenDatesOrStatus(null, null, null);
+            });
+            String expectedMessage = "Se debe de ingresar las fechas de inicio y fin o un status";
+            String actualMessage = exception.getMessage();
+            assertTrue(actualMessage.contains(expectedMessage));
+        }
+
+    }
 }
 
 
