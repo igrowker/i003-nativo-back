@@ -80,8 +80,6 @@ public class DonationIntegrationTest {
     @Nested
     class getAllTestDonation{
 
-
-        // When call at method create Donation
         @Test
         public void when_call_create_donation_true_and_data_return_ok() throws Exception {
 
@@ -154,7 +152,41 @@ public class DonationIntegrationTest {
         }
 
         @Test
-        public void when_call_create_donation_false_and_data_return_403() throws Exception {
+        public void when_call_create_donation_false_with_number_account_invalid() throws Exception {
+
+            String baseURL = "http://localhost:" + port;
+            var requestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),12345L,false);
+
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .body(requestDonationDto)
+                    .contentType(ContentType.JSON)
+                    .when().post("/api/donaciones/crear-donacion")
+                    .then()
+                    .log().body()
+                    .assertThat()
+                    .statusCode(404);
+        }
+
+        @Test
+        public void when_call_create_donation_false_with_anonymous_invalid() throws Exception {
+
+            String baseURL = "http://localhost:" + port;
+            var requestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),12345L,null);
+
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .body(requestDonationDto)
+                    .contentType(ContentType.JSON)
+                    .when().post("/api/donaciones/crear-donacion")
+                    .then()
+                    .log().body()
+                    .assertThat()
+                    .statusCode(400);
+        }
+
+        @Test
+        public void when_call_create_donation_false_with_amount_less_than_one_hundred() throws Exception {
 
             String baseURL = "http://localhost:" + port;
             var requestDonationDto = new RequestDonationDto(BigDecimal.valueOf(10),savedAccount2.getAccountNumber(),false);
@@ -191,17 +223,116 @@ public class DonationIntegrationTest {
         }
 
         @Test
-        public void when_call_record_donation_beneficiary_and_data_return_ok() throws Exception {
+        public void when_call_record_donation_donor_and_data_return_400_by_token_error() throws Exception {
+            User userNotFound = (new User(null, 123456788l, "Name", "Apellido", "notfound@gmail.com",
+                    "password123", "123654789", null, LocalDate.of(1990, 12, 31),
+                    LocalDateTime.now(), true, "123456",
+                    LocalDateTime.now().plusMonths(1), true, true, true));
 
+            var savedUserNotFound = userRepository.save(userNotFound);
+            String tokenNotFound = jwtService.generateToken(savedUserNotFound);
 
-            var responseRecordDonation = new ResponseDonationRecord("e17efc6c-6d57-4542-8ac1-637251e7662b",
-                    BigDecimal.valueOf(100.0),
-                    "Pedro", "Pascal", "348ad942-10aa-42b8-8173-a763c8d9b7e3",
-                    "Natalia", "Lafourcade", "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",
-                    TransactionStatus.ACCEPTED, LocalDateTime.now().minusDays(2), LocalDateTime.now());
-
+            String baseURL = "http://localhost:" + port;
+            given().baseUri(baseURL)
+                    .header("Authorization", "Bearer " + tokenNotFound)
+                    .pathParam("idDonorAccount", savedAccount.getId())
+                    .when()
+                    .get("/api/donaciones/historial-donaciones/donador/{idDonorAccount}")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404);
         }
 
+        @Test
+        public void when_call_record_beneficiary_and_data_return_400_by_beneficiary_account_non_exist() throws Exception {
+            String idBeneficiaryAccountNull = "4432232";
+            String message = "La cuenta provista no fue encontrada.";
+            String baseURL = "http://localhost:" + port;
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .pathParam("idBeneficiaryAccount", idBeneficiaryAccountNull)
+                    .when()
+                    .get("/api/donaciones/historial-donaciones/beneficiario/{idBeneficiaryAccount}")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.is(message));
+        }
+
+        @Test
+        public void when_call_record_donor_and_data_return_400_by_beneficiary_account_non_exist() throws Exception {
+            String idDonorAccount = "4432232";
+            String message = "La cuenta provista no fue encontrada.";
+            String baseURL = "http://localhost:" + port;
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .pathParam("idDonorAccount", idDonorAccount)
+                    .when()
+                    .get("/api/donaciones/historial-donaciones/donador/{idDonorAccount}")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.is(message));
+        }
+
+        @Test
+        public void when_call_record_by_between_dates_or_status_and_data_return_404() throws Exception {
+            String message = "Se debe de ingresar las fechas de inicio y fin o un status";
+            String baseURL = "http://localhost:" + port;
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .when()
+                    .get("/api/donaciones/historial-donaciones")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(404)
+                    .body("message", Matchers.is(message));
+        }
+
+        @Test
+        public void when_call_record_by_between_dates_or_status_with_dates_invalid_format() throws Exception {
+            String message = "Formato de fecha erroneo. Debe ingresar yyyy-MM-dd";
+            String fromDate = "2024/02/12", toDate="2024/02/12";
+            String baseURL = "http://localhost:" + port;
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .queryParam("fromDate", fromDate)
+                    .queryParam("toDate", toDate)
+                    .when()
+                    .get("/api/donaciones/historial-donaciones")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.is(message));
+        }
+
+        @Test
+        public void when_call_record_by_between_dates_or_status_with_status_invalid() throws Exception {
+            String message = "El estado de la transacción no existe: ACC";
+            String status = "ACC";
+            String baseURL = "http://localhost:" + port;
+            given().baseUri(baseURL)
+                    .header("Authorization",token)
+                    .queryParam("status", status)
+                    .when()
+                    .get("/api/donaciones/historial-donaciones")
+                    .then()
+                    .log()
+                    .body()
+                    .assertThat()
+                    .statusCode(400)
+                    .body("message", Matchers.is(message));
+        }
 
     }
 }
