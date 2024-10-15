@@ -12,9 +12,11 @@ import com.igrowker.nativo.repositories.AccountRepository;
 import com.igrowker.nativo.repositories.DonationRepository;
 import com.igrowker.nativo.repositories.UserRepository;
 import com.igrowker.nativo.services.DonationService;
+import com.igrowker.nativo.utils.DateFormatter;
 import com.igrowker.nativo.utils.GeneralTransactions;
 import com.igrowker.nativo.validations.Validations;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cglib.core.Local;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +38,7 @@ public class DonationServiceImpl implements DonationService {
 
     private final GeneralTransactions generalTransactions;
     private final Validations validations;
+    private final DateFormatter dateFormatter;
 
     @Override
     public ResponseDonationDtoTrue createDonationTrue(RequestDonationDto requestDonationDto) {
@@ -46,6 +49,10 @@ public class DonationServiceImpl implements DonationService {
 
         if (validations.validateTransactionUserFunds(requestDonationDto.amount())) {
             Account accountBeneficiary = accountRepository.findAccountByNumberAccount(requestDonationDto.numberAccountBeneficiary()).orElseThrow(() -> new ResourceNotFoundException("El numero de cuenta beneficiario no existe"));
+            // IMPORTANTE AGREGUE ESTO
+            if (donor.account.getId().equals(accountBeneficiary.getId())){
+                throw new IllegalArgumentException("No puedes donarte a ti mismo");
+            }
 
             User beneficiary = userRepository.findById(accountBeneficiary.getUserId()).orElseThrow(() -> new ResourceNotFoundException("El id del usuario beneficiario no existe"));
 
@@ -59,6 +66,7 @@ public class DonationServiceImpl implements DonationService {
                     donation.getAmount(),
                     donor.user.getName(),
                     donor.user.getSurname(),
+                    accountBeneficiary.getAccountNumber(),
                     beneficiary.getName(),
                     beneficiary.getSurname(),
                     donation.getCreatedAt(),
@@ -79,12 +87,17 @@ public class DonationServiceImpl implements DonationService {
 
         if (validations.validateTransactionUserFunds(requestDonationDto.amount())){
             Account accountBeneficiary = accountRepository.findAccountByNumberAccount(requestDonationDto.numberAccountBeneficiary()).orElseThrow(() -> new ResourceNotFoundException("El numero de cuenta beneficiario no existe"));
+            // IMPORTANTE AGREGUE ESTO
+            if (donor.account.getId().equals(accountBeneficiary.getId())){
+                throw new IllegalArgumentException("No puedes donarte a ti mismo");
+            }
+
             User beneficiaryAccount = userRepository.findById(accountBeneficiary.getUserId()).orElseThrow(() -> new ResourceNotFoundException("El id de usuario beneficiario no existe"));
             donor.account.setReservedAmount(donor.account.getReservedAmount().add(requestDonationDto.amount()));
             accountRepository.save(donor.account);
             Donation donation = returnDonation(donor.account.getId(), accountBeneficiary.getId(), requestDonationDto);;
 
-            return donationMapper.donationToResponseDtoFalse(donation, beneficiaryAccount.getName(), beneficiaryAccount.getSurname());
+            return donationMapper.donationToResponseDtoFalse(donation, beneficiaryAccount.getName(), beneficiaryAccount.getSurname(), accountBeneficiary.getAccountNumber());
         }else{
             throw new InsufficientFundsException("Tu cuenta no tiene suficientes fondos.");
         }
@@ -125,7 +138,6 @@ public class DonationServiceImpl implements DonationService {
 
 
         }
-
         throw new ResourceAlreadyExistsException("Esta donacion ya fue finalizada");
     }
 
@@ -215,9 +227,34 @@ public class DonationServiceImpl implements DonationService {
         }
     }
 
+    @Override
+    public List<ResponseDonationRecord> getDonationBtBetweenDatesOrStatus(String fromDate, String toDate, String status) {
+        Validations.UserAccountPair accountAndUser = validations.getAuthenticatedUserAndAccount();
+
+        if (status == null && (fromDate == null || toDate == null)) {
+            throw new ResourceNotFoundException("Se debe de ingresar las fechas de inicio y fin o un status");
+        }
+
+        List<Donation> donations;
+
+        if (fromDate == null || toDate == null) {
+            TransactionStatus transactionStatus = validations.statusConvert(status);
+            donations = donationRepository.findDonationsByStatus(accountAndUser.account.getId(), transactionStatus);
+        } else {
+            List<LocalDateTime> dateTimes = dateFormatter.getDateFromString(fromDate, toDate);
+            LocalDateTime startDate = dateTimes.get(0);
+            LocalDateTime endDate = dateTimes.get(1);
+            donations = donationRepository.findDonationsByDateRange(accountAndUser.account.getId(), startDate, endDate);
+        }
+
+        donations.sort(Comparator.comparing(Donation::getUpdateAt).reversed());
+
+        return donationMapper.listDonationToListResponseDonationRecordTwo(donations);
+    }
+
 
     public void returnAmount(String id, BigDecimal amount){
-        Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new InsufficientFundsException("La cuenta del donador no existe"));
+        Account donorAccount = accountRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("La cuenta del donador no existe"));
         donorAccount.setReservedAmount(donorAccount.getReservedAmount().subtract(amount));
         accountRepository.save(donorAccount);
     }

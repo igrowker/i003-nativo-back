@@ -59,14 +59,12 @@ public class DonationControllerTest {
 
             // Arrange: Preparar las clases de Input y Output
             // se puede hacer fuera del test si son clases compartidas
-            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),123456l,
+            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),345347333L,
                     true);
 
-            var ResponseDonationDtoTrue = new ResponseDonationDtoTrue("e17efc6c-6d57-4542-8ac1-637251e7662b",
-                    BigDecimal.valueOf(100.0),
-                    "Mario","Grande",
-                    "Ulises", "Gonzales",
-                    LocalDateTime.now(), "PENDENT");
+            var ResponseDonationDtoTrue = new ResponseDonationDtoTrue("c12e32e4-0e27-438d-8861-cb1aaa619f56",
+                    BigDecimal.valueOf(100.0), "Ulises", "Gadea", 345347333L,
+                    "Mario", "Grande", LocalDateTime.now(), "PENDING");
 
             when(donationService.createDonationTrue(RequestDonationDto)).thenReturn(ResponseDonationDtoTrue);
 
@@ -82,6 +80,7 @@ public class DonationControllerTest {
                     .andExpect(jsonPath("$.amount", Matchers.is(ResponseDonationDtoTrue.amount().doubleValue())))
                     .andExpect(jsonPath("$.donorName", Matchers.is(ResponseDonationDtoTrue.donorName())))
                     .andExpect(jsonPath("$.donorLastName", Matchers.is(ResponseDonationDtoTrue.donorLastName())))
+                    .andExpect(jsonPath("$.beneficiaryAccountNumber", Matchers.is(ResponseDonationDtoTrue.beneficiaryAccountNumber().intValue())))
                     .andExpect(jsonPath("$.beneficiaryName", Matchers.is(ResponseDonationDtoTrue.beneficiaryName())))
                     .andExpect(jsonPath("$.beneficiaryLastName", Matchers.is(ResponseDonationDtoTrue.beneficiaryLastName())))
                     .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoTrue.createdAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")))))
@@ -93,14 +92,12 @@ public class DonationControllerTest {
 
             // Arrange: Preparar las clases de Input y Output
             // se puede hacer fuera del test si son clases compartidas
-            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),
-                    123456l, false);
+            var RequestDonationDto = new RequestDonationDto(BigDecimal.valueOf(100.0),345347333L,
+                    false);
 
-            var ResponseDonationDtoFalse = new ResponseDonationDtoFalse("e17efc6c-6d57-4542-8ac1-637251e7662b",
-                    BigDecimal.valueOf(100.0),"348ad942-10aa-42b8-8173-a763c8d9b7e3",
-                    "Pedro", "Pascal",
-                    LocalDateTime.now(),
-                    "PENDENT");
+            var ResponseDonationDtoFalse = new ResponseDonationDtoFalse("c12e32e4-0e27-438d-8861-cb1aaa619f56",
+                    BigDecimal.valueOf(100.0), 345347333L, "Mario",
+                    "Grande", LocalDateTime.now(), "PENDING");
 
             when(donationService.createDonationFalse(RequestDonationDto)).thenReturn(ResponseDonationDtoFalse);
 
@@ -114,7 +111,7 @@ public class DonationControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id", Matchers.is(ResponseDonationDtoFalse.id())))
                     .andExpect(jsonPath("$.amount", Matchers.is(ResponseDonationDtoFalse.amount().doubleValue())))
-                    .andExpect(jsonPath("$.accountIdBeneficiary", Matchers.is(ResponseDonationDtoFalse.accountIdBeneficiary())))
+                    .andExpect(jsonPath("$.beneficiaryAccountNumber", Matchers.is( ResponseDonationDtoFalse.beneficiaryAccountNumber().intValue() ))) // Acá
                     .andExpect(jsonPath("$.beneficiaryName", Matchers.is(ResponseDonationDtoFalse.beneficiaryName())))
                     .andExpect(jsonPath("$.beneficiaryLastName", Matchers.is(ResponseDonationDtoFalse.beneficiaryLastName())))
                     .andExpect(jsonPath("$.createdAt", Matchers.is(ResponseDonationDtoFalse.createdAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")))))
@@ -267,7 +264,46 @@ public class DonationControllerTest {
                     .andExpect(jsonPath("$.message", Matchers.is("La cuenta del donador no existe")));
         }
 
+        @Test
+        public void recordBeneficiaryByBetweenDatesOrStatus_should_be_ok() throws Exception {
+            String fromDate = "2023/01/20";
+            String toDate = "2024/10/12";
+
+            var responseRecordDonation = new ResponseDonationRecord("e17efc6c-6d57-4542-8ac1-637251e7662b",
+                    BigDecimal.valueOf(100.0),
+                    "Pedro", "Pascal", "348ad942-10aa-42b8-8173-a763c8d9b7e3",
+                    "Natalia", "Lafourcade", "218d6f62-d5cf-423d-a0ac-4df8d7f1d06c",
+                    TransactionStatus.ACCEPTED, LocalDateTime.now().minusDays(2), LocalDateTime.now());
+
+            when(donationService.getDonationBtBetweenDatesOrStatus(fromDate, toDate,null)).thenReturn(List.of(responseRecordDonation));
+
+            mockMvc.perform(get("/api/donaciones/historial-donaciones")
+                            .param("fromDate",fromDate)
+                            .param("toDate",toDate))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$[0].id", Matchers.is(responseRecordDonation.id())))
+                    .andExpect(jsonPath("$[0].amount", Matchers.is(responseRecordDonation.amount().doubleValue())))
+                    .andExpect(jsonPath("$[0].donorName", Matchers.is(responseRecordDonation.donorName())))
+                    .andExpect(jsonPath("$[0].donorLastName", Matchers.is(responseRecordDonation.donorLastName())))
+                    .andExpect(jsonPath("$[0].accountIdDonor", Matchers.is(responseRecordDonation.accountIdDonor())))
+                    .andExpect(jsonPath("$[0].beneficiaryName", Matchers.is(responseRecordDonation.beneficiaryName())))
+                    .andExpect(jsonPath("$[0].beneficiaryLastName", Matchers.is(responseRecordDonation.beneficiaryLastName())))
+                    .andExpect(jsonPath("$[0].accountIdBeneficiary", Matchers.is(responseRecordDonation.accountIdBeneficiary())))
+                    .andExpect(jsonPath("$[0].status", Matchers.is(responseRecordDonation.status().name())));
+        }
+
+        @Test
+        public void recordDonationHistoryByBetweenDates_should_NOT_be_ok() throws Exception {
+
+            // Simulando que no se encontró ninguna donación entre las fechas o que hubo un error
+            when(donationService.getDonationBtBetweenDatesOrStatus(null, null, null))
+                    .thenThrow(new ResourceNotFoundException("Se debe de ingresar las fechas de inicio y fin o un status"));
+
+            mockMvc.perform(get("/api/donaciones/historial-donaciones"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", Matchers.is("Se debe de ingresar las fechas de inicio y fin o un status")));
+        }
 
     }
-
 }

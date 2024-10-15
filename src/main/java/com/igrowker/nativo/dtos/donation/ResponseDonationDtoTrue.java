@@ -12,6 +12,8 @@ public record ResponseDonationDtoTrue(
         String donorName,
         String donorLastName,
 
+        Long beneficiaryAccountNumber,
+
         String beneficiaryName,
 
         String beneficiaryLastName,
